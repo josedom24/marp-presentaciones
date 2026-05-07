@@ -711,26 +711,22 @@ Se pierde tras reiniciar el sistema.
 
 <div class="card card-green">
 
-### Activación persistente
+### Activación persistente (Debian 13)
 
-Editar `/etc/sysctl.conf` y descomentar:
-
-```
-net.ipv4.ip_forward = 1
-```
-
-Aplicar los cambios:
+Crear un archivo en `/etc/sysctl.d/`:
 
 ```bash
-sysctl -p
+echo "net.ipv4.ip_forward = 1" \
+    > /etc/sysctl.d/99-router.conf
 ```
 
+Aplicar los cambios: `sysctl --system`
 </div>
 
 </div>
 
-<div class="alerta alerta-warning" style="margin-top:0.8rem">
-<span>⚠️</span><div>En <strong>Debian 13</strong> ha cambiado la gestión de los parámetros del kernel: hay que consultar la documentación para añadir <code>net.ipv4.ip_forward = 1</code> en la ubicación correcta y activar el bit de forwarding.</div>
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>En <strong>Debian 13</strong> ya no se proporciona <code>/etc/sysctl.conf</code>: la configuración se organiza de forma modular en <code>/etc/sysctl.d/</code>. Detalles en <code>man sysctl.d</code> y en <code>/etc/sysctl.d/README.sysctl</code>.</div>
 </div>
 
 ---
@@ -742,8 +738,7 @@ Permite que una red local con **direcciones privadas** salga a Internet usando l
 ### Regla con `iptables`
 
 ```bash
-iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 \
-    -j SNAT --to-source 192.0.2.1
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j SNAT --to-source 192.0.2.1
 ```
 
 - `-o eth0` — interfaz de salida (hacia Internet)
@@ -759,8 +754,7 @@ Cuando la IP pública del router **no es fija** (por ejemplo, asignada por DHCP 
 ### Regla equivalente
 
 ```bash
-iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 \
-    -j MASQUERADE
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j MASQUERADE
 ```
 
 - Toma **automáticamente** la IP de la interfaz de salida
@@ -780,8 +774,7 @@ Se usa para **redirigir tráfico entrante** desde el exterior hacia una máquina
 ### Regla con `iptables`
 
 ```bash
-iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 \
-    -j DNAT --to-destination 192.168.1.100:80
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination 192.168.1.100:80
 ```
 
 - `-i eth0` — interfaz por la que entra el tráfico
