@@ -1,5 +1,6 @@
 ---
 marp: true
+title: Protocolo DHCP y servidor Kea
 theme: profesional
 paginate: true
 header: 'SRI · Unidad 2 — Protocolo DHCP y servidor Kea'

@@ -1,5 +1,6 @@
 ---
 marp: true
+title: Configuración inicial de un servidor Linux
 theme: profesional
 paginate: true
 header: 'SRI · Unidad 1 — Configuración inicial de un servidor Linux'
