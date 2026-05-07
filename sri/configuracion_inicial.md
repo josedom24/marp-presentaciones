@@ -713,20 +713,20 @@ Se pierde tras reiniciar el sistema.
 
 ### Activación persistente (Debian 13)
 
-Crear un archivo en `/etc/sysctl.d/`:
+En <strong>Debian 13</strong> ya no se proporciona <code>/etc/sysctl.conf</code>: la configuración se organiza de forma modular en <code>/etc/sysctl.d/</code>. Detalles en <code>man sysctl.d</code> y en <code>/etc/sysctl.d/README.sysctl</code>.
 
 ```bash
-echo "net.ipv4.ip_forward = 1" \
-    > /etc/sysctl.d/99-router.conf
+echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-router.conf
 ```
 
-Aplicar los cambios: `sysctl --system`
-</div>
+Aplicar los cambios: 
+
+```bash
+sysctl --system`
+```
 
 </div>
 
-<div class="alerta alerta-info" style="margin-top:0.8rem">
-<span>ℹ️</span><div>En <strong>Debian 13</strong> ya no se proporciona <code>/etc/sysctl.conf</code>: la configuración se organiza de forma modular en <code>/etc/sysctl.d/</code>. Detalles en <code>man sysctl.d</code> y en <code>/etc/sysctl.d/README.sysctl</code>.</div>
 </div>
 
 ---
