@@ -467,5 +467,5 @@ cat /var/lib/kea/kea-leases4.csv
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>
   <span>🏫 IES Gonzalo Nazareno · Dos Hermanas</span>
-  <span>📚 SRI 25/26</span>
+  <span>📚 SRI</span>
 </div>
