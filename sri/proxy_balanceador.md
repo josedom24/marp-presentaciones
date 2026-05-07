@@ -560,8 +560,6 @@ sudo hatop -s /run/haproxy/admin.sock
 
 ## Para profundizar
 
-- [Proxy inverso — fp.josedomingo.org](https://fp.josedomingo.org/sri/2526/u3/proxyinverso/)
-- [HAProxy — fp.josedomingo.org](https://fp.josedomingo.org/sri/2526/u3/haproxy/)
 - [Documentación oficial de HAProxy](https://docs.haproxy.org/)
 - [Apache mod_proxy](https://httpd.apache.org/docs/current/mod/mod_proxy.html)
 - [Nginx — proxy_pass](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)

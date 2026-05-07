@@ -673,8 +673,6 @@ sudo journalctl -u nginx
 
 ## Para profundizar
 
-- [Apache HTTP Server — fp.josedomingo.org](https://fp.josedomingo.org/sri/2526/u3/apache2/)
-- [Nginx — fp.josedomingo.org](https://fp.josedomingo.org/sri/2526/u3/nginx/)
 - [Documentación oficial de Apache](https://httpd.apache.org/docs/)
 - [Documentación oficial de Nginx](https://nginx.org/en/docs/)
 
