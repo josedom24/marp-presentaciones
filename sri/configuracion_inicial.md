@@ -411,63 +411,76 @@ Linux ofrece **varias herramientas** para gestionar la red. La que se utiliza de
 
 ---
 
-## ifupdown y NetworkManager
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### ifupdown
+## ifupdown
 
 - Herramienta **tradicional** de Debian
-- Archivos de configuración en `/etc/network/`
-- Integrada con `systemd` mediante un servicio que la activa al arrancar
+- Archivos de configuración en `/etc/network/interfaces` y `/etc/network/interfaces.d/`
+- Integrada con `systemd` mediante el servicio `networking.service`
 - Sencilla y predecible: ideal para **servidores con configuración estable**
 
-</div>
+### Comandos principales
 
-<div class="card card-green">
-
-### NetworkManager
-
-- Pensada para **gestión dinámica** de la red
-- Soporta **Wi-Fi, VPN, redes móviles** y conexiones cambiantes
-- Ofrece interfaz gráfica, *applet* de escritorio y herramientas en línea de comandos
-- Habitual en **escritorios** y en distribuciones tipo Fedora
-
-</div>
-
-</div>
+```bash
+ifup eth0          # Levanta una interfaz según la configuración
+ifdown eth0        # La desactiva
+ip a               # Muestra interfaces y direcciones IP
+ip route           # Muestra la tabla de rutas
+systemctl restart networking   # Aplica cambios en interfaces
+```
 
 ---
 
-## systemd-networkd y Netplan
+## NetworkManager
 
-<div class="cols-2" style="margin-top:0.8rem">
+- Pensada para **gestión dinámica** de la red
+- Soporta **Wi-Fi, VPN, redes móviles** y conexiones cambiantes
+- Habitual en **escritorios** y en distribuciones tipo Fedora
+- Almacena las conexiones como *perfiles* en `/etc/NetworkManager/system-connections/`
 
-<div class="card card-purple">
+### Comandos principales
 
-### systemd-networkd
+```bash
+nmcli device status            # Estado de cada interfaz
+nmcli connection show          # Lista de conexiones definidas
+nmcli connection up <perfil>   # Activa una conexión
+nmtui                          # Interfaz interactiva en modo texto
+nm-applet                      # Applet gráfico de escritorio
+```
+
+---
+
+## systemd-networkd
 
 - **Forma parte de systemd**: integrada en el sistema base
-- Configuración **declarativa** en `/etc/systemd/network/`
+- Configuración **declarativa** en archivos `.network` y `.link` dentro de `/etc/systemd/network/`
 - Ligera y eficiente: pensada para **servidores** y entornos automatizados
 - Combinada con `systemd-resolved` cubre red y DNS
 
-</div>
+### Comandos principales
 
-<div class="card card-yellow">
+```bash
+systemctl enable --now systemd-networkd   # Activar el servicio
+systemctl restart systemd-networkd        # Aplicar cambios
+networkctl                                # Estado de las interfaces
+networkctl status eth0                    # Detalle de una interfaz
+```
 
-### Netplan
+---
+
+## Netplan
 
 - Herramienta de **Ubuntu** (también disponible en otras distribuciones)
-- Configuración declarativa en archivos **YAML**
+- Configuración declarativa en archivos **YAML** en `/etc/netplan/`
 - No gestiona la red directamente: **traduce** la configuración a NetworkManager o systemd-networkd
 - Unifica la sintaxis entre escritorio y servidor
 
-</div>
+### Comandos principales
 
-</div>
+```bash
+netplan generate   # Genera la configuración del backend
+netplan apply      # Aplica los cambios
+netplan try        # Prueba la configuración con rollback automático
+```
 
 ---
 
@@ -483,6 +496,17 @@ Linux ofrece **varias herramientas** para gestionar la red. La que se utiliza de
 <div class="alerta alerta-info" style="margin-top:0.8rem">
 <span>ℹ️</span><div>Conviene <strong>no mezclar</strong> mecanismos en el mismo equipo: dos gestores intentando configurar la misma interfaz provocan conflictos imprevisibles.</div>
 </div>
+
+---
+
+## Para profundizar — Configuración de red
+
+Artículos del blog con explicaciones detalladas y ejemplos de cada herramienta:
+
+- [Configuración de red en sistemas Linux — **ifupdown**](https://www.josedomingo.org/pledin/2025/01/configuracion-red-linux-ifupdown/)
+- [Configuración de red en sistemas Linux — **NetworkManager**](https://www.josedomingo.org/pledin/2025/01/configuracion-red-linux-networkmanager/)
+- [Configuración de red en sistemas Linux — **systemd-networkd**](https://www.josedomingo.org/pledin/2025/03/configuracion-red-linux-systemd-networkd/)
+- [Configuración de red en sistemas Linux — **Netplan**](https://www.josedomingo.org/pledin/2025/04/configuracion-red-linux-netplan/)
 
 ---
 
@@ -562,10 +586,18 @@ Servicio moderno que **centraliza** la resolución de nombres en el sistema.
 ### Qué aporta
 
 - **Caché local** de respuestas → mejor rendimiento
-- Servidor DNS local de reenvío en una dirección de *loopback*
-- Integración con **NSS** mediante módulos propios
+- Servidor DNS local de reenvío en `127.0.0.53`
+- Integración con **NSS** mediante módulos propios (`resolve`, `myhostname`, `mymachines`)
 - Combina resolución estática (`/etc/hosts`), DNS remoto y nombres de contenedores
-- Herramientas propias para consultar el estado, vaciar la caché y diagnosticar
+
+### Comandos principales
+
+```bash
+resolvectl status                  # Estado del servicio y DNS configurados
+resolvectl query www.ejemplo.com   # Consulta usando systemd-resolved
+resolvectl dns eth0 1.1.1.1        # Establece servidores DNS para una interfaz
+resolvectl flush-caches            # Vacía la caché de resolución
+```
 
 ---
 
@@ -579,7 +611,12 @@ No todas las herramientas siguen el mismo camino que el sistema operativo cuando
 
 ### Consultan **directamente** al DNS
 
-- `dig`, `host`, `nslookup`
+```bash
+dig www.ejemplo.com
+host www.ejemplo.com
+nslookup www.ejemplo.com
+```
+
 - **No respetan** el orden de NSS
 - Útiles para **diagnosticar el DNS** en sí mismo
 
@@ -589,7 +626,11 @@ No todas las herramientas siguen el mismo camino que el sistema operativo cuando
 
 ### Respetan el orden de NSS
 
-- `getent hosts` / `getent ahosts`
+```bash
+getent hosts www.ejemplo.com
+getent ahosts www.ejemplo.com
+```
+
 - Reproducen el camino real de una aplicación
 - Útiles para verificar la **resolución completa** del sistema
 
@@ -599,6 +640,16 @@ No todas las herramientas siguen el mismo camino que el sistema operativo cuando
 
 <div class="alerta alerta-warning" style="margin-top:0.8rem">
 <span>⚠️</span><div>Si <code>dig</code> resuelve un nombre pero <code>ping</code> no, lo más probable es que el problema esté en NSS o en <code>/etc/hosts</code>, no en el DNS.</div>
+</div>
+
+---
+
+## Para profundizar — Resolución de nombres
+
+- [Resolución de nombres de dominios en sistemas Linux](https://www.josedomingo.org/pledin/2024/02/resolucion-nombres-linux/)
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>El artículo desarrolla en detalle el funcionamiento de NSS, <code>/etc/hosts</code>, <code>/etc/resolv.conf</code> y <code>systemd-resolved</code>, con ejemplos prácticos.</div>
 </div>
 
 ---
