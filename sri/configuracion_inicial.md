@@ -590,7 +590,9 @@ Servicio moderno que **centraliza** la resolución de nombres en el sistema.
 - Integración con **NSS** mediante módulos propios (`resolve`, `myhostname`, `mymachines`)
 - Combina resolución estática (`/etc/hosts`), DNS remoto y nombres de contenedores
 
-### Comandos principales
+---
+
+## Comandos de `resolvectl`
 
 ```bash
 resolvectl status                  # Estado del servicio y DNS configurados
@@ -599,47 +601,54 @@ resolvectl dns eth0 1.1.1.1        # Establece servidores DNS para una interfaz
 resolvectl flush-caches            # Vacía la caché de resolución
 ```
 
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div><code>resolvectl</code> usa el flujo del propio sistema (caché incluida), por lo que sus respuestas reflejan lo que verá una aplicación real.</div>
+</div>
+
 ---
 
 ## Herramientas de consulta: cuidado con lo que prueban
 
 No todas las herramientas siguen el mismo camino que el sistema operativo cuando una aplicación normal resuelve un nombre.
 
+- **Consultas directas al DNS**: `dig`, `host`, `nslookup`
+   *No respetan* el orden de NSS — diagnostican el DNS en sí mismo
+- **Consultas que respetan NSS**: `getent hosts`, `getent ahosts`
+   Reproducen el camino real de una aplicación
+
+<div class="alerta alerta-warning" style="margin-top:0.8rem">
+<span>⚠️</span><div>Si <code>dig</code> resuelve un nombre pero <code>ping</code> no, lo más probable es que el problema esté en NSS o en <code>/etc/hosts</code>, no en el DNS.</div>
+</div>
+
+---
+
+## Comandos de consulta DNS
+
 <div class="cols-2" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
-### Consultan **directamente** al DNS
+### Directos al DNS
 
 ```bash
-dig www.ejemplo.com
-host www.ejemplo.com
-nslookup www.ejemplo.com
+dig ejemplo.com
+host ejemplo.com
+nslookup ejemplo.com
 ```
-
-- **No respetan** el orden de NSS
-- Útiles para **diagnosticar el DNS** en sí mismo
 
 </div>
 
 <div class="card card-green">
 
-### Respetan el orden de NSS
+### Respetando NSS
 
 ```bash
-getent hosts www.ejemplo.com
-getent ahosts www.ejemplo.com
+getent hosts ejemplo.com
+getent ahosts ejemplo.com
 ```
 
-- Reproducen el camino real de una aplicación
-- Útiles para verificar la **resolución completa** del sistema
-
 </div>
 
-</div>
-
-<div class="alerta alerta-warning" style="margin-top:0.8rem">
-<span>⚠️</span><div>Si <code>dig</code> resuelve un nombre pero <code>ping</code> no, lo más probable es que el problema esté en NSS o en <code>/etc/hosts</code>, no en el DNS.</div>
 </div>
 
 ---
