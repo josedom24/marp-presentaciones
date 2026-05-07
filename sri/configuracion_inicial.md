@@ -92,6 +92,38 @@ La autenticación por contraseña es vulnerable a **ataques de fuerza bruta** y 
 
 ---
 
+## Herramientas en la práctica
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### `ssh-keygen`
+
+- Genera el **par de claves** (privada y pública) en el cliente
+- Se guarda por defecto en `~/.ssh/` (`id_rsa`, `id_ed25519`…)
+- Permite proteger la clave privada con una **passphrase**
+
+</div>
+
+<div class="card card-green">
+
+### `ssh-copy-id`
+
+- Copia automáticamente la **clave pública** del cliente al servidor
+- La añade al archivo `~/.ssh/authorized_keys` del usuario remoto
+- Alternativa manual: copiar la clave pública a `~/.ssh/authorized_keys` en el servidor
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>El archivo <code>~/.ssh/authorized_keys</code> contiene <strong>todas las claves públicas</strong> que pueden iniciar sesión en esa cuenta.</div>
+</div>
+
+---
+
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
@@ -179,6 +211,46 @@ Trabajar directamente como **root** rompe el principio de **mínimo privilegio**
 
 ---
 
+## Comandos habituales con sudo
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div>
+
+### Habilitar a un usuario
+
+```bash
+# Añadir al grupo sudo
+sudo usermod -aG sudo nombre_usuario
+
+# Editar la configuración con validación
+sudo visudo
+```
+
+`visudo` abre `/etc/sudoers` en un editor y **comprueba la sintaxis** antes de guardar.
+
+</div>
+
+<div>
+
+### Ejemplos dentro de `sudoers`
+
+```
+# Usuario concreto, sin contraseña
+nombre_usuario ALL=(ALL) NOPASSWD:ALL
+
+# Cualquier miembro del grupo admin
+%admin ALL=(ALL) ALL
+```
+
+El símbolo `%` indica un **grupo**. `NOPASSWD` evita pedir la contraseña al ejecutar `sudo`.
+
+</div>
+
+</div>
+
+---
+
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
@@ -240,7 +312,11 @@ Trabajar directamente como **root** rompe el principio de **mínimo privilegio**
 - Tabla de **resolución estática** local
 - Mapea direcciones IP con nombres (corto y FQDN)
 - Permite que el propio equipo se resuelva sin depender del DNS
-- Su entrada para el equipo debe incluir **hostname y FQDN**
+- La entrada para el equipo debe incluir **FQDN y hostname**:
+
+```
+127.0.1.1   sauron.mordor.com sauron
+```
 
 </div>
 
@@ -248,6 +324,23 @@ Trabajar directamente como **root** rompe el principio de **mínimo privilegio**
 
 <div class="alerta alerta-info" style="margin-top:0.8rem">
 <span>ℹ️</span><div>La identidad del sistema requiere coherencia entre <strong>ambos archivos</strong>: si discrepan, distintos servicios verán nombres distintos.</div>
+</div>
+
+---
+
+## `hostnamectl`: gestión centralizada del nombre
+
+`hostnamectl` es la herramienta moderna (parte de **systemd**) para consultar y modificar la identidad del sistema **sin editar archivos a mano**.
+
+### Para qué sirve
+
+- Cambia el hostname **de forma persistente**: actualiza `/etc/hostname` y aplica el cambio al sistema en ejecución, sin reiniciar
+- Distingue entre varios tipos de nombre: *static*, *transient* y *pretty*
+- Muestra información útil del equipo: kernel, arquitectura, ID de máquina, virtualización…
+- Comandos típicos: `hostnamectl` (consulta) y `hostnamectl set-hostname sauron` (modificación)
+
+<div class="alerta alerta-warning" style="margin-top:0.8rem">
+<span>⚠️</span><div>Aunque <code>hostnamectl</code> actualiza el hostname, <strong>no modifica</strong> <code>/etc/hosts</code>: ese archivo hay que ajustarlo aparte.</div>
 </div>
 
 ---
@@ -506,23 +599,6 @@ No todas las herramientas siguen el mismo camino que el sistema operativo cuando
 
 <div class="alerta alerta-warning" style="margin-top:0.8rem">
 <span>⚠️</span><div>Si <code>dig</code> resuelve un nombre pero <code>ping</code> no, lo más probable es que el problema esté en NSS o en <code>/etc/hosts</code>, no en el DNS.</div>
-</div>
-
----
-
-<!-- _class: destacado -->
-<!-- _paginate: false -->
-
-<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center;">
-
-<p style="font-size:0.9rem; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--teal-500); margin-bottom:1.5rem;">Resumen</p>
-
-# Configuración inicial de un servidor
-
-## Acceso seguro · Identidad clara · Red operativa · Resolución fiable
-
-<p style="font-size:0.85rem; color:var(--slate-400); margin-top:2rem;">Estos cuatro pilares son la base sobre la que se instalan los servicios posteriores.</p>
-
 </div>
 
 ---
