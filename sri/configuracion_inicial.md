@@ -823,12 +823,9 @@ iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination
 
 Las reglas de `iptables` **no sobreviven a un reinicio**. Hay que guardarlas para que se restauren automáticamente al arrancar.
 
-### Con `iptables-persistent` (Debian / Ubuntu)
+### Con el paquete `iptables-persistent` (Debian / Ubuntu)
 
 ```bash
-# Instalar el paquete
-apt install iptables-persistent
-
 # Guardar las reglas actuales
 iptables-save > /etc/iptables/rules.v4
 ```
