@@ -663,6 +663,192 @@ getent ahosts ejemplo.com
 
 ---
 
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">06</p>
+
+# Router Linux, SNAT y DNAT
+
+## Enrutamiento y traducción de direcciones con iptables
+
+---
+
+## ¿Para qué se usa un router Linux?
+
+Un equipo Linux puede actuar como **router** para conectar dos o más redes y permitir el enrutamiento de paquetes entre ellas. Es habitual en redes domésticas, laboratorios docentes o firewalls personalizados.
+
+### Funciones que puede realizar
+
+- **NAT** — traducción de direcciones de red
+- **Filtrado de paquetes** — control del tráfico permitido
+- **Redirección de puertos** — exponer servicios internos al exterior
+- **Compartir conexión a Internet** — dar salida a una red privada
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>Linux dispone de todo lo necesario en el propio kernel: sólo hay que <strong>activar el reenvío</strong> y definir las reglas adecuadas con <code>iptables</code>.</div>
+</div>
+
+---
+
+## Habilitar el reenvío de IPs (IP Forwarding)
+
+Por defecto el kernel **no reenvía** paquetes entre interfaces. Para que un equipo actúe como router hay que activarlo.
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Activación temporal
+
+```bash
+echo 1 > /proc/sys/net/ipv4/ip_forward
+```
+
+Se pierde tras reiniciar el sistema.
+
+</div>
+
+<div class="card card-green">
+
+### Activación persistente
+
+Editar `/etc/sysctl.conf` y descomentar:
+
+```
+net.ipv4.ip_forward = 1
+```
+
+Aplicar los cambios:
+
+```bash
+sysctl -p
+```
+
+</div>
+
+</div>
+
+<div class="alerta alerta-warning" style="margin-top:0.8rem">
+<span>⚠️</span><div>En <strong>Debian 13</strong> ha cambiado la gestión de los parámetros del kernel: hay que consultar la documentación para añadir <code>net.ipv4.ip_forward = 1</code> en la ubicación correcta y activar el bit de forwarding.</div>
+</div>
+
+---
+
+## SNAT — Source NAT
+
+Permite que una red local con **direcciones privadas** salga a Internet usando la **IP pública** del router. Cambia la **IP de origen** de los paquetes salientes.
+
+### Regla con `iptables`
+
+```bash
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 \
+    -j SNAT --to-source 192.0.2.1
+```
+
+- `-o eth0` — interfaz de salida (hacia Internet)
+- `-s 192.168.0.0/24` — red de origen que tendrá acceso a Internet
+- `--to-source 192.0.2.1` — IP pública del router
+
+---
+
+## SNAT con IP dinámica: MASQUERADE
+
+Cuando la IP pública del router **no es fija** (por ejemplo, asignada por DHCP del proveedor), conviene usar `MASQUERADE` en lugar de `SNAT`.
+
+### Regla equivalente
+
+```bash
+iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 \
+    -j MASQUERADE
+```
+
+- Toma **automáticamente** la IP de la interfaz de salida
+- No hay que especificar la IP pública
+- Más cómodo cuando la dirección puede cambiar
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div><code>MASQUERADE</code> es una variante de <code>SNAT</code> pensada para enlaces con IP dinámica: paga un pequeño coste extra por consultar la IP cada vez.</div>
+</div>
+
+---
+
+## DNAT — Destination NAT
+
+Se usa para **redirigir tráfico entrante** desde el exterior hacia una máquina de la red interna. Cambia la **IP de destino** de los paquetes.
+
+### Regla con `iptables`
+
+```bash
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 \
+    -j DNAT --to-destination 192.168.1.100:80
+```
+
+- `-i eth0` — interfaz por la que entra el tráfico
+- `-p tcp --dport 80` — protocolo y puerto de destino
+- `--to-destination 192.168.1.100:80` — máquina interna a la que se redirige
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>Se aplica en la cadena <code>PREROUTING</code> porque la decisión de redirigir se toma <strong>antes</strong> de enrutar el paquete.</div>
+</div>
+
+---
+
+## SNAT vs DNAT: comparación
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### SNAT — salida
+
+- Cambia la **IP de origen**
+- Cadena `POSTROUTING`
+- Sentido: **red interna → Internet**
+- Comparte una IP pública entre varios equipos
+- Caso típico: dar Internet a una LAN
+
+</div>
+
+<div class="card card-green">
+
+### DNAT — entrada
+
+- Cambia la **IP de destino**
+- Cadena `PREROUTING`
+- Sentido: **Internet → red interna**
+- Publica un servicio interno hacia el exterior
+- Caso típico: redirección de puertos a un servidor
+
+</div>
+
+</div>
+
+---
+
+## Hacer las reglas de iptables persistentes
+
+Las reglas de `iptables` **no sobreviven a un reinicio**. Hay que guardarlas para que se restauren automáticamente al arrancar.
+
+### Con `iptables-persistent` (Debian / Ubuntu)
+
+```bash
+# Instalar el paquete
+apt install iptables-persistent
+
+# Guardar las reglas actuales
+iptables-save > /etc/iptables/rules.v4
+```
+
+- Las reglas se restauran **automáticamente** al iniciar el sistema
+- Existe el equivalente para IPv6 en `/etc/iptables/rules.v6`
+
+<div class="alerta alerta-warning" style="margin-top:0.8rem">
+<span>⚠️</span><div>Después de modificar reglas, no olvides <strong>volver a guardarlas</strong>: si no, los cambios se perderán en el próximo reinicio.</div>
+</div>
+
+---
+
 <!-- _class: cierre -->
 <!-- _paginate: false -->
 
