@@ -1,0 +1,66 @@
+name: Build Marp Presentations
+
+on:
+  push:
+    paths:
+      - '**/*.md'
+      - '!README.md'
+      - '.marprc.yml'
+      - 'tema-profesional.css'
+      - '.github/workflows/build-marp.yml'
+  pull_request:
+    paths:
+      - '**/*.md'
+      - '!README.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Marp CLI
+        run: npm install -g @marp-team/marp-cli
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            **/*.md
+          files_ignore: |
+            README.md
+
+      - name: Build presentations
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if [ -f "$file" ]; then
+              echo "Processing: $file"
+              marp "$file" --pdf --allow-local-files -o "${file%.*}.pdf"
+            fi
+          done
+
+      - name: Commit and push changes
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          if ! git diff --quiet || [ -n "$(git status --porcelain)" ]; then
+            git add '*.pdf' 2>/dev/null || true
+            git status
+            git commit -m "chore: build marp presentations [skip ci]" || echo "No changes to commit"
+            git push
+          else
+            echo "No changes to commit"
+          fi
