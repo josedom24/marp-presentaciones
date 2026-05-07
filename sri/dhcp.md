@@ -301,7 +301,6 @@ Al arrancar, el cliente **guarda** su última configuración y pide al servidor 
 apt install kea-dhcp4-server
 
 # Gestión del servicio
-systemctl enable --now kea-dhcp4-server
 systemctl restart kea-dhcp4-server
 systemctl status kea-dhcp4-server
 
@@ -439,11 +438,6 @@ Con el backend `memfile`, las concesiones se almacenan en `/var/lib/kea/kea-leas
 - Marcas de tiempo: inicio y expiración
 - **Estado** de la concesión
 
-```bash
-# Consulta rápida del archivo
-cat /var/lib/kea/kea-leases4.csv
-```
-
 <div class="alerta alerta-info" style="margin-top:0.8rem">
 <span>ℹ️</span><div>Para entornos grandes existen backends en <strong>MySQL</strong> o <strong>PostgreSQL</strong>, que sustituyen a <code>memfile</code>.</div>
 </div>
@@ -452,7 +446,6 @@ cat /var/lib/kea/kea-leases4.csv
 
 ## Para profundizar
 
-- [Servidor DHCP con Kea — fp.josedomingo.org](https://fp.josedomingo.org/sri/2526/u2/kea/)
 - [Documentación oficial de Kea (ISC)](https://kea.readthedocs.io/)
 
 ---
