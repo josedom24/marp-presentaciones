@@ -331,6 +331,242 @@ mv newvol1.qcow2 vol1.qcow2
 
 ---
 
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">04</p>
+
+# Clonación e instantáneas
+
+## Plantillas, clonación completa, enlazada y snapshots
+
+---
+
+## Métodos de clonación
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### A partir de una MV
+
+- **`virt-clone`** o `virt-manager`
+- La MV clonada es **idéntica** a la original
+- Problema: misma configuración, hostname, claves SSH…
+
+</div>
+
+<div class="card card-green">
+
+### A partir de una plantilla
+
+Imagen preconfigurada y generalizada (**copia maestra**):
+
+- **Clonación completa (Full)**: copia completa de la plantilla. Requiere el mismo espacio en disco.
+- **Clonación enlazada (Linked)**: la plantilla actúa como imagen base de solo lectura (*backing store*). Requiere mucho menos espacio.
+
+</div>
+
+</div>
+
+---
+
+## Clonación desde una MV con `virt-clone`
+
+```bash
+# Clonación automática (nombre e imagen generados automáticamente)
+virt-clone --connect=qemu:///system \
+           --original prueba4 --auto-clone
+
+# Especificando nombre e imagen destino
+virt-clone --connect=qemu:///system \
+           --original prueba4 \
+           --name prueba5 \
+           --file /var/lib/libvirt/images/prueba5.qcow2 \
+           --auto-clone
+```
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>La MV clonada es <strong>igual a la original</strong>: mismo hostname, mismas claves SSH, misma configuración. Hay que entrar y modificarla manualmente.</div>
+</div>
+
+---
+
+## Creación de una plantilla de MV
+
+Una plantilla es una imagen **generalizada** a partir de la cual se crean nuevas MV no idénticas a la original.
+
+1. Instalar y configurar una MV con todo el software necesario.
+
+2. **Generalizar** la imagen con la MV parada:
+
+   ```bash
+   sudo virt-sysprep -d prueba1 --hostname plantilla-debian11
+   ```
+
+3. **Proteger** la imagen para evitar arrancas la plantilla por error:
+
+   ```bash
+   chmod -w prueba1.qcow2
+   virsh -c qemu:///system domrename prueba1 plantilla-prueba1
+   ```
+
+---
+
+## Clonación completa de plantilla
+
+```bash
+virt-clone --connect=qemu:///system \
+           --original plantilla-prueba1 \
+           --name clone1 \
+           --auto-clone
+```
+
+También se puede usar `--file` para indicar el nombre de la nueva imagen.
+
+Tras clonar, la MV no tiene claves SSH (se borraron al generalizar). Hay que entrar y regenerarlas:
+
+```bash
+echo "clone1" > /etc/hostname
+ssh-keygen -A
+reboot
+```
+
+---
+
+## Clonación enlazada (*Linked Clone*)
+
+- La imagen de la MV clonada usa la de la plantilla como **imagen base** (*backing store*) en **solo lectura**
+- La nueva imagen **solo almacena los cambios** respecto a la base
+- Requiere **mucho menos espacio**, pero depende de la imagen base para funcionar
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Paso 1
+
+Crear el nuevo volumen indicando la imagen base (*backing store*)
+
+</div>
+
+<div class="card card-green">
+
+### Paso 2
+
+Crear la nueva MV a partir del volumen, **sin instalar** SO (`--import`)
+
+</div>
+
+</div>
+
+---
+
+## Paso 1 — Crear volumen con *backing store*
+
+Comprobamos el tamaño de la imagen de la plantilla:
+
+```bash
+virsh -c qemu:///system domblkinfo plantilla-prueba1 vda --human
+```
+
+Creamos la nueva imagen con **virsh**:
+
+```bash
+virsh -c qemu:///system vol-create-as default clone2.qcow2 10G \
+      --format qcow2 \
+      --backing-vol      prueba1.qcow2 \
+      --backing-vol-format qcow2
+```
+
+O con **`qemu-img`**:
+
+```bash
+cd /var/lib/libvirt/images
+sudo qemu-img create -f qcow2 -b prueba1.qcow2 -F qcow2 clone2.qcow2 10G
+virsh -c qemu:///system pool-refresh default
+```
+
+---
+
+## Paso 1 — Verificar la imagen base
+
+Con **virsh**:
+
+```bash
+virsh -c qemu:///system vol-dumpxml clone2.qcow2 default
+...
+<backingStore>
+    <path>/var/lib/libvirt/images/prueba1.qcow2</path>
+    <format type='qcow2'/>
+    ...
+```
+
+Con **`qemu-img`**:
+
+```bash
+sudo qemu-img info /var/lib/libvirt/images/clone2.qcow2
+...
+backing file: prueba1.qcow2
+backing file format: qcow2
+...
+```
+
+---
+
+## Paso 2 — Crear la MV enlazada
+
+Con **`virt-install`** usando `--import` (no hay instalación, el disco ya tiene SO):
+
+```bash
+virt-install --connect qemu:///system \
+             --virt-type kvm \
+             --name nueva_prueba \
+             --os-variant debian10 \
+             --disk path=/var/lib/libvirt/images/clone2.qcow2 \
+             --memory 1024 \
+             --vcpus 1 \
+             --import
+```
+
+Con **`virt-clone`** usando `--preserve-data` (no copia el volumen, lo reutiliza):
+
+```bash
+virt-clone --connect=qemu:///system \
+           --original plantilla-prueba1 \
+           --name clone2 \
+           --file /var/lib/libvirt/images/clone2.qcow2 \
+           --preserve-data
+```
+
+---
+
+## Instantáneas de MV (*snapshots*)
+
+- Guardan el **estado del disco y de la memoria** en un momento dado
+- Permiten **volver a un estado anterior**
+- Requieren imagen de disco en formato **`qcow2`**
+- Se pueden hacer con la MV **apagada o encendida**
+
+```bash
+# Crear instantánea
+virsh -c qemu:///system snapshot-create-as prueba2 \
+      --name "instantánea1" \
+      --description "Creada carpeta importante" \
+      --atomic
+
+# Listar y obtener info
+virsh -c qemu:///system snapshot-list prueba2
+sudo qemu-img info /var/lib/libvirt/images/prueba2.qcow2
+
+# Restaurar
+virsh -c qemu:///system snapshot-revert prueba2 instantánea1
+```
+
+Otros subcomandos: `snapshot-dumpxml`, `snapshot-info`, `snapshot-delete`.
+
+---
+
 <!-- _class: cierre -->
 <!-- _paginate: false -->
 
