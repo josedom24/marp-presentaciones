@@ -45,9 +45,7 @@ footer: ''
 ### Infraestructura tradicional
 
 - Adquisición y montaje físico de equipos
-- Instalación y configuración manual
 - Conexión mediante redes físicas
-- Gestión del almacenamiento NAS o SAN
 - **Estática**: mismas configuraciones durante años
 - Usuarios sin acceso directo
 
@@ -60,8 +58,6 @@ footer: ''
 - Varios MVs en un solo equipo físico
 - El software de gestión se llama **hipervisor**
 - MVs conectadas en redes virtuales
-- Sin cambios relevantes en almacenamiento
-- Gestión similar a la infraestructura tradicional
 - Ejemplos: KVM, Xen, Proxmox, VMware…
 
 </div>
@@ -128,45 +124,37 @@ footer: ''
 
 ## Los tres niveles …aaS
 
-> Modelo de negocio basado en la **oferta de servicios** con características de cloud, no en la venta de licencias o hardware.
+> Modelo de negocio: **oferta de servicios** cloud, no venta de licencias o hardware.
 
 <div class="cols-3" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
-### SaaS
-
-**Software as a Service**
+### SaaS — *Software as a Service*
 
 - Aplicación como servicio en la nube
-- El usuario usa la aplicación a través de la web
-- **Usuarios finales**
+- El usuario accede a través de la web
+- Para **usuarios finales**
 - Ejemplos: Google Workspace, Office 365
 
 </div>
 
 <div class="card card-green">
 
-### PaaS
+### PaaS — *Platform as a Service*
 
-**Platform as a Service**
-
-- Plataforma de desarrollo web en la nube
-- Se proporciona toda la plataforma de desarrollo y despliegue
-- **Desarrolladores de software**
+- Plataforma de desarrollo y despliegue en la nube
+- Para **desarrolladores de software**
 - Ejemplos: Heroku, OpenShift, CloudFoundry
 
 </div>
 
 <div class="card card-purple">
 
-### IaaS
+### IaaS — *Infrastructure as a Service*
 
-**Infrastructure as a Service**
-
-- Infraestructura como servicio
-- Cómputo, redes y almacenamiento
-- **Administradores de sistemas**
+- Cómputo, redes y almacenamiento como servicio
+- Para **administradores de sistemas**
 - Ejemplos: AWS, Azure, GCE, OpenStack
 
 </div>

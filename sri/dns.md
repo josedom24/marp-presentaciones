@@ -53,7 +53,7 @@ footer: ''
 
 ## Tipos de nombres
 
-<div class="cols-2" style="margin-top:0.8rem">
+<div class="cols-2" style="margin-top:0.6rem">
 
 <div class="card card-blue">
 
@@ -61,13 +61,11 @@ footer: ''
 
 - **Una sola palabra** que identifica al equipo
 - Se guarda en `/etc/hostname`
-- Ejemplo: `macaco`
 
 ### FQDN — *Fully Qualified Domain Name*
 
-- Hostname **+ dominio completo**
+- Hostname **+ dominio completo**: `macaco.gonzalonazareno.org.`
 - Identifica al equipo de forma **inequívoca**
-- Ejemplo: `macaco.gonzalonazareno.org.`
 
 </div>
 
@@ -81,7 +79,6 @@ footer: ''
 ### Dominio raíz
 
 - Es el **punto final**: todo nombre acaba en `.`
-- Ejemplo completo: `macaco.gonzalonazareno.org.`
 
 ### TLD — *Top Level Domain*
 
@@ -205,21 +202,21 @@ Cuando un equipo necesita resolver un nombre, sigue este flujo:
 ## Esquema de la resolución
 
 ```
-            Cliente                 DNS local                  Internet
-              │                         │                          │
-              │  ¿www.example.org?      │                          │
-              │ ───────────────────────►│                          │
-              │                         │  ¿quién resuelve org?    │
-              │                         │ ────────────────────────►│  Root
-              │                         │ ◄────────────────────────│
-              │                         │  ¿quién resuelve         │
-              │                         │   example.org?           │
-              │                         │ ────────────────────────►│  TLD .org
-              │                         │ ◄────────────────────────│
-              │                         │  ¿IP de www.example.org? │
-              │                         │ ────────────────────────►│  Autoridad
-              │  IP                     │ ◄────────────────────────│
-              │ ◄───────────────────────│                          │
+     Cliente              DNS local               Internet
+       │                      │                      │
+       │  ¿www.example.org?   │                      │
+       │ ────────────────────►│                      │
+       │                      │  ¿quién resuelve org?│
+       │                      │ ────────────────────►│  Root
+       │                      │ ◄────────────────────│
+       │                      │  ¿autoridad de       │
+       │                      │   example.org?       │
+       │                      │ ────────────────────►│  TLD .org
+       │                      │ ◄────────────────────│
+       │                      │  ¿IP www.example.org?│
+       │                      │ ────────────────────►│  Autoridad
+       │  IP                  │ ◄────────────────────│
+       │ ◄────────────────────│                      │
 ```
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">

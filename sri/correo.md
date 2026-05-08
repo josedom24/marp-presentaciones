@@ -393,7 +393,7 @@ Con un servidor en la nube, **no necesitamos relay**: nuestra propia máquina en
 
 ---
 
-## Alias, redirecciones y usuarios virtuales
+## Alias y redirecciones
 
 <div class="cols-2" style="margin-top:0.8rem">
 
@@ -409,6 +409,10 @@ postmaster: root
 webmaster:  debian
 ```
 
+</div>
+
+<div class="card card-green">
+
 ### Redirección
 
 Reenvía el correo a una **cuenta externa**.
@@ -417,17 +421,37 @@ Reenvía el correo a una **cuenta externa**.
 ventas: contacto@otrodominio.com
 ```
 
+Requiere ejecutar `newaliases` tras modificar `/etc/aliases`.
+
+</div>
+
+</div>
+
+---
+
+## Usuarios virtuales
+
+> Permite usar nombres de usuario que **no se corresponden** con cuentas del sistema.
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### ¿Para qué sirve?
+
+- Alojar **múltiples dominios** en un mismo servidor
+- Cada dominio tiene sus propios buzones
+- Separa cuentas de correo de cuentas del sistema
+
 </div>
 
 <div class="card card-green">
 
-### Usuarios virtuales
+### Implementación
 
-Permite usar nombres de usuario que **no se corresponden** con cuentas del sistema.
-
-- Útil para alojar **múltiples dominios**
-- Cada dominio puede tener sus propios buzones
-- Habitualmente se almacenan en una **base de datos** o en archivos planos
+- Almacenamiento en **base de datos** (MySQL/PostgreSQL)
+- O en **archivos planos** de texto
+- Gestión habitual con **Postfix + Dovecot + base de datos**
 
 </div>
 

@@ -239,9 +239,7 @@ virsh -c qemu:///system dumpxml <máquina>
 
 ## Modificación de una máquina virtual
 
-Dos alternativas para modificar la configuración:
-
-<div class="cols-2" style="margin-top:0.8rem">
+<div class="cols-2" style="margin-top:0.6rem">
 
 <div class="card card-blue">
 
@@ -251,22 +249,20 @@ Dos alternativas para modificar la configuración:
 virsh -c qemu:///system edit prueba1
 ```
 
-Abre el XML en el editor configurado en `$EDITOR`.
+Abre el XML en `$EDITOR`. Útil para cambios no soportados por comandos.
 
 </div>
 
 <div class="card card-green">
 
-### Comandos específicos de virsh
+### Comandos virsh
 
 ```bash
 # Renombrar (MV parada)
-virsh -c qemu:///system \
-  domrename prueba2 prueba1
+virsh -c qemu:///system domrename prueba2 prueba1
 
 # Cambiar vCPUs (MV parada)
-virsh -c qemu:///system \
-  setvcpus prueba1 2 --config
+virsh -c qemu:///system setvcpus prueba1 2 --config
 ```
 
 </div>

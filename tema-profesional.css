@@ -143,6 +143,7 @@ pre {
   box-shadow: var(--shadow);
   overflow: hidden;
   margin: 0.8rem 0;
+  flex-shrink: 0;
 }
 
 pre code {

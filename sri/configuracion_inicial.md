@@ -186,10 +186,9 @@ Trabajar directamente como **root** rompe el principio de **mínimo privilegio**
 
 ### `/etc/sudoers`
 
-- Archivo principal de configuración
-- Define qué usuarios o grupos pueden ejecutar qué comandos con privilegios
-- Se edita con una herramienta específica que **valida la sintaxis** antes de guardar
-- Un error en este archivo puede dejar el sistema sin acceso administrativo
+- Archivo principal de configuración de sudo
+- Define qué usuarios/grupos pueden ejecutar qué comandos con privilegios
+- Se edita con **`visudo`**, que valida la sintaxis antes de guardar
 
 </div>
 
@@ -200,14 +199,13 @@ Trabajar directamente como **root** rompe el principio de **mínimo privilegio**
 - Directorio con archivos **modulares** de configuración
 - Cada archivo añade reglas sin tocar el principal
 - Facilita la gestión por **automatización** (Ansible, paquetes, scripts)
-- Permite separar reglas por usuario, servicio o despliegue
 
 </div>
 
 </div>
 
-<div class="alerta alerta-warning" style="margin-top:0.8rem">
-<span>⚠️</span><div>Editar siempre con la herramienta específica para evitar dejar el archivo corrupto.</div>
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Usar siempre <strong>visudo</strong>: un error en sudoers puede dejar el sistema sin acceso administrativo.</div>
 </div>
 
 ---
