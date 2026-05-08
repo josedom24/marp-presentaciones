@@ -18,7 +18,7 @@ footer: ''
 <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.5rem; justify-content:center; font-size:0.85rem; color:white">
   <span>📧 José Domingo Muñoz</span>
   <span>🏫 IES Gonzalo Nazareno · Dos Hermanas</span>
-  <span>📚 IV · Implantación de Aplicaciones Web</span>
+  <span>📚 IV · Infraestructura Virtual</span>
 </div>
 
 ---
