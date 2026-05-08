@@ -12,6 +12,7 @@ on:
     paths:
       - '**/*.md'
       - '!README.md'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -33,6 +34,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
+        if: github.event_name != 'workflow_dispatch'
         uses: tj-actions/changed-files@v42
         with:
           files: |
@@ -40,8 +42,8 @@ jobs:
           files_ignore: |
             README.md
 
-      - name: Build presentations
-        if: steps.changed-files.outputs.any_changed == 'true'
+      - name: Build presentations (changed files)
+        if: github.event_name != 'workflow_dispatch' && steps.changed-files.outputs.any_changed == 'true'
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             if [ -f "$file" ]; then
@@ -50,8 +52,16 @@ jobs:
             fi
           done
 
+      - name: Build presentations (all files)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          find . -name '*.md' ! -name 'README.md' | while read file; do
+            echo "Processing: $file"
+            marp "$file" --pdf --allow-local-files -o "${file%.*}.pdf"
+          done
+
       - name: Commit and push changes
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"

@@ -195,6 +195,9 @@ blockquote {
   padding: 0.9rem 1.4rem;
   margin: 0.8rem 0;
   box-shadow: 2px 2px 12px rgba(13,148,136,0.08);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
 }
 
 blockquote p {
@@ -206,13 +209,11 @@ blockquote p {
 
 blockquote::before {
   content: '"';
-  font-size: 3rem;
-  color: var(--teal-300);
-  line-height: 0;
-  position: relative;
-  top: 0.5rem;
-  margin-right: 0.2rem;
+  font-size: 1.6rem;
+  color: var(--teal-400);
+  line-height: 1;
   font-family: Georgia, serif;
+  flex-shrink: 0;
 }
 
 /* ── Header y Footer ────────────────────────────────────────── */
@@ -277,6 +278,8 @@ section.portada h2 {
   font-weight: 400;
   margin: 0 0 2.5rem 0;
 }
+
+section.portada strong { color: white; }
 
 section.portada p {
   color: rgba(255,255,255,0.65);
