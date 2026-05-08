@@ -173,20 +173,20 @@ Toda la gestión queda registrada en libvirt.
 ## Gestión de pools de almacenamiento
 
 ```bash
-virsh -c qemu:///system pool-list
-virsh -c qemu:///system pool-info default
-virsh -c qemu:///system pool-dumpxml default
+virsh pool-list
+virsh pool-info default
+virsh pool-dumpxml default
 
 # Crear, construir, arrancar y persistir un nuevo pool
-virsh -c qemu:///system pool-define-as vm-images dir --target /srv/images
-virsh -c qemu:///system pool-build      vm-images
-virsh -c qemu:///system pool-start      vm-images
-virsh -c qemu:///system pool-autostart  vm-images
+virsh pool-define-as vm-images dir --target /srv/images
+virsh pool-build      vm-images
+virsh pool-start      vm-images
+virsh pool-autostart  vm-images
 
 # Detener y eliminar
-virsh -c qemu:///system pool-destroy  vm-images
-virsh -c qemu:///system pool-delete   vm-images
-virsh -c qemu:///system pool-undefine vm-images
+virsh pool-destroy  vm-images
+virsh pool-delete   vm-images
+virsh pool-undefine vm-images
 ```
 
 ---
@@ -194,16 +194,16 @@ virsh -c qemu:///system pool-undefine vm-images
 ## Gestión de volúmenes con libvirt
 
 ```bash
-virsh -c qemu:///system vol-list default
-virsh -c qemu:///system vol-list default --details
-virsh -c qemu:///system vol-info    prueba1.qcow2 default
-virsh -c qemu:///system vol-dumpxml vol.qcow2     default
+virsh vol-list default
+virsh vol-list default --details
+virsh vol-info    prueba1.qcow2 default
+virsh vol-dumpxml vol.qcow2     default
 
 # Crear un volumen qcow2 de 10 GB en el pool default
-virsh -c qemu:///system vol-create-as default vol1.qcow2 --format qcow2 10G
+virsh vol-create-as default vol1.qcow2 --format qcow2 10G
 
 # Eliminar un volumen
-virsh -c qemu:///system vol-delete vol1.qcow2 default
+virsh vol-delete vol1.qcow2 default
 ```
 
 ---
@@ -222,7 +222,7 @@ qemu-img create -f qcow2 vol2.qcow2 2G
 qemu-img info vol2.qcow2
 
 # Hacer que libvirt detecte el nuevo fichero
-virsh -c qemu:///system pool-refresh vm-images
+virsh pool-refresh vm-images
 ```
 
 ---
@@ -230,7 +230,7 @@ virsh -c qemu:///system pool-refresh vm-images
 ## Creación de MV usando volúmenes existentes
 
 ```bash
-virt-install --connect qemu:///system \
+virt-install \
              --virt-type kvm \
              --name prueba4 \
              --cdrom ~/iso/debian-11.3.0-amd64-netinst.iso \
@@ -264,14 +264,14 @@ Otras formas de indicar el disco:
 
 ```bash
 # Añadir disco (funciona también en caliente)
-virsh -c qemu:///system attach-disk prueba4 \
+virsh attach-disk prueba4 \
         /srv/images/vol2.qcow2 vdb \
         --driver=qemu --type disk  \
         --subdriver qcow2          \
         --persistent
 
 # Eliminar disco
-virsh -c qemu:///system detach-disk prueba4 vdb --persistent
+virsh detach-disk prueba4 vdb --persistent
 ```
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
@@ -286,7 +286,7 @@ Con la MV **parada**:
 
 ```bash
 # Con libvirt
-virsh -c qemu:///system vol-resize vol2.qcow2 3G --pool vm-images
+virsh vol-resize vol2.qcow2 3G --pool vm-images
 
 # Con qemu-img
 sudo qemu-img resize /srv/images/vol2.qcow2 3G
@@ -295,8 +295,8 @@ sudo qemu-img resize /srv/images/vol2.qcow2 3G
 Con la MV **en ejecución** (en caliente):
 
 ```bash
-virsh -c qemu:///system domblklist prueba4
-virsh -c qemu:///system blockresize prueba4 /srv/images/vol2.qcow2 3G
+virsh domblklist prueba4
+virsh blockresize prueba4 /srv/images/vol2.qcow2 3G
 ```
 
 Después, dentro de la MV, redimensionar el sistema de ficheros:
@@ -375,11 +375,11 @@ Imagen preconfigurada y generalizada (**copia maestra**):
 
 ```bash
 # Clonación automática (nombre e imagen generados automáticamente)
-virt-clone --connect=qemu:///system \
+virt-clone \
            --original prueba4 --auto-clone
 
 # Especificando nombre e imagen destino
-virt-clone --connect=qemu:///system \
+virt-clone \
            --original prueba4 \
            --name prueba5 \
            --file /var/lib/libvirt/images/prueba5.qcow2 \
@@ -408,7 +408,7 @@ Una plantilla es una imagen **generalizada** a partir de la cual se crean nuevas
 
    ```bash
    chmod -w prueba1.qcow2
-   virsh -c qemu:///system domrename prueba1 plantilla-prueba1
+   virsh domrename prueba1 plantilla-prueba1
    ```
 
 ---
@@ -416,7 +416,7 @@ Una plantilla es una imagen **generalizada** a partir de la cual se crean nuevas
 ## Clonación completa de plantilla
 
 ```bash
-virt-clone --connect=qemu:///system \
+virt-clone \
            --original plantilla-prueba1 \
            --name clone1 \
            --auto-clone
@@ -467,13 +467,13 @@ Crear la nueva MV a partir del volumen, **sin instalar** SO (`--import`)
 Comprobamos el tamaño de la imagen de la plantilla:
 
 ```bash
-virsh -c qemu:///system domblkinfo plantilla-prueba1 vda --human
+virsh domblkinfo plantilla-prueba1 vda --human
 ```
 
 Creamos la nueva imagen con **virsh**:
 
 ```bash
-virsh -c qemu:///system vol-create-as default clone2.qcow2 10G \
+virsh vol-create-as default clone2.qcow2 10G \
       --format qcow2 \
       --backing-vol      prueba1.qcow2 \
       --backing-vol-format qcow2
@@ -484,7 +484,7 @@ O con **`qemu-img`**:
 ```bash
 cd /var/lib/libvirt/images
 sudo qemu-img create -f qcow2 -b prueba1.qcow2 -F qcow2 clone2.qcow2 10G
-virsh -c qemu:///system pool-refresh default
+virsh pool-refresh default
 ```
 
 ---
@@ -494,7 +494,7 @@ virsh -c qemu:///system pool-refresh default
 Con **virsh**:
 
 ```bash
-virsh -c qemu:///system vol-dumpxml clone2.qcow2 default
+virsh vol-dumpxml clone2.qcow2 default
 ...
 <backingStore>
     <path>/var/lib/libvirt/images/prueba1.qcow2</path>
@@ -519,7 +519,7 @@ backing file format: qcow2
 Con **`virt-install`** usando `--import` (no hay instalación, el disco ya tiene SO):
 
 ```bash
-virt-install --connect qemu:///system \
+virt-install \
              --virt-type kvm \
              --name nueva_prueba \
              --os-variant debian10 \
@@ -532,7 +532,7 @@ virt-install --connect qemu:///system \
 Con **`virt-clone`** usando `--preserve-data` (no copia el volumen, lo reutiliza):
 
 ```bash
-virt-clone --connect=qemu:///system \
+virt-clone \
            --original plantilla-prueba1 \
            --name clone2 \
            --file /var/lib/libvirt/images/clone2.qcow2 \
@@ -550,17 +550,17 @@ virt-clone --connect=qemu:///system \
 
 ```bash
 # Crear instantánea
-virsh -c qemu:///system snapshot-create-as prueba2 \
+virsh snapshot-create-as prueba2 \
       --name "instantánea1" \
       --description "Creada carpeta importante" \
       --atomic
 
 # Listar y obtener info
-virsh -c qemu:///system snapshot-list prueba2
+virsh snapshot-list prueba2
 sudo qemu-img info /var/lib/libvirt/images/prueba2.qcow2
 
 # Restaurar
-virsh -c qemu:///system snapshot-revert prueba2 instantánea1
+virsh snapshot-revert prueba2 instantánea1
 ```
 
 Otros subcomandos: `snapshot-dumpxml`, `snapshot-info`, `snapshot-delete`.

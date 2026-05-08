@@ -167,12 +167,12 @@ Red **muy aislada** (sin host, sin DHCP, sin exterior):
 ## Gestión de redes virtuales con virsh
 
 ```bash
-virsh -c qemu:///system net-list --all
-virsh -c qemu:///system net-define   red-nat.xml
-virsh -c qemu:///system net-start    red_nat
-virsh -c qemu:///system net-autostart red_nat
-virsh -c qemu:///system net-info     red_nat
-virsh -c qemu:///system net-dumpxml  red_nat
+virsh net-list --all
+virsh net-define   red-nat.xml
+virsh net-start    red_nat
+virsh net-autostart red_nat
+virsh net-info     red_nat
+virsh net-dumpxml  red_nat
 ```
 
 También se pueden gestionar desde **`virt-manager`**.
@@ -240,8 +240,8 @@ Con **virsh** (opcional, no obligatorio):
 ```
 
 ```bash
-virsh -c qemu:///system net-define red-bridge.xml
-virsh -c qemu:///system net-start  red_bridge
+virsh net-define red-bridge.xml
+virsh net-start  red_bridge
 ```
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
@@ -277,7 +277,7 @@ virsh -c qemu:///system net-start  red_bridge
 ## Crear MV conectada a una red existente
 
 ```bash
-virt-install --connect qemu:///system \
+virt-install \
              --virt-type kvm \
              --name prueba5 \
              --cdrom ~/iso/debian-11.3.0-amd64-netinst.iso \
@@ -298,13 +298,13 @@ virt-install --connect qemu:///system \
 
 ```bash
 # Conectar a una red virtual
-virsh -c qemu:///system attach-interface prueba4 \
+virsh attach-interface prueba4 \
       network red_nat \
       --model virtio \
       --persistent
 
 # Conectar directamente a un bridge
-virsh -c qemu:///system attach-interface prueba4 \
+virsh attach-interface prueba4 \
       bridge virbr1 \
       --model virtio \
       --persistent
@@ -319,7 +319,7 @@ virsh -c qemu:///system attach-interface prueba4 \
 ## Eliminar interfaces de red de una MV
 
 ```bash
-virsh -c qemu:///system detach-interface prueba4 bridge \
+virsh detach-interface prueba4 bridge \
       --mac 52:54:00:0c:06:2a \
       --persistent
 ```
@@ -327,7 +327,7 @@ virsh -c qemu:///system detach-interface prueba4 bridge \
 La MAC se obtiene con:
 
 ```bash
-virsh -c qemu:///system domiflist prueba4
+virsh domiflist prueba4
 ```
 
 ---

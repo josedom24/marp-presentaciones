@@ -59,15 +59,15 @@ export LIBVIRT_DEFAULT_URI='qemu:///system'
 ## Red disponible por defecto
 
 ```bash
-usuario@kvm:~$ virsh -c qemu:///system net-list --all
+usuario@kvm:~$ virsh net-list --all
  Nombre    Estado     Inicio automático   Persistente
 -------------------------------------------------------
  default   inactivo   no                  si
 
-usuario@kvm:~$ virsh -c qemu:///system net-start default
+usuario@kvm:~$ virsh net-start default
 La red default se ha iniciado
 
-usuario@kvm:~$ virsh -c qemu:///system net-autostart default
+usuario@kvm:~$ virsh net-autostart default
 La red default ha sido marcada para iniciarse automáticamente
 ```
 
@@ -112,7 +112,7 @@ La red `default` es de tipo **NAT**. Al crear una MV se conectará a ella por de
 Recurso de almacenamiento gestionado por libvirt. Normalmente es un **directorio**.
 
 ```bash
-virsh -c qemu:///system pool-list
+virsh pool-list
  Nombre    Estado   Inicio automático
 ---------------------------------------
  default   activo   si
@@ -128,7 +128,7 @@ virsh -c qemu:///system pool-list
 Medio de almacenamiento creado en un pool. Si el pool es de tipo `dir`, el volumen es un **fichero de imagen**.
 
 ```bash
-virsh -c qemu:///system vol-list default
+virsh vol-list default
  Nombre          Ruta
 -----------------------------------------------------
  prueba1.qcow2   /var/lib/libvirt/images/prueba1.qcow2
@@ -149,7 +149,7 @@ apt install virtinst
 Ejemplo — crear una MV con instalación desde ISO:
 
 ```bash
-virt-install --connect qemu:///system \
+virt-install \
              --virt-type kvm \
              --name prueba1 \
              --cdrom ~/iso/debian-11.3.0-amd64-netinst.iso \
@@ -162,7 +162,7 @@ virt-install --connect qemu:///system \
 Para acceder a la consola gráfica:
 
 ```bash
-virt-viewer -c qemu:///system prueba1
+virt-viewer prueba1
 ```
 
 ---
@@ -193,7 +193,7 @@ undefine --remove-all-storage <máquina>
 ## Definición XML de una máquina
 
 ```bash
-virsh -c qemu:///system dumpxml <máquina>
+virsh dumpxml <máquina>
 ```
 
 ```xml
@@ -246,7 +246,7 @@ virsh -c qemu:///system dumpxml <máquina>
 ### Edición XML directa
 
 ```bash
-virsh -c qemu:///system edit prueba1
+virsh edit prueba1
 ```
 
 Abre el XML en `$EDITOR`. Útil para cambios no soportados por comandos.
@@ -259,10 +259,10 @@ Abre el XML en `$EDITOR`. Útil para cambios no soportados por comandos.
 
 ```bash
 # Renombrar (MV parada)
-virsh -c qemu:///system domrename prueba2 prueba1
+virsh domrename prueba2 prueba1
 
 # Cambiar vCPUs (MV parada)
-virsh -c qemu:///system setvcpus prueba1 2 --config
+virsh setvcpus prueba1 2 --config
 ```
 
 </div>
@@ -280,7 +280,7 @@ virsh -c qemu:///system setvcpus prueba1 2 --config
 Con la MV **parada**, editando el XML:
 
 ```bash
-virsh -c qemu:///system edit prueba1
+virsh edit prueba1
 ...
   <memory unit='KiB'>3145728</memory>
   <currentMemory unit='KiB'>1048576</currentMemory>
@@ -290,9 +290,9 @@ virsh -c qemu:///system edit prueba1
 O **en caliente** con la MV arrancada:
 
 ```bash
-virsh -c qemu:///system start prueba1
+virsh start prueba1
 
-virsh -c qemu:///system setmem prueba1 2048M
+virsh setmem prueba1 2048M
 ```
 
 ---
@@ -312,7 +312,7 @@ Aplicación gráfica para gestionar libvirt:
 - Añadimos un CDROM adicional con la **ISO de drivers VirtIO**
 
 ```bash
-virt-install --connect qemu:///system \
+virt-install \
              --virt-type kvm \
              --name prueba4 \
              --cdrom ~/iso/Win10_21H2_Spanish_x64.iso \
@@ -461,20 +461,20 @@ Según el tipo de pool, puede ser:
 ## Gestión de pools de almacenamiento
 
 ```bash
-virsh -c qemu:///system pool-list
-virsh -c qemu:///system pool-info default
-virsh -c qemu:///system pool-dumpxml default
+virsh pool-list
+virsh pool-info default
+virsh pool-dumpxml default
 
 # Crear, construir, arrancar y persistir un nuevo pool
-virsh -c qemu:///system pool-define-as vm-images dir --target /srv/images
-virsh -c qemu:///system pool-build vm-images
-virsh -c qemu:///system pool-start vm-images
-virsh -c qemu:///system pool-autostart vm-images
+virsh pool-define-as vm-images dir --target /srv/images
+virsh pool-build vm-images
+virsh pool-start vm-images
+virsh pool-autostart vm-images
 
 # Detener y eliminar
-virsh -c qemu:///system pool-destroy vm-images
-virsh -c qemu:///system pool-delete vm-images
-virsh -c qemu:///system pool-undefine vm-images
+virsh pool-destroy vm-images
+virsh pool-delete vm-images
+virsh pool-undefine vm-images
 ```
 
 ---
@@ -482,16 +482,16 @@ virsh -c qemu:///system pool-undefine vm-images
 ## Gestión de volúmenes con libvirt
 
 ```bash
-virsh -c qemu:///system vol-list default
-virsh -c qemu:///system vol-list default --details
-virsh -c qemu:///system vol-info prueba1.qcow2 default
-virsh -c qemu:///system vol-dumpxml vol.qcow2 default
+virsh vol-list default
+virsh vol-list default --details
+virsh vol-info prueba1.qcow2 default
+virsh vol-dumpxml vol.qcow2 default
 
 # Crear un volumen qcow2 de 10 GB en el pool default
-virsh -c qemu:///system vol-create-as default vol1.qcow2 --format qcow2 10G
+virsh vol-create-as default vol1.qcow2 --format qcow2 10G
 
 # Eliminar un volumen
-virsh -c qemu:///system vol-delete vol1.qcow2 default
+virsh vol-delete vol1.qcow2 default
 ```
 
 ---
@@ -510,7 +510,7 @@ qemu-img create -f qcow2 vol2.qcow2 2G
 qemu-img info vol2.qcow2
 
 # Hacer que libvirt detecte el nuevo fichero
-virsh -c qemu:///system pool-refresh vm-images
+virsh pool-refresh vm-images
 ```
 
 ---
@@ -518,7 +518,7 @@ virsh -c qemu:///system pool-refresh vm-images
 ## Creación de MV usando volúmenes existentes
 
 ```bash
-virt-install --connect qemu:///system \
+virt-install \
              --virt-type kvm \
              --name prueba4 \
              --cdrom ~/iso/debian-11.3.0-amd64-netinst.iso \
@@ -541,14 +541,14 @@ Otras formas de indicar el disco:
 
 ```bash
 # Añadir disco (también funciona en caliente)
-virsh -c qemu:///system attach-disk prueba4 \
+virsh attach-disk prueba4 \
         /srv/images/vol2.qcow2 vdb \
         --driver=qemu --type disk \
         --subdriver qcow2 \
         --persistent
 
 # Eliminar disco
-virsh -c qemu:///system detach-disk prueba4 vdb --persistent
+virsh detach-disk prueba4 vdb --persistent
 ```
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
@@ -563,7 +563,7 @@ Con la MV **parada**:
 
 ```bash
 # Con libvirt
-virsh -c qemu:///system vol-resize vol2.qcow2 3G --pool vm-images
+virsh vol-resize vol2.qcow2 3G --pool vm-images
 
 # Con qemu-img
 sudo qemu-img resize /srv/images/vol2.qcow2 3G
@@ -572,8 +572,8 @@ sudo qemu-img resize /srv/images/vol2.qcow2 3G
 Con la MV **en ejecución** (en caliente):
 
 ```bash
-virsh -c qemu:///system domblklist prueba4
-virsh -c qemu:///system blockresize prueba4 /srv/images/vol2.qcow2 3G
+virsh domblklist prueba4
+virsh blockresize prueba4 /srv/images/vol2.qcow2 3G
 ```
 
 Dentro de la MV, redimensionar el sistema de ficheros:
