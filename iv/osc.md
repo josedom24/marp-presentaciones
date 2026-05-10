@@ -679,9 +679,14 @@ openstack subnet create \
 openstack router add subnet mi_router subred2
 ```
 
+
+---
+
 <div class="cols-2" style="margin-top:0.5rem">
 
 <div class="card card-blue">
+
+
 
 ### Sin DHCP → cloud-init configura estáticamente
 
