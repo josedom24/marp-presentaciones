@@ -336,9 +336,9 @@ mv newvol1.qcow2 vol1.qcow2
 
 <p class="numero">04</p>
 
-# Clonación e instantáneas
+# Clonación, imágenes cloud y snapshots
 
-## Plantillas, clonación completa, enlazada y snapshots
+## Plantillas, cloud-init y instantáneas de MV
 
 ---
 
@@ -392,69 +392,84 @@ virt-clone \
 
 ---
 
-## Creación de una plantilla de MV
+## Despliegue automatizado con imágenes cloud
 
-Una plantilla es una imagen **generalizada** a partir de la cual se crean nuevas MV no idénticas a la original.
-
-1. Instalar y configurar una MV con todo el software necesario.
-
-2. **Generalizar** la imagen con la MV parada:
-
-   ```bash
-   sudo virt-sysprep -d prueba1 --hostname plantilla-debian11
-   ```
-
-3. **Proteger** la imagen para evitar arrancas la plantilla por error:
-
-   ```bash
-   chmod -w prueba1.qcow2
-   virsh domrename prueba1 plantilla-prueba1
-   ```
-
----
-
-## Clonación completa de plantilla
-
-```bash
-virt-clone \
-           --original plantilla-prueba1 \
-           --name clone1 \
-           --auto-clone
-```
-
-También se puede usar `--file` para indicar el nombre de la nueva imagen.
-
-Tras clonar, la MV no tiene claves SSH (se borraron al generalizar). Hay que entrar y regenerarlas:
-
-```bash
-echo "clone1" > /etc/hostname
-ssh-keygen -A
-reboot
-```
-
----
-
-## Clonación enlazada (*Linked Clone*)
-
-- La imagen de la MV clonada usa la de la plantilla como **imagen base** (*backing store*) en **solo lectura**
-- La nueva imagen **solo almacena los cambios** respecto a la base
-- Requiere **mucho menos espacio**, pero depende de la imagen base para funcionar
+Aunque podemos crear plantillas manualmente con `virt-sysprep` (ver capítulo 5 del curso *Profundización a la virtualización con KVM/libvirt*), en esta asignatura usaremos un enfoque más moderno y estándar:
 
 <div class="cols-2" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
-### Paso 1
+### Imágenes cloud
 
-Crear el nuevo volumen indicando la imagen base (*backing store*)
+Discos base **ya generalizados** y listos para usar como plantilla.
+
+Las distribuyen directamente Ubuntu, Debian, Fedora, CentOS, AlmaLinux…
 
 </div>
 
 <div class="card card-green">
 
-### Paso 2
+### cloud-init
 
-Crear la nueva MV a partir del volumen, **sin instalar** SO (`--import`)
+Herramienta que **personaliza la MV en su primer arranque**: hostname, usuarios, claves SSH, paquetes, red…
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>Una imagen cloud <strong>es una plantilla</strong>: generalizada, sin configuración específica, lista para clonar y personalizar.</div>
+</div>
+
+---
+
+## Imágenes cloud: plantillas listas para usar
+
+Las imágenes cloud son discos base preconfigurados y optimizados para entornos virtualizados:
+
+- **Generalizadas**: sin hostname, sin usuarios locales fijos, sin claves SSH
+- **Aprovisionamiento ligero**: arranque rápido, tamaño mínimo
+- **Personalizables** en el primer arranque mediante `cloud-init`
+
+Distribuciones que ofrecen imágenes cloud:
+
+| Distribución | URL |
+|:--|:--|
+| **Ubuntu** | https://cloud-images.ubuntu.com |
+| **Debian** | https://cloud.debian.org/images/cloud/ |
+| **Fedora** | https://alt.fedoraproject.org/cloud/ |
+| **AlmaLinux** | https://repo.almalinux.org/cloud/ |
+| **Rocky Linux** | https://dl.rockylinux.org/pub/rocky/ |
+
+---
+
+## ¿Qué es cloud-init?
+
+`cloud-init` es el estándar para la **inicialización automática** de MV e instancias en la nube (OpenStack, AWS, Azure…) y en entornos KVM/libvirt.
+
+Lee una **configuración en formato YAML** (`cloud-config`) y la aplica en el primer arranque:
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Configuración del sistema
+
+- Hostname y FQDN
+- Red (IP, DNS, rutas)
+- Particiones y montajes
+
+</div>
+
+<div class="card card-green">
+
+### Usuarios y software
+
+- Creación de usuarios y grupos
+- Inyección de claves SSH
+- Instalación de paquetes
+- Ejecución de comandos o scripts
 
 </div>
 
@@ -462,81 +477,80 @@ Crear la nueva MV a partir del volumen, **sin instalar** SO (`--import`)
 
 ---
 
-## Paso 1 — Crear volumen con *backing store*
+## Configuración: fichero cloud-config
 
-Comprobamos el tamaño de la imagen de la plantilla:
+Creamos un fichero `cloud.yaml` con la configuración deseada:
 
-```bash
-virsh domblkinfo plantilla-prueba1 vda --human
+```yaml
+#cloud-config
+
+hostname: ubuntu-vm
+
+package_update: true
+package_upgrade: true
+
+chpasswd:
+  expire: False
+  users:
+    - name: root
+      password: newpassword
+      type: text
+    - name: ubuntu
+      password: asdasd
+      type: text
 ```
 
-Creamos la nueva imagen con **virsh**:
+Con este fichero se cambia el nombre de la MV, se actualizan los paquetes y se establecen contraseñas para los usuarios `root` y `ubuntu`.
+
+---
+
+## Preparar la imagen: descarga y clonación enlazada
+
+Descargamos la imagen cloud y la guardamos en el pool:
 
 ```bash
-virsh vol-create-as default clone2.qcow2 10G \
-      --format qcow2 \
-      --backing-vol      prueba1.qcow2 \
-      --backing-vol-format qcow2
+wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+sudo mv noble-server-cloudimg-amd64.img /var/lib/libvirt/images
 ```
 
-O con **`qemu-img`**:
+Creamos una **clonación enlazada** usando la imagen cloud como *backing store*:
 
 ```bash
 cd /var/lib/libvirt/images
-sudo qemu-img create -f qcow2 -b prueba1.qcow2 -F qcow2 clone2.qcow2 10G
-virsh pool-refresh default
+sudo qemu-img create -f qcow2 \
+     -b noble-server-cloudimg-amd64.img \
+     -F qcow2 ubuntu2404.qcow2
+```
+
+Opcionalmente, ampliamos el tamaño del disco (cloud-init lo redimensionará en el primer arranque):
+
+```bash
+sudo qemu-img resize ubuntu2404.qcow2 20G
 ```
 
 ---
 
-## Paso 1 — Verificar la imagen base
-
-Con **virsh**:
+## Crear la MV con cloud-init
 
 ```bash
-virsh vol-dumpxml clone2.qcow2 default
-...
-<backingStore>
-    <path>/var/lib/libvirt/images/prueba1.qcow2</path>
-    <format type='qcow2'/>
-    ...
-```
-
-Con **`qemu-img`**:
-
-```bash
-sudo qemu-img info /var/lib/libvirt/images/clone2.qcow2
-...
-backing file: prueba1.qcow2
-backing file format: qcow2
-...
-```
-
----
-
-## Paso 2 — Crear la MV enlazada
-
-Con **`virt-install`** usando `--import` (no hay instalación, el disco ya tiene SO):
-
-```bash
-virt-install \
+virt-install --connect qemu:///system \
              --virt-type kvm \
-             --name nueva_prueba \
-             --os-variant debian10 \
-             --disk path=/var/lib/libvirt/images/clone2.qcow2 \
-             --memory 1024 \
-             --vcpus 1 \
-             --import
+             --name ubuntu-vm \
+             --memory 2048 \
+             --vcpus 2 \
+             --os-variant ubuntu24.04 \
+             --disk path=/var/lib/libvirt/images/ubuntu2404.qcow2,format=qcow2,bus=virtio \
+             --import \
+             --cloud-init user-data=/var/lib/libvirt/images/cloud.yaml \
+             --noautoconsole
 ```
 
-Con **`virt-clone`** usando `--preserve-data` (no copia el volumen, lo reutiliza):
+El parámetro `--import` indica que el disco ya tiene SO instalado. El parámetro `--cloud-init` pasa el fichero de configuración a la MV para que `cloud-init` lo aplique en el primer arranque.
+
+Una vez arrancada, accedemos por consola serie:
 
 ```bash
-virt-clone \
-           --original plantilla-prueba1 \
-           --name clone2 \
-           --file /var/lib/libvirt/images/clone2.qcow2 \
-           --preserve-data
+virsh console ubuntu-vm
 ```
 
 ---
