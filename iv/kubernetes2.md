@@ -753,33 +753,36 @@ REVISION  CHANGE-CAUSE
 
 ## Tipos de Services
 
-<div class="cols-2" style="margin-top:0.8rem">
+| Tipo | Acceso | Uso |
+|:--|:--|:--|
+| **ClusterIP** | Solo interno al clúster | Bases de datos, servicios internos |
+| **NodePort** | Exterior vía puerto aleatorio 30000-40000 | Pruebas y desarrollo |
+| **LoadBalancer** | Exterior vía cloud público | GKE, AWS, AKS… |
+| **Ingress** | Exterior vía proxy inverso por nombre de host | Producción |
 
-<div class="card card-blue">
+---
 
-### ClusterIP *(por defecto)*
+## ClusterIP
 
-Acceso **solo interno** al clúster. Ideal para bases de datos u otros servicios que no deben exponerse al exterior.
+Acceso **solo interno** al clúster. Es el tipo por defecto.
 
-### NodePort
+![w:750px](img/clusterip.png)
 
-Abre un **puerto aleatorio (30000-40000)** en el nodo master para acceso desde el exterior.
+---
 
-</div>
+## NodePort
 
-<div class="card card-green">
+Abre un **puerto aleatorio (30000-40000)** en el nodo para acceso desde el exterior.
 
-### LoadBalancer
+![w:750px](img/nodeport.png)
+
+---
+
+## LoadBalancer
 
 Solo disponible en **cloud público** (GKE, AWS, AKS…). El proveedor asigna un balanceador de carga con IP pública.
 
-### Ingress
-
-**Proxy inverso** con reglas de encaminamiento por nombre de host. La opción más adecuada para producción.
-
-</div>
-
-</div>
+![w:750px](img/loadbalancer.png)
 
 ---
 
@@ -873,6 +876,8 @@ kubectl exec -it busybox -- wget http://nginx   # Acceso por nombre
 
 **Solución**: Ingress Controller — un **proxy inverso** (nginx, traefik…) que enruta tráfico HTTP por nombre de host.
 
+![w:720px](img/ingress.png)
+
 **Activar Ingress en Minikube:**
 
 ```bash
@@ -920,6 +925,8 @@ Para pruebas sin DNS, añadir al `/etc/hosts` del anfitrión:
 ```
 192.168.39.222  www.example.org
 ```
+
+![w:600px](img/ingress2.png)
 
 ---
 
