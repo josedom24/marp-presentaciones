@@ -682,6 +682,8 @@ openstack router add subnet mi_router subred2
 
 ---
 
+## Red NAT sin DHCP
+
 <div class="cols-2" style="margin-top:0.5rem">
 
 <div class="card card-blue">
