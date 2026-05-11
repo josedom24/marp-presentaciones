@@ -691,12 +691,344 @@ nodo1 : ok=4  changed=2  unreachable=0
 
 ---
 
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">03</p>
+
+# Roles
+
+## Organización y reutilización en Ansible
+
+---
+
+## ¿Qué es un rol?
+
+> Un **rol** es una unidad de configuración reutilizable que agrupa todas las tareas, ficheros, plantillas y variables necesarias para configurar **un servicio concreto**.
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Motivación
+
+En un playbook con muchas tareas todo acaba en un único fichero. Los roles permiten:
+
+- **Separar** la configuración de cada servicio
+- **Reutilizar** el mismo rol en distintos proyectos
+- **Asignar roles** a grupos de hosts diferentes
+- Mantener el código **ordenado y mantenible**
+
+</div>
+
+<div class="card card-green">
+
+### Ejemplo típico
+
+Un proyecto con dos servidores:
+
+- **`commons`** → tareas comunes a todas las máquinas
+- **`apache2`** → instala y configura el servidor web
+- **`mariadb`** → instala y configura la base de datos
+
+Cada rol se ejecuta solo en los hosts que corresponden.
+
+</div>
+
+</div>
+
+---
+
+## Estructura de un rol
+
+Cada rol es un directorio dentro de `roles/` con subdirectorios predefinidos:
+
+```
+roles/
+└── apache2/
+    ├── tasks/
+    │   └── main.yml       # Lista de tareas del rol
+    ├── handlers/
+    │   └── main.yml       # Handlers (reinicio de servicios, etc.)
+    ├── templates/
+    │   └── vhost.conf.j2  # Plantillas Jinja2
+    ├── files/
+    │   └── index.html     # Ficheros estáticos para copiar
+    └── defaults/
+        └── main.yml       # Variables por defecto del rol
+```
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Solo es necesario crear los subdirectorios que se vayan a usar. Ansible los detecta automáticamente por nombre.</div>
+</div>
+
+---
+
+## Usando roles en el playbook
+
+El fichero `site.yml` asigna cada rol al grupo de hosts que corresponde:
+
+```yaml
+---
+# Tareas comunes a todos los nodos
+- name: Configuración común
+  hosts: all
+  become: true
+  roles:
+    - commons
+
+# Servidor web
+- name: Configurar servidor web
+  hosts: servidores_web
+  become: true
+  roles:
+    - apache2
+
+# Servidor de base de datos
+- name: Configurar servidor de base de datos
+  hosts: servidores_bd
+  become: true
+  roles:
+    - mariadb
+```
+
+---
+
+## Handlers
+
+> Un **handler** es una tarea especial que **solo se ejecuta cuando es notificada** por otra tarea. Se ejecuta **una sola vez**, al finalizar todas las tareas del play.
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div>
+
+**`roles/apache2/tasks/main.yml`**
+
+```yaml
+- name: Copiar configuración de Apache
+  ansible.builtin.template:
+    src: vhost.conf.j2
+    dest: /etc/apache2/sites-available/000-default.conf
+  notify: Reiniciar Apache
+```
+
+El parámetro `notify` indica qué handler activar si la tarea produce un cambio (`changed`). Si el fichero ya era igual, el handler **no se ejecuta**.
+
+</div>
+
+<div class="card card-blue">
+
+**`roles/apache2/handlers/main.yml`**
+
+```yaml
+- name: Reiniciar Apache
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
+```
+
+### ¿Por qué handlers y no una tarea normal?
+
+Una tarea normal se ejecuta siempre. El handler **solo se dispara si hubo un cambio real**, evitando reinicios innecesarios del servicio.
+
+</div>
+
+</div>
+
+---
+
+## Bucles con loop
+
+Para ejecutar una tarea sobre una lista de elementos se usa `loop`. El valor de cada iteración se referencia con `{{ item }}`.
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-red">
+
+### ⚠️ Forma antigua (obsoleta)
+
+```yaml
+- name: Instalar paquetes
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - apache2
+    - git
+    - curl
+```
+
+`with_items` está **deprecado** desde Ansible 2.5.
+
+</div>
+
+<div class="card card-green">
+
+### Forma actual
+
+```yaml
+- name: Instalar paquetes
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - apache2
+    - git
+    - curl
+```
+
+O más idiomático para `apt`, pasando la lista directamente:
+
+```yaml
+- name: Instalar paquetes
+  ansible.builtin.apt:
+    name:
+      - apache2
+      - git
+      - curl
+    state: present
+```
+
+</div>
+
+</div>
+
+---
+
+## El módulo lineinfile
+
+Permite **modificar una línea concreta** de un fichero remoto sin sobreescribir el fichero completo. Muy útil para ajustar ficheros de configuración.
+
+```yaml
+- name: Configurar bind-address en MariaDB
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
+    regexp: '^bind-address'          # Línea a buscar (expresión regular)
+    line: 'bind-address = 0.0.0.0'  # Valor que debe quedar
+  notify: Reiniciar MariaDB
+```
+
+| Parámetro | Descripción |
+|:--|:--|
+| `path` | Fichero a modificar en el nodo remoto |
+| `regexp` | Expresión regular para localizar la línea |
+| `line` | Contenido que debe tener esa línea |
+| `state` | `present` (asegurar que existe) / `absent` (eliminar) |
+
+---
+
+## Gestión de bases de datos
+
+Los módulos para MariaDB/MySQL pertenecen a la colección **`community.mysql`**, que hay que instalar antes de usarlos:
+
+```bash
+ansible-galaxy collection install community.mysql
+```
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### community.mysql.mysql_db
+
+Crea, elimina o importa bases de datos.
+
+```yaml
+- name: Crear base de datos
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+```
+
+</div>
+
+<div class="card card-green">
+
+### community.mysql.mysql_user
+
+Gestiona usuarios y sus privilegios.
+
+```yaml
+- name: Crear usuario de la BD
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    host: "%"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+```
+
+</div>
+
+</div>
+
+---
+
+## Ansible Galaxy
+
+> **Ansible Galaxy** es el repositorio oficial de roles y colecciones creados y compartidos por la comunidad.
+
+```bash
+# Buscar un rol
+ansible-galaxy search apache
+
+# Instalar un rol
+ansible-galaxy install geerlingguy.apache
+
+# Instalar una colección
+ansible-galaxy collection install community.mysql
+
+# Ver roles instalados
+ansible-galaxy list
+```
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Usar un rol de Galaxy en el playbook
+
+```yaml
+- name: Configurar servidor web
+  hosts: servidores_web
+  become: true
+  roles:
+    - geerlingguy.apache
+```
+
+</div>
+
+<div class="card card-green">
+
+### requirements.yml
+
+Declara las dependencias del proyecto para instalarlas todas a la vez:
+
+```yaml
+roles:
+  - name: geerlingguy.apache
+collections:
+  - name: community.mysql
+```
+
+```bash
+ansible-galaxy install -r requirements.yml
+```
+
+</div>
+
+</div>
+
+---
+
 <!-- _class: cierre -->
 <!-- _paginate: false -->
 
 # ¡Gracias!
 
-## Ansible · Introducción y Playbooks
+## Ansible · Introducción, Playbooks y Roles
 
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>
