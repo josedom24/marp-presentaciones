@@ -277,259 +277,62 @@ La IaC es una de las piedras angulares de la cultura DevOps.
 
 <p class="numero">03</p>
 
-# Terraform y OpenTofu
+# OpenTofu
 
 ## Orquestación de infraestructura declarativa
 
 ---
 
-## ¿Qué es Terraform?
+## OpenTofu
 
-> **Terraform** es una herramienta de orquestación de infraestructura de código abierto creada por **HashiCorp** en 2014.
+> **OpenTofu** es una herramienta de **orquestación de infraestructura** de código abierto, fork libre de Terraform, mantenida por la **Linux Foundation** (licencia MPL 2.0).
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Características principales
-
+- Creado en **septiembre de 2023** cuando HashiCorp cambió la licencia de Terraform a BSL 1.1 (no libre)
 - Lenguaje declarativo propio: **HCL** (*HashiCorp Configuration Language*)
-- Funciona con **múltiples proveedores**: AWS, Azure, GCP, OpenStack…
+- Funciona con **múltiples proveedores**: AWS, Azure, GCP, OpenStack, Kubernetes…
 - Gestiona el **estado de la infraestructura** en un fichero `terraform.tfstate`
-- **Planificación previa** antes de aplicar cambios
-
-</div>
-
-<div class="card card-red">
-
-### El problema: cambio de licencia
-
-En **agosto de 2023**, HashiCorp cambió la licencia de Terraform de **MPL 2.0** (software libre) a **BSL 1.1** (licencia de negocio), restringiendo su uso comercial por competidores.
-
-Esto impulsó la creación de una alternativa **100% libre**.
-
-</div>
-
-</div>
+- Compatible con todos los **módulos y providers** de Terraform
+- Sitio oficial: **opentofu.org**
 
 ---
 
-## ¿Qué es OpenTofu?
-
-> **OpenTofu** es un fork de Terraform mantenido por la **Linux Foundation** bajo licencia **MPL 2.0**. Es el sucesor libre y abierto de Terraform.
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-green">
-
-### Historia
-
-- Nace en **septiembre de 2023** como respuesta al cambio de licencia de Terraform
-- Lo impulsan empresas como Gruntwork, Spacelift, Harness, env0…
-- Se convierte en proyecto de la **Linux Foundation** en enero de 2024
-- Mantiene **compatibilidad total** con Terraform
-
-</div>
-
-<div class="card card-blue">
-
-### ¿Por qué OpenTofu?
-
-- **Software libre** (MPL 2.0) sin restricciones de uso
-- Comunidad abierta y gobernanza transparente
-- Compatible con todos los **proveedores y módulos** de Terraform
-- Desarrollo activo con nuevas funcionalidades propias
-- **Recomendado** frente a Terraform para nuevos proyectos
-
-</div>
-
-</div>
-
----
-
-## Conceptos fundamentales de OpenTofu
-
-<div class="cols-3" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Providers
-
-Plugins que permiten a OpenTofu interactuar con distintas **APIs** (AWS, OpenStack, Docker, Kubernetes…).
-
-```hcl
-terraform {
-  required_providers {
-    openstack = {
-      source = "terraform-provider-openstack/openstack"
-    }
-  }
-}
-```
-
-</div>
-
-<div class="card card-green">
-
-### Resources
-
-Representan los **elementos de infraestructura** que queremos crear o gestionar.
-
-```hcl
-resource "openstack_compute_instance_v2" "web" {
-  name      = "servidor-web"
-  image_id  = var.image_id
-  flavor_id = "m1.small"
-}
-```
-
-</div>
-
-<div class="card card-purple">
-
-### State
-
-Fichero (`terraform.tfstate`) que almacena el **estado actual** de la infraestructura gestionada.
-
-- Permite detectar **cambios reales** necesarios
-- Puede almacenarse de forma **remota** (S3, Consul…)
-- **No subir al control de versiones** si contiene datos sensibles
-
-</div>
-
-</div>
-
----
-
-## Más conceptos de OpenTofu
+## Conceptos sobre OpenTofu
 
 <div class="cols-2" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
-### Variables
+### Elementos de configuración
 
-Permiten **parametrizar** la configuración para reutilizarla en distintos entornos.
-
-```hcl
-variable "image_id" {
-  description = "ID de la imagen base"
-  type        = string
-  default     = "ubuntu-22.04"
-}
-```
+- **Provider**: plugin que conecta con una API (OpenStack, AWS…)
+- **Resource**: elemento de infraestructura a crear (VM, red, volumen…)
+- **Variable**: parámetro para reutilizar la configuración en distintos entornos
+- **Output**: valor de salida (IP, ID…) tras aplicar el plan
+- **Module**: agrupación reutilizable de resources
 
 </div>
 
 <div class="card card-green">
 
-### Módulos
-
-Agrupaciones de recursos reutilizables. Permiten **estructurar proyectos** complejos y compartir configuraciones.
-
-```hcl
-module "red" {
-  source      = "./modules/red"
-  nombre_red  = "mi-red-privada"
-  cidr        = "192.168.1.0/24"
-}
-```
-
-</div>
-
-</div>
-
----
-
-## El flujo de trabajo de OpenTofu
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div>
-
-### Los cuatro pasos básicos
+### Flujo de trabajo
 
 ```bash
-# 1. Inicializar — descarga providers y módulos
+# Inicializar — descarga providers y módulos
 tofu init
 
-# 2. Planificar — muestra los cambios que se aplicarán
+# Planificar — muestra los cambios a realizar
 tofu plan
 
-# 3. Aplicar — crea/modifica/destruye la infraestructura
+# Aplicar — crea/modifica la infraestructura
 tofu apply
 
-# 4. Destruir — elimina toda la infraestructura gestionada
+# Destruir — elimina todos los recursos
 tofu destroy
 ```
 
 </div>
 
-<div class="card card-blue">
-
-### El ciclo de vida
-
-1. **`init`** — prepara el entorno de trabajo
-2. **`plan`** — compara el estado deseado con el actual y propone cambios
-3. **`apply`** — aplica los cambios después de confirmación
-4. **`destroy`** — elimina los recursos cuando ya no son necesarios
-
-> El paso **`plan`** es clave: permite revisar los cambios antes de aplicarlos, evitando sorpresas.
-
 </div>
-
-</div>
-
----
-
-## Estructura de un proyecto OpenTofu
-
-```
-mi-proyecto/
-├── main.tf           # Recursos principales
-├── variables.tf      # Definición de variables
-├── outputs.tf        # Valores de salida (IPs, IDs...)
-├── providers.tf      # Configuración de providers
-├── terraform.tfvars  # Valores de las variables (no subir a git si tiene credenciales)
-└── modules/          # Módulos reutilizables
-    └── servidor/
-        ├── main.tf
-        └── variables.tf
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El fichero <strong>terraform.tfstate</strong> se genera automáticamente. Contiene el estado real de la infraestructura. En equipos, se recomienda almacenarlo en un <strong>backend remoto</strong>.</div>
-</div>
-
----
-
-## OpenTofu con OpenStack — ejemplo completo
-
-```hcl
-provider "openstack" {
-  cloud = "openstack"   # Usa el fichero clouds.yaml para las credenciales
-}
-
-resource "openstack_networking_network_v2" "red_privada" {
-  name           = "mi-red"
-  admin_state_up = true
-}
-
-resource "openstack_compute_instance_v2" "servidor" {
-  name        = "servidor-web"
-  image_name  = "Ubuntu 22.04"
-  flavor_name = "m1.small"
-  key_pair    = "mi-clave-ssh"
-
-  network {
-    uuid = openstack_networking_network_v2.red_privada.id
-  }
-}
-
-output "ip_servidor" {
-  value = openstack_compute_instance_v2.servidor.access_ip_v4
-}
-```
 
 ---
 
