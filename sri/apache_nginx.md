@@ -221,6 +221,10 @@ Restringe el acceso a un directorio mediante usuario y contraseña.
 </Directory>
 ```
 
+---
+
+## Autenticación básica
+
 ### Crear el archivo de contraseñas
 
 ```bash
