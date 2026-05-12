@@ -389,6 +389,10 @@ server {
 }
 ```
 
+---
+
+## Server Blocks (Virtual Hosts)
+
 ### Activación
 
 ```bash
