@@ -515,6 +515,10 @@ location /admin/ {
 }
 ```
 
+---
+
+## Control de acceso por IP
+
 ### Combinar IP y autenticación
 
 ```nginx
@@ -579,7 +583,9 @@ add_header X-Frame-Options       "SAMEORIGIN";
 add_header X-Content-Type-Options "nosniff";
 ```
 
-Inclusión:
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Idea equivalente al patrón <code>conf-available/</code> de Apache: configuración modular que se reutiliza en varios sitios.</div>
+</div>
 
 ```nginx
 server {
@@ -589,10 +595,6 @@ server {
     ...
 }
 ```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Idea equivalente al patrón <code>conf-available/</code> de Apache: configuración modular que se reutiliza en varios sitios.</div>
-</div>
 
 ---
 
