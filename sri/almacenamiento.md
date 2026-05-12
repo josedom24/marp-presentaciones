@@ -286,9 +286,6 @@ sudo systemctl daemon-reload
 sudo mount -a
 ```
 
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Si el servidor NFS no está accesible, un <code>defaults</code> puede bloquear el arranque. En servidores conviene revisar opciones como <code>_netdev</code>, <code>nofail</code> o <code>x-systemd.automount</code>.</div>
-</div>
 
 ---
 
