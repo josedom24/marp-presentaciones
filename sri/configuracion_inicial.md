@@ -309,7 +309,6 @@ El símbolo `%` indica un **grupo**. `NOPASSWD` evita pedir la contraseña al ej
 ### `/etc/hosts`
 
 - Tabla de **resolución estática** local
-- Mapea direcciones IP con nombres (corto y FQDN)
 - Permite que el propio equipo se resuelva sin depender del DNS
 - La entrada para el equipo debe incluir **FQDN y hostname**:
 
