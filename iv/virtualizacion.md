@@ -492,7 +492,7 @@ Pensados para el **despliegue** de aplicaciones (especialmente web):
 |:--|:--|
 | **virsh** | Cliente oficial de **línea de comandos**. Shell completa para la API |
 | **virt-manager** | Aplicación **gráfica** con la mayor parte de las funcionalidades |
-| **virtinst** | Comandos `virt-install`, `virt-clone`, `virt-xml` para crear y copiar VM |
+| **virt-install** | Creación de MV desde la **línea de comandos** (`virt-install`, `virt-clone`, `virt-xml`) |
 | **virt-viewer** | Acceso a la **consola gráfica** de una VM |
 | **gnome-boxes** | Aplicación gráfica **simple** para usuarios de escritorio |
 
