@@ -13,7 +13,7 @@ footer: ''
 
 # Configuración inicial de un **servidor Linux**
 
-## Acceso, identidad, red y resolución de nombres
+## Acceso, administración, identidad, red y enrutamiento
 
 <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.5rem; justify-content:center; font-size:0.85rem; color:white">
   <span>📧 José Domingo Muñoz</span>
@@ -31,6 +31,22 @@ footer: ''
 # Acceso seguro al servidor
 
 ## SSH con autenticación por clave pública
+
+---
+
+## ¿Qué es SSH?
+
+**SSH** (*Secure Shell*) es el protocolo estándar para administrar equipos Linux de forma remota a través de un **canal cifrado**.
+
+- Sustituye a protocolos antiguos sin cifrar como **Telnet** o **rsh**
+- Cifra tanto las credenciales como todo el tráfico de la sesión
+- El cliente (`ssh`) se conecta al demonio **`sshd`** del servidor, por el puerto **TCP 22**
+- La configuración del servidor está en `/etc/ssh/sshd_config`
+- Además de una shell remota, permite transferir ficheros (`scp`, `sftp`) y crear túneles
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>El canal ya viaja cifrado por defecto. Lo que queda por decidir es <strong>cómo se demuestra la identidad</strong>: con contraseña o con clave pública.</div>
+</div>
 
 ---
 
@@ -720,7 +736,7 @@ echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-router.conf
 Aplicar los cambios: 
 
 ```bash
-sysctl --system`
+sysctl --system
 ```
 
 </div>
