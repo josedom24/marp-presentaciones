@@ -71,31 +71,31 @@ Las MV se conectan a la misma red que el host:
 
 ## Red virtual de tipo NAT
 
-![w:900px](img/red_nat.drawio.png)
+![h:550px](img/red_nat.drawio.png)
 
 ---
 
 ## Red virtual aislada (*Isolated*)
 
-![w:900px](img/red_aislada.drawio.png)
+![h:550px](img/red_aislada.drawio.png)
 
 ---
 
 ## Red virtual muy aislada (*Very Isolated*)
 
-![w:900px](img/red_muy_aislada.drawio.png)
+![h:550px](img/red_muy_aislada.drawio.png)
 
 ---
 
 ## Red puente conectada a un bridge externo
 
-![w:900px](img/red_bridge.drawio.png)
+![h:550px](img/red_bridge.drawio.png)
 
 ---
 
 ## Red puente compartiendo la interfaz del host
 
-![w:900px](img/red_bridge2.drawio.png)
+![h:550px](img/red_bridge2.drawio.png)
 
 ---
 
@@ -196,7 +196,7 @@ También se pueden gestionar desde **`virt-manager`**.
 - Se crea en el **host** y él mismo se conecta a ese bridge
 - Las MV conectadas al bridge obtienen IPs del **mismo rango que el host**
 
-![w:800px](img/red_bridge.drawio.png)
+![h:280px](img/red_bridge.drawio.png)
 
 ---
 
