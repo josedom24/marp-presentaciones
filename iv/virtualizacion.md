@@ -13,7 +13,7 @@ footer: ''
 
 # **Virtualización** en Linux
 
-## Conceptos, tipos y herramientas
+## Concepto y tipos de virtualización
 
 <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.5rem; justify-content:center; font-size:0.85rem; color:white">
   <span>📧 José Domingo Muñoz</span>
@@ -141,7 +141,7 @@ Una **extensión de virtualización** es una ampliación del juego de instruccio
 
 ### Ejemplos
 
-`QEMU` · `Microsoft Virtual PC` · `Wine`
+`QEMU` · `DOSBox` · `Wine`
 
 </div>
 
@@ -278,167 +278,6 @@ Pensados para el **despliegue** de aplicaciones (especialmente web):
 | **Virtualización completa** | Tipo 1 (nativo) | No | Alto | KVM, Xen, ESXi |
 | **Virtualización completa** | Tipo 2 (alojado) | No | Medio | VirtualBox, VMware |
 | **Contenedores** | — | — | Casi nativo | LXC, Docker |
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">03</p>
-
-# QEMU/KVM y libvirt
-
-## Virtualización completa en Linux
-
----
-
-## QEMU
-
-> **QEMU** es un emulador genérico y de código abierto de máquinas virtuales.
-
-### Dos modos de funcionamiento
-
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div class="card card-blue">
-
-### Modo **emulador**
-
-- Permite ejecutar SO de una **arquitectura distinta** (ej. ARM sobre x86)
-- Útil para **desarrollo cruzado**
-- Rendimiento bajo
-
-</div>
-
-<div class="card card-green">
-
-### Modo **virtualización**
-
-- Apoyado en hipervisores como **KVM**
-- Aprovecha las extensiones del procesador
-- **Alto rendimiento**
-
-</div>
-
-</div>
-
----
-
-## KVM
-
-> **Kernel-based Virtual Machine** es un hipervisor de **tipo 1** integrado al kernel de Linux.
-
-### Características
-
-- Solución de **virtualización completa** para Linux
-- Necesita CPU con extensiones **Intel VT** o **AMD-V**
-- Se compone de varios **módulos del kernel**:
-  - `kvm.ko` — infraestructura base de virtualización
-  - `kvm-intel.ko` / `kvm-amd.ko` — módulo específico del procesador
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div><strong>QEMU + KVM</strong> es la combinación habitual: QEMU emula los dispositivos y KVM acelera la ejecución del invitado.</div>
-</div>
-
----
-
-## Dispositivos paravirtualizados (`virtIO`)
-
-- En virtualización completa, los dispositivos (discos, red…) están **emulados por software**: el invitado cree que habla con hardware real, y cada operación se traduce mediante una capa de emulación
-- Un dispositivo **paravirtualizado** es distinto: el invitado *sabe* que está virtualizado y usa un **driver específico** que habla directamente con el hipervisor mediante una interfaz simple y eficiente, sin fingir ser hardware real
-- KVM agrupa estos dispositivos bajo el estándar **`virtIO`**
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-red">
-
-### Dispositivos emulados
-
-- Compatibilidad universal
-- **Rendimiento bajo**
-- Cada operación atraviesa la capa de emulación
-
-</div>
-
-<div class="card card-green">
-
-### Dispositivos `virtIO`
-
-- **`virtio-net`** — tarjeta de red
-- **`virtio-blk` / `virtio-scsi`** — disco
-- **Rendimiento muy cercano al real**
-
-</div>
-
-</div>
-
----
-
-## libvirt
-
-> **libvirt** es la API y conjunto de herramientas que facilita la **gestión** de los recursos virtualizados.
-
-### ¿Por qué libvirt?
-
-- Trabajar directamente con QEMU/KVM es **complejo**
-- libvirt ofrece una **API genérica** y un **demonio** comunes
-- Soporta varios sistemas: **KVM**, **LXC**, **Xen**…
-- Permite usar las **mismas herramientas** independientemente del hipervisor
-
----
-
-## Mecanismos de conexión a libvirt
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Local sin privilegios
-
-`qemu:///session`
-
-- Acceso a las VM **del usuario actual**
-- Sin permisos para crear redes
-- Útil para usuarios de escritorio
-
-### Local privilegiado
-
-`qemu:///system`
-
-- Acceso a las VM **del sistema**
-- Permisos completos sobre red y almacenamiento
-
-</div>
-
-<div class="card card-green">
-
-### Remoto privilegiado por SSH
-
-`qemu+ssh:///system`
-
-- Conexión **a un servidor remoto** que ejecuta libvirt
-- Autenticación a través de **SSH**
-- Base para administrar **clústeres** de hipervisores
-
-</div>
-
-</div>
-
----
-
-## Aplicaciones del ecosistema libvirt
-
-| Aplicación | Función |
-|:--|:--|
-| **virsh** | Cliente oficial de **línea de comandos**. Shell completa para la API |
-| **virt-manager** | Aplicación **gráfica** con la mayor parte de las funcionalidades |
-| **virt-install** | Creación de MV desde la **línea de comandos** (`virt-install`, `virt-clone`, `virt-xml`) |
-| **virt-viewer** | Acceso a la **consola gráfica** de una VM |
-| **gnome-boxes** | Aplicación gráfica **simple** para usuarios de escritorio |
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div><code>virsh</code> es la herramienta de referencia para automatizar y administrar libvirt en servidores sin entorno gráfico.</div>
-</div>
 
 ---
 

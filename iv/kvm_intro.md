@@ -13,7 +13,7 @@ footer: ''
 
 # **QEMU/KVM** y libvirt
 
-## Instalación, gestión y almacenamiento
+## Conceptos, instalación y gestión de máquinas virtuales
 
 <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.5rem; justify-content:center; font-size:0.85rem; color:white">
   <span>📧 José Domingo Muñoz</span>
@@ -28,7 +28,168 @@ footer: ''
 
 <p class="numero">01</p>
 
-# Introducción a QEMU/KVM + libvirt
+# QEMU/KVM y libvirt
+
+## Virtualización completa en Linux
+
+---
+
+## QEMU
+
+> **QEMU** es un emulador genérico y de código abierto de máquinas virtuales.
+
+### Dos modos de funcionamiento
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Modo **emulador**
+
+- Permite ejecutar SO de una **arquitectura distinta** (ej. ARM sobre x86)
+- Útil para **desarrollo cruzado**
+- Rendimiento bajo
+
+</div>
+
+<div class="card card-green">
+
+### Modo **virtualización**
+
+- Apoyado en hipervisores como **KVM**
+- Aprovecha las extensiones del procesador
+- **Alto rendimiento**
+
+</div>
+
+</div>
+
+---
+
+## KVM
+
+> **Kernel-based Virtual Machine** es un hipervisor de **tipo 1** integrado al kernel de Linux.
+
+### Características
+
+- Solución de **virtualización completa** para Linux
+- Necesita CPU con extensiones **Intel VT** o **AMD-V**
+- Se compone de varios **módulos del kernel**:
+  - `kvm.ko` — infraestructura base de virtualización
+  - `kvm-intel.ko` / `kvm-amd.ko` — módulo específico del procesador
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div><strong>QEMU + KVM</strong> es la combinación habitual: QEMU emula los dispositivos y KVM acelera la ejecución del invitado.</div>
+</div>
+
+---
+
+## Dispositivos paravirtualizados (`virtIO`)
+
+- En virtualización completa, los dispositivos (discos, red…) están **emulados por software**: el invitado cree que habla con hardware real, y cada operación se traduce mediante una capa de emulación
+- Un dispositivo **paravirtualizado** es distinto: el invitado *sabe* que está virtualizado y usa un **driver específico** que habla directamente con el hipervisor mediante una interfaz simple y eficiente, sin fingir ser hardware real
+- KVM agrupa estos dispositivos bajo el estándar **`virtIO`**
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-red">
+
+### Dispositivos emulados
+
+- Compatibilidad universal
+- **Rendimiento bajo**
+- Cada operación atraviesa la capa de emulación
+
+</div>
+
+<div class="card card-green">
+
+### Dispositivos `virtIO`
+
+- **`virtio-net`** — tarjeta de red
+- **`virtio-blk` / `virtio-scsi`** — disco
+- **Rendimiento muy cercano al real**
+
+</div>
+
+</div>
+
+---
+
+## libvirt
+
+> **libvirt** es la API y conjunto de herramientas que facilita la **gestión** de los recursos virtualizados.
+
+### ¿Por qué libvirt?
+
+- Trabajar directamente con QEMU/KVM es **complejo**
+- libvirt ofrece una **API genérica** y un **demonio** comunes
+- Soporta varios sistemas: **KVM**, **LXC**, **Xen**…
+- Permite usar las **mismas herramientas** independientemente del hipervisor
+
+---
+
+## Mecanismos de conexión a libvirt
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Local sin privilegios
+
+`qemu:///session`
+
+- Acceso a las VM **del usuario actual**
+- Sin permisos para crear redes
+- Útil para usuarios de escritorio
+
+### Local privilegiado
+
+`qemu:///system`
+
+- Acceso a las VM **del sistema**
+- Permisos completos sobre red y almacenamiento
+
+</div>
+
+<div class="card card-green">
+
+### Remoto privilegiado por SSH
+
+`qemu+ssh:///system`
+
+- Conexión **a un servidor remoto** que ejecuta libvirt
+- Autenticación a través de **SSH**
+- Base para administrar **clústeres** de hipervisores
+
+</div>
+
+</div>
+
+---
+
+## Aplicaciones del ecosistema libvirt
+
+| Aplicación | Función |
+|:--|:--|
+| **virsh** | Cliente oficial de **línea de comandos**. Shell completa para la API |
+| **virt-manager** | Aplicación **gráfica** con la mayor parte de las funcionalidades |
+| **virt-install** | Creación de MV desde la **línea de comandos** (`virt-install`, `virt-clone`, `virt-xml`) |
+| **virt-viewer** | Acceso a la **consola gráfica** de una VM |
+| **gnome-boxes** | Aplicación gráfica **simple** para usuarios de escritorio |
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div><code>virsh</code> es la herramienta de referencia para automatizar y administrar libvirt en servidores sin entorno gráfico.</div>
+</div>
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">02</p>
+
+# Instalación y primeros pasos
 
 ## Instalación, red y almacenamiento por defecto
 
@@ -99,54 +260,15 @@ La red `default` es de tipo **NAT**. Al crear una MV se conectará a ella por de
 
 ![w:900px](img/almacenamiento1.png)
 
----
-
-## Pools y volúmenes
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Pool de almacenamiento
-
-Recurso de almacenamiento gestionado por libvirt. Normalmente es un **directorio**.
-
-```bash
-virsh pool-list
- Nombre    Estado   Inicio automático
----------------------------------------
- default   activo   si
- iso       activo   si
-```
-
-</div>
-
-<div class="card card-green">
-
-### Volumen
-
-Medio de almacenamiento creado en un pool. Si el pool es de tipo `dir`, el volumen es un **fichero de imagen**.
-
-```bash
-virsh vol-list default
- Nombre          Ruta
------------------------------------------------------
- prueba1.qcow2   /var/lib/libvirt/images/prueba1.qcow2
-```
-
-</div>
-
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>La gestión de pools, volúmenes y formatos de disco se ve en detalle más adelante, en la presentación dedicada a almacenamiento.</div>
 </div>
 
 ---
 
 ## virt-install
 
-```bash
-apt install virtinst
-```
-
-Ejemplo — crear una MV con instalación desde ISO:
+Crea una MV desde la línea de comandos (`apt install virtinst`):
 
 ```bash
 virt-install \
@@ -159,11 +281,7 @@ virt-install \
              --vcpus 1
 ```
 
-Para acceder a la consola gráfica:
-
-```bash
-virt-viewer prueba1
-```
+Para acceder a la consola gráfica: `virt-viewer prueba1`
 
 ---
 
@@ -239,7 +357,26 @@ virsh dumpxml <máquina>
 
 ## Modificación de una máquina virtual
 
+Siempre que exista un subcomando específico de `virsh`, es preferible usarlo antes que editar el XML a mano: valida los cambios y reduce el riesgo de dejar la configuración en un estado inconsistente.
+
 <div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-green">
+
+### Comandos virsh (recomendado)
+
+```bash
+# Renombrar (MV parada)
+virsh domrename prueba2 prueba1
+
+# Cambiar vCPUs (MV parada)
+virsh setvcpus prueba1 2 --config
+
+# Arranque automático
+virsh autostart prueba1
+```
+
+</div>
 
 <div class="card card-blue">
 
@@ -249,21 +386,7 @@ virsh dumpxml <máquina>
 virsh edit prueba1
 ```
 
-Abre el XML en `$EDITOR`. Útil para cambios no soportados por comandos.
-
-</div>
-
-<div class="card card-green">
-
-### Comandos virsh
-
-```bash
-# Renombrar (MV parada)
-virsh domrename prueba2 prueba1
-
-# Cambiar vCPUs (MV parada)
-virsh setvcpus prueba1 2 --config
-```
+Abre el XML en `$EDITOR`. Solo para cambios sin subcomando equivalente.
 
 </div>
 
@@ -305,11 +428,23 @@ Aplicación gráfica para gestionar libvirt:
 
 ---
 
-## Creación de MV Windows
+## Creación de MV Windows — el problema
 
-- Configurar disco y tarjeta de red en modo **VirtIO**
-- Windows **no tiene soporte nativo** para dispositivos VirtIO
-- Añadimos un CDROM adicional con la **ISO de drivers VirtIO**
+- Por defecto, `virt-install` puede crear discos y tarjetas de red **sin especificar el bus**: usa dispositivos **emulados** (ej. disco IDE, red `e1000`), que funcionan sin drivers pero con **peor rendimiento**
+- Si se piden dispositivos **VirtIO** (`bus=virtio`, `model=virtio`) para mejor rendimiento, Windows **no los reconoce de forma nativa**: el instalador ni siquiera detecta el disco
+- Hace falta instalar los **drivers VirtIO para Windows** durante la propia instalación
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Con <code>bus=virtio</code> y sin proporcionar los drivers, el instalador de Windows no encuentra ningún disco donde instalar el sistema.</div>
+</div>
+
+---
+
+## Creación de MV Windows — drivers VirtIO
+
+1. Descarga la ISO de drivers del proyecto oficial **virtio-win**: `https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/`
+2. Añádela como un **segundo CD-ROM** en la propia creación de la MV
+3. Durante la instalación, cuando no aparezca ningún disco, usa **"Cargar controlador"** y navega hasta ese CD-ROM
 
 ```bash
 virt-install \
@@ -326,285 +461,12 @@ virt-install \
 
 ---
 
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">02</p>
-
-# Almacenamiento en QEMU/KVM + libvirt
-
-## Pools, volúmenes y gestión con virsh y qemu-img
-
----
-
-## Conceptos de almacenamiento
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Pool de almacenamiento
-
-Recurso de almacenamiento gestionado por libvirt.
-
-**Tipos principales:**
-- `dir` — directorio del sistema de archivos
-- `logical` — grupo de volúmenes LVM
-- `netfs` — directorio NAS (NFS…)
-- `iSCSI` — disco desde servidor iSCSI
-
-</div>
-
-<div class="card card-green">
-
-### Volumen
-
-Medio de almacenamiento que representa el **disco de una MV**.
-
-Según el tipo de pool, puede ser:
-- Un **fichero de imagen** (`dir`, `netfs`)
-- Un **volumen lógico LVM** (`logical`)
-- Un **disco iSCSI** (`iscsi`)
-
-</div>
-
-</div>
-
----
-
-## Tipos de pool: `dir`
-
-- El pool controla un **directorio del host**
-- Los volúmenes son **ficheros de imagen de disco**:
-
-| Formato | Características |
-|:--|:--|
-| **raw** | Imagen binaria. Ocupa todo el espacio asignado. Más eficiente. Sin snapshots |
-| **qcow2** | Copy-on-write. Aprovisionamiento ligero. Soporta snapshots. Algo menos eficiente |
-| vdi, vmdk | Formatos de otros hipervisores (VirtualBox, VMware) |
-
-<div class="alerta alerta-warning" style="margin-top:0.5rem">
-<span>⚠️</span><div>El tipo <code>dir</code> <strong>no ofrece almacenamiento compartido</strong> entre hosts.</div>
-</div>
-
----
-
-## Tipos de pool: `logical`, `netfs`, `iSCSI`
-
-<div class="cols-3" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### `logical`
-
-- Controla un **Grupo de Volúmenes LVM**
-- Los volúmenes son **LVs**
-- Sin almacenamiento compartido
-- Sin snapshots ni aprovisionamiento ligero
-
-</div>
-
-<div class="card card-green">
-
-### `netfs`
-
-- Monta un **directorio NAS** (NFS…)
-- Volúmenes: **ficheros de imagen**
-- **Almacenamiento compartido** entre hosts
-
-</div>
-
-<div class="card card-purple">
-
-### `iSCSI`
-
-- Monta un **disco desde un servidor iSCSI**
-- Los datos se guardan en ese disco remoto
-- **Almacenamiento compartido** (con las consideraciones de acceso concurrente)
-
-</div>
-
-</div>
-
----
-
-## Gestión de volúmenes — dos enfoques
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Con libvirt (`virsh` / `virt-manager`)
-
-- Pool `dir` → crea una **imagen de disco**
-- Pool `logical` → crea un **LV**
-
-</div>
-
-<div class="card card-green">
-
-### Con herramientas específicas
-
-- Pool `dir` → `qemu-img create …` y luego `pool-refresh`
-- Pool `logical` → `lvcreate …` y luego `pool-refresh`
-
-</div>
-
-</div>
-
-<div class="alerta alerta-info" style="margin-top:0.8rem">
-<span>ℹ️</span><div>Tras crear el volumen con herramientas externas hay que ejecutar <code>virsh pool-refresh &lt;pool&gt;</code> para que libvirt lo detecte.</div>
-</div>
-
----
-
-## Gestión de pools de almacenamiento
-
-```bash
-virsh pool-list
-virsh pool-info default
-virsh pool-dumpxml default
-
-# Crear, construir, arrancar y persistir un nuevo pool
-virsh pool-define-as vm-images dir --target /srv/images
-virsh pool-build vm-images
-virsh pool-start vm-images
-virsh pool-autostart vm-images
-
-# Detener y eliminar
-virsh pool-destroy vm-images
-virsh pool-delete vm-images
-virsh pool-undefine vm-images
-```
-
----
-
-## Gestión de volúmenes con libvirt
-
-```bash
-virsh vol-list default
-virsh vol-list default --details
-virsh vol-info prueba1.qcow2 default
-virsh vol-dumpxml vol.qcow2 default
-
-# Crear un volumen qcow2 de 10 GB en el pool default
-virsh vol-create-as default vol1.qcow2 --format qcow2 10G
-
-# Eliminar un volumen
-virsh vol-delete vol1.qcow2 default
-```
-
----
-
-## Gestión de volúmenes con `qemu-img`
-
-Trabajamos con un pool de tipo **`dir`**:
-
-```bash
-cd /var/lib/libvirt/images
-
-# Crear imagen qcow2 de 2 GB
-qemu-img create -f qcow2 vol2.qcow2 2G
-
-# Ver información de la imagen
-qemu-img info vol2.qcow2
-
-# Hacer que libvirt detecte el nuevo fichero
-virsh pool-refresh vm-images
-```
-
----
-
-## Creación de MV usando volúmenes existentes
-
-```bash
-virt-install \
-             --virt-type kvm \
-             --name prueba4 \
-             --cdrom ~/iso/debian-11.3.0-amd64-netinst.iso \
-             --os-variant debian10 \
-             --disk vol=default/vol1.qcow2 \
-             --memory 1024 \
-             --vcpus 1
-```
-
-Otras formas de indicar el disco:
-
-```bash
---disk path=/var/lib/libvirt/images/vol1.qcow2
---disk pool=vm-images,size=10
-```
-
----
-
-## Añadir nuevos discos a una MV
-
-```bash
-# Añadir disco (también funciona en caliente)
-virsh attach-disk prueba4 \
-        /srv/images/vol2.qcow2 vdb \
-        --driver=qemu --type disk \
-        --subdriver qcow2 \
-        --persistent
-
-# Eliminar disco
-virsh detach-disk prueba4 vdb --persistent
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div><code>--persistent</code> guarda el cambio en la configuración XML de la MV para que persista tras reinicios.</div>
-</div>
-
----
-
-## Redimensión de discos
-
-Con la MV **parada**:
-
-```bash
-# Con libvirt
-virsh vol-resize vol2.qcow2 3G --pool vm-images
-
-# Con qemu-img
-sudo qemu-img resize /srv/images/vol2.qcow2 3G
-```
-
-Con la MV **en ejecución** (en caliente):
-
-```bash
-virsh domblklist prueba4
-virsh blockresize prueba4 /srv/images/vol2.qcow2 3G
-```
-
-Dentro de la MV, redimensionar el sistema de ficheros:
-
-```bash
-resize2fs /dev/vdb
-```
-
----
-
-## Redimensión del sistema de ficheros de una imagen
-
-Para redimensionar el SF **sin entrar en la MV** usamos **`virt-resize`**:
-
-```bash
-# 1. Ampliar el fichero de imagen
-qemu-img resize vol1.qcow2 10G
-
-# 2. Copiar la imagen (virt-resize trabaja origen → destino)
-cp vol1.qcow2 newvol1.qcow2
-
-# 3. Expandir la partición dentro de la imagen
-virt-resize --expand /dev/sda1 vol1.qcow2 newvol1.qcow2
-
-# 4. Reemplazar la imagen original
-mv newvol1.qcow2 vol1.qcow2
-```
-
-<div class="alerta alerta-warning" style="margin-top:0.5rem">
-<span>⚠️</span><div><code>virt-resize</code> requiere el paquete <code>libguestfs-tools</code>. Siempre trabaja sobre una copia del fichero original.</div>
-</div>
+## Para profundizar
+
+- **Curso 1**: Introducción a la virtualización con KVM/libvirt usando virt-manager
+  [github.com/josedom24/curso_kvm_ow/curso1](https://github.com/josedom24/curso_kvm_ow/blob/main/curso1)
+- **Curso 2**: Profundización en la virtualización con KVM/libvirt
+  [github.com/josedom24/curso_kvm_ow/curso2](https://github.com/josedom24/curso_kvm_ow/blob/main/curso2)
 
 ---
 
