@@ -152,7 +152,7 @@ Desde 2005, **Intel VT** y **AMD-V** añaden extensiones de virtualización al p
 
 # Tipos de virtualización
 
-## Emulación, hardware, completa, paravirtualización y contenedores
+## Emulación, virtualización completa (tipo 1 y 2) y contenedores
 
 ---
 
@@ -183,33 +183,6 @@ Desde 2005, **Intel VT** y **AMD-V** añaden extensiones de virtualización al p
 
 ---
 
-## Virtualización por hardware
-
-<div class="cols-40-60" style="margin-top:0.8rem">
-
-<div>
-
-![w:100%](img/virt_hw.png)
-
-</div>
-
-<div>
-
-- El hipervisor simula **suficiente hardware** para que un sistema operativo **no adaptado** se ejecute aislado
-- Se usan **hipervisores de tipo 1**, que controlan directamente el hardware físico del host
-- La CPU **debe disponer** de las extensiones de virtualización (Intel VT / AMD-V)
-- Es la opción de **mayor rendimiento** entre las virtualizaciones completas
-
-### Ejemplos
-
-`Xen` · `KVM` · `Microsoft Hyper-V` · `VMware ESXi`
-
-</div>
-
-</div>
-
----
-
 ## Virtualización completa
 
 <div class="cols-40-60" style="margin-top:0.8rem">
@@ -222,14 +195,9 @@ Desde 2005, **Intel VT** y **AMD-V** añaden extensiones de virtualización al p
 
 <div>
 
-- También permite ejecutar **SO no adaptados** en aislamiento
-- Se usan **hipervisores de tipo 2**, instalados sobre el sistema operativo del host
-- **No controlan** directamente el hardware físico
-- Ofrecen **menos rendimiento** que la virtualización por hardware
-
-### Ejemplos
-
-`VirtualBox` · `VMware Workstation` · `VMware Player` · `Parallels Desktop`
+- El hipervisor simula **suficiente hardware** para que un sistema operativo **no adaptado** se ejecute aislado, sin darse cuenta de que está virtualizado
+- La CPU **debe disponer** de las extensiones de virtualización (Intel VT / AMD-V)
+- Se clasifica en **dos tipos**, según dónde se ejecuta el hipervisor
 
 </div>
 
@@ -237,26 +205,33 @@ Desde 2005, **Intel VT** y **AMD-V** añaden extensiones de virtualización al p
 
 ---
 
-## Paravirtualización
+## Tipo 1 (nativo) y Tipo 2 (alojado)
 
-<div class="cols-40-60" style="margin-top:0.8rem">
+<div class="cols-2" style="margin-top:0.8rem">
 
-<div>
+<div class="card card-blue">
 
-![w:100%](img/paravirt_microkernel.png)
+### Tipo 1 — nativo / *bare-metal*
+
+- El hipervisor se ejecuta **directamente sobre el hardware**, sin un SO anfitrión de por medio
+- **Mayor rendimiento**: es la opción habitual para servidores
+
+#### Ejemplos
+
+`KVM` · `Xen` · `VMware ESXi` · `Microsoft Hyper-V`
 
 </div>
 
-<div>
+<div class="card card-green">
 
-- El hipervisor ofrece una **interfaz especial** para acceder a los recursos
-- A veces requiere **modificar el SO** de la máquina virtual
-- Ofrecen el **máximo rendimiento**
-- Pero **no se pueden usar** sistemas operativos sin modificar ni hardware específico
+### Tipo 2 — alojado / *hosted*
 
-### Ejemplos
+- El hipervisor se instala **como una aplicación más** sobre el SO del host
+- **Menor rendimiento**: añade una capa extra entre el hardware y la VM
 
-`Xen` · `Microsoft Hyper-V` · `VMware ESXi`
+#### Ejemplos
+
+`VirtualBox` · `VMware Workstation` · `Parallels Desktop`
 
 </div>
 
@@ -334,9 +309,8 @@ Pensados para el **despliegue** de aplicaciones (especialmente web):
 | Tipo | Hipervisor | SO modificado | Rendimiento | Ejemplos |
 |:--|:--|:--:|:--|:--|
 | **Emulación** | — | No | Muy bajo | QEMU, Wine |
-| **Virtualización HW** | Tipo 1 | No | Alto | KVM, Xen, ESXi |
-| **Virtualización completa** | Tipo 2 | No | Medio | VirtualBox, VMware |
-| **Paravirtualización** | Tipo 1 | Sí | Muy alto | Xen, Hyper-V |
+| **Virtualización completa** | Tipo 1 (nativo) | No | Alto | KVM, Xen, ESXi |
+| **Virtualización completa** | Tipo 2 (alojado) | No | Medio | VirtualBox, VMware |
 | **Contenedores** | — | — | Casi nativo | LXC, Docker |
 
 ---
@@ -498,107 +472,6 @@ Pensados para el **despliegue** de aplicaciones (especialmente web):
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>ℹ️</span><div><code>virsh</code> es la herramienta de referencia para automatizar y administrar libvirt en servidores sin entorno gráfico.</div>
-</div>
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">04</p>
-
-# Introducción a LXC
-
-## Contenedores de sistema en Linux
-
----
-
-## Linux Containers (LXC)
-
-> **LXC** es una tecnología de **virtualización ligera** o por contenedores, mantenida por Canonical.
-
-### Componentes del kernel que la hacen posible
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Grupos de control (*cgroups*)
-
-- En Debian 11 se utiliza **cgroups v2**
-- **Limitan el uso de recursos** (memoria, CPU, I/O, red) de un proceso y sus hijos
-
-</div>
-
-<div class="card card-green">
-
-### Espacios de nombres (*namespaces*)
-
-- Proporcionan una **vista aislada** a un proceso
-- Aíslan: **interfaces de red**, **procesos**, **usuarios**, ficheros…
-
-</div>
-
-</div>
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>LXC pertenece a los <strong>contenedores de sistema</strong>: su gestión y ciclo de vida son similares a los de una máquina virtual tradicional.</div>
-</div>
-
----
-
-## LXD
-
-> **LXD** *(Linux Container Daemon)* es la herramienta de **gestión** de contenedores y máquinas virtuales para Linux, también desarrollada por Canonical.
-
-### Características
-
-- Ofrece una **REST API** que se puede consumir con la línea de comandos o herramientas de terceros
-- Gestiona **instancias**, que pueden ser de dos tipos:
-  - **Contenedores** — usando LXC internamente
-  - **Máquinas virtuales** — usando QEMU internamente
-- Una sola herramienta para administrar **ambos modelos**
-
-<div class="alerta alerta-ok" style="margin-top:0.6rem">
-<span>✅</span><div>LXD unifica la gestión de contenedores de sistema y de máquinas virtuales bajo el <strong>mismo flujo de trabajo</strong>.</div>
-</div>
-
----
-
-## ¿Cuándo elegir cada opción?
-
-<div class="cols-3" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### KVM / libvirt
-
-Cuando se necesita un **sistema operativo completo** y aislado con el **mismo kernel** que en producción.
-
-**Ideal para:** servidores tradicionales, laboratorios.
-
-</div>
-
-<div class="card card-green">
-
-### LXC / LXD
-
-Cuando se busca un **contenedor de sistema** ligero pero con experiencia similar a una VM.
-
-**Ideal para:** múltiples servicios en un host, desarrollo, *self-hosting*.
-
-</div>
-
-<div class="card card-purple">
-
-### Docker / Podman
-
-Cuando se quiere desplegar **una aplicación** empaquetada y portable.
-
-**Ideal para:** microservicios, *cloud-native*, CI/CD.
-
-</div>
-
 </div>
 
 ---
