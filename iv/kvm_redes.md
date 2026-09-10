@@ -196,7 +196,7 @@ También se pueden gestionar desde **`virt-manager`**.
 - Se crea en el **host** y él mismo se conecta a ese bridge
 - Las MV conectadas al bridge obtienen IPs del **mismo rango que el host**
 
-![h:280px](img/red_bridge.drawio.png)
+![h:340px](img/red_bridge.drawio.png)
 
 ---
 
