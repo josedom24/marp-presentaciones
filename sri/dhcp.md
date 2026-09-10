@@ -184,12 +184,12 @@ El cliente puede **renunciar** a la concesión antes de tiempo enviando un **DHC
 
 <div class="card card-green">
 
-### Reinicio del cliente
+### INIT-REBOOT: reinicio del cliente
 
-Al arrancar, el cliente **guarda** su última configuración y pide al servidor seguir usándola:
+Al arrancar, el cliente **recuerda** su última IP y pide confirmarla directamente con un `DHCPREQUEST`, sin repetir todo el proceso DORA:
 
-- Si la concesión sigue vigente → `BOUND`
-- Si ha expirado → `INIT`
+- El servidor responde `DHCPACK` → la concesión sigue siendo válida → `BOUND`
+- El servidor responde `DHCPNACK` (o no hay respuesta y la concesión ya expiró) → `INIT`, y el cliente reinicia el proceso completo desde `DHCPDISCOVER`
 
 </div>
 

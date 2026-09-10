@@ -53,10 +53,14 @@ jobs:
             read -ra FILES <<< "${{ steps.changed-files.outputs.all_changed_files }}"
           fi
 
+          # Guardamos la lista de PDFs generados para poder purgarlos después,
+          # en un paso posterior que corre en un shell distinto.
+          > generated_pdfs.txt
           for file in "${FILES[@]}"; do
             if [ -f "$file" ]; then
               echo "Processing: $file"
               marp "$file" --pdf --allow-local-files -o "${file%.*}.pdf"
+              echo "${file%.*}.pdf" >> generated_pdfs.txt
             fi
           done
 
@@ -74,3 +78,17 @@ jobs:
           else
             echo "No changes to commit"
           fi
+
+      - name: Purge jsDelivr cache for updated PDFs
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          if [ ! -s generated_pdfs.txt ]; then
+            echo "No hay PDFs generados, nada que purgar."
+            exit 0
+          fi
+
+          while IFS= read -r pdf; do
+            url="https://purge.jsdelivr.net/gh/${{ github.repository }}@main/${pdf}"
+            echo "Purgando: $url"
+            curl -s -o /dev/null -w "  -> HTTP %{http_code}\n" "$url"
+          done < generated_pdfs.txt
