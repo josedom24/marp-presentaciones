@@ -255,14 +255,10 @@ La red `default` es de tipo **NAT**. Al crear una MV se conectará a ella por de
 
 ## Almacenamiento disponible por defecto
 
-- Los discos de las MV se guardan por defecto en **ficheros con formato `qcow2`**
-- El directorio de almacenamiento es **`/var/lib/libvirt/images`**
+- Los discos (**volumen**) de las MV se guardan por defecto en **ficheros con formato `qcow2`**
+- El directorio (**pool de almacenamiento**) es **`/var/lib/libvirt/images`**
 
 ![w:900px](img/almacenamiento1.png)
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>La gestión de pools, volúmenes y formatos de disco se ve en detalle más adelante, en la presentación dedicada a almacenamiento.</div>
-</div>
 
 ---
 
@@ -357,13 +353,7 @@ virsh dumpxml <máquina>
 
 ## Modificación de una máquina virtual
 
-Siempre que exista un subcomando específico de `virsh`, es preferible usarlo antes que editar el XML a mano: valida los cambios y reduce el riesgo de dejar la configuración en un estado inconsistente.
-
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div class="card card-green">
-
-### Comandos virsh (recomendado)
+Con `virsh edit <máquina>` se puede editar directamente el XML en `$EDITOR`, pero **solo conviene hacerlo si no existe un subcomando** para el cambio que se necesita: los subcomandos validan lo que se escribe y evitan dejar el XML en un estado inconsistente.
 
 ```bash
 # Renombrar (MV parada)
@@ -374,49 +364,14 @@ virsh setvcpus prueba1 2 --config
 
 # Arranque automático
 virsh autostart prueba1
+
+# Cambiar memoria asignada (MV parada, con --config; en caliente, sin --config)
+virsh setmem prueba1 2G --config
 ```
-
-</div>
-
-<div class="card card-blue">
-
-### Edición XML directa
-
-```bash
-virsh edit prueba1
-```
-
-Abre el XML en `$EDITOR`. Solo para cambios sin subcomando equivalente.
-
-</div>
-
-</div>
 
 <div class="alerta alerta-warning" style="margin-top:0.5rem">
 <span>⚠️</span><div>Algunos cambios requieren la MV <strong>parada</strong>, otros admiten <strong>cambio en caliente</strong> y otros necesitan <strong>reinicio</strong>.</div>
 </div>
-
----
-
-## Modificación de memoria
-
-Con la MV **parada**, editando el XML:
-
-```bash
-virsh edit prueba1
-...
-  <memory unit='KiB'>3145728</memory>
-  <currentMemory unit='KiB'>1048576</currentMemory>
-...
-```
-
-O **en caliente** con la MV arrancada:
-
-```bash
-virsh start prueba1
-
-virsh setmem prueba1 2048M
-```
 
 ---
 
