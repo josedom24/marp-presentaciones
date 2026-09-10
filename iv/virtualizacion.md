@@ -96,7 +96,7 @@ footer: ''
 
 Una **extensión de virtualización** es una ampliación del juego de instrucciones del procesador para ejecutar hipervisores de forma eficiente — es lo que se llama **virtualización asistida por hardware**.
 
-> El **hipervisor** es el software que gestiona las máquinas virtuales y reparte entre ellas los recursos del equipo físico.
+> El **hipervisor** es el software que gestiona las máquinas virtuales, ejecutadas sobre el **anfitrión** (*host*, el equipo físico) como sistemas **invitados** (*guest*).
 
 <div class="cols-2" style="margin-top:0.8rem">
 
@@ -161,7 +161,7 @@ Una **extensión de virtualización** es una ampliación del juego de instruccio
 
 <div>
 
-- El hipervisor simula **suficiente hardware** para que un sistema operativo **no adaptado** —el **invitado** (*guest*)— se ejecute aislado sobre el **anfitrión** (*host*, el equipo físico), sin darse cuenta de que está virtualizado
+- El hipervisor simula **suficiente hardware** para que un invitado **no adaptado** se ejecute aislado sobre el anfitrión, sin darse cuenta de que está virtualizado
 - La CPU **debe disponer** de las extensiones de virtualización (Intel VT / AMD-V)
 - Se clasifica en **dos tipos**, según dónde se ejecuta el hipervisor
 
@@ -179,7 +179,7 @@ Una **extensión de virtualización** es una ampliación del juego de instruccio
 
 ### Tipo 1 — nativo / *bare-metal*
 
-- **Acceso directo al hardware** — no hay un SO de propósito general por debajo (así **KVM convierte Linux en hipervisor**)
+- **Acceso directo al hardware**, sin SO de propósito general por debajo: un **núcleo propio** (ESXi, Hyper-V), o **módulos** que convierten un kernel existente en hipervisor, como hace **KVM** sobre Linux
 - **Mayor rendimiento**: opción habitual en servidores
 
 #### Ejemplos
