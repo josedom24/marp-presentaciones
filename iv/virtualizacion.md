@@ -30,7 +30,7 @@ footer: ''
 
 # Introducción a la virtualización
 
-## Concepto, usos, ventajas y conceptos básicos
+## Concepto, usos, ventajas y desventajas
 
 ---
 
@@ -53,22 +53,17 @@ footer: ''
 
 ## ¿Para qué se utiliza?
 
-- **Servidores**: aislar servicios, migrar en vivo entre hosts, montar clústeres
-- **Desarrollo y formación**: laboratorios de pruebas sin riesgo, entornos aislados y desechables
-- **Aprovechamiento del hardware**: varios sistemas sobre el mismo equipo físico
+- **Servidores**: aislar servicios, migrar en vivo, montar clústeres
+- **Desarrollo y formación**: laboratorios de pruebas sin riesgo
+- **Aprovechamiento del hardware**: varios sistemas en el mismo equipo
 
----
-
-## Ventajas y desventajas
-
-<div class="cols-2" style="margin-top:0.8rem">
+<div class="cols-2" style="margin-top:0.6rem">
 
 <div class="card card-green">
 
 ### Ventajas
 
 - **Ahorro** económico y energético
-- Mejor **aprovechamiento** de recursos
 - **Aislamiento** entre servicios
 
 </div>
@@ -77,23 +72,11 @@ footer: ''
 
 ### Desventajas
 
-- Depende de un **único equipo físico** — requiere alta disponibilidad
+- Depende de un **único equipo físico**
 - Mayor **complejidad** de gestión
 
 </div>
 
-</div>
-
----
-
-## Conceptos básicos
-
-- **Anfitrión** (*host*): controla el hardware real
-- **Invitado** (*guest*): sistema virtualizado que se ejecuta sobre el anfitrión
-- **Hipervisor**: gestiona los invitados y reparte los recursos del host
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Desde 2005, <strong>Intel VT</strong> y <strong>AMD-V</strong> añaden soporte de virtualización al procesador.</div>
 </div>
 
 ---
@@ -111,7 +94,9 @@ footer: ''
 
 ## ¿Por qué hacen falta extensiones de virtualización?
 
-> Una **extensión de virtualización** es una ampliación del juego de instrucciones del procesador, pensada específicamente para ejecutar hipervisores de forma eficiente y segura.
+Una **extensión de virtualización** es una ampliación del juego de instrucciones del procesador para ejecutar hipervisores de forma eficiente — es lo que se llama **virtualización asistida por hardware**.
+
+> El **hipervisor** es el software que gestiona las máquinas virtuales y reparte entre ellas los recursos del equipo físico.
 
 <div class="cols-2" style="margin-top:0.8rem">
 
@@ -119,26 +104,20 @@ footer: ''
 
 ### Sin extensiones
 
-- El procesador solo está pensado para **un sistema operativo al mando**
-- El hipervisor tiene que **vigilar y traducir por software** cada instrucción sensible del invitado antes de dejarla pasar
+- El hipervisor **vigila y traduce por software** cada instrucción sensible del invitado
 - Complejo y con **peor rendimiento**
 
 </div>
 
 <div class="card card-green">
 
-### Con extensiones (Intel VT-x / AMD-V)
+### Con extensiones (VT-x / AMD-V)
 
-- El procesador añade un **modo especial** que distingue entre el hipervisor y las máquinas virtuales
-- El invitado ejecuta la mayoría de sus instrucciones **directamente sobre el hardware real**
-- Solo se avisa al hipervisor cuando de verdad hace falta (p. ej. al acceder a un dispositivo)
-
-</div>
+- El procesador distingue entre **hipervisor** e **invitado**
+- El invitado ejecuta casi todo **directamente sobre el hardware real**
 
 </div>
 
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Es lo que se conoce como <strong>virtualización asistida por hardware</strong> — la base de KVM y del resto de hipervisores de Tipo 1 modernos.</div>
 </div>
 
 ---
@@ -182,7 +161,7 @@ footer: ''
 
 <div>
 
-- El hipervisor simula **suficiente hardware** para que un sistema operativo **no adaptado** se ejecute aislado, sin darse cuenta de que está virtualizado
+- El hipervisor simula **suficiente hardware** para que un sistema operativo **no adaptado** —el **invitado** (*guest*)— se ejecute aislado sobre el **anfitrión** (*host*, el equipo físico), sin darse cuenta de que está virtualizado
 - La CPU **debe disponer** de las extensiones de virtualización (Intel VT / AMD-V)
 - Se clasifica en **dos tipos**, según dónde se ejecuta el hipervisor
 
@@ -200,9 +179,8 @@ footer: ''
 
 ### Tipo 1 — nativo / *bare-metal*
 
-- El hipervisor tiene **acceso directo al hardware**: no hay un sistema operativo de propósito general por debajo controlándolo
-- Puede ser un núcleo propio y especializado (ESXi, Hyper-V), o integrarse en el kernel de un SO existente — así es como **KVM convierte Linux en hipervisor**
-- **Mayor rendimiento**: es la opción habitual para servidores
+- **Acceso directo al hardware** — no hay un SO de propósito general por debajo (así **KVM convierte Linux en hipervisor**)
+- **Mayor rendimiento**: opción habitual en servidores
 
 #### Ejemplos
 
@@ -366,9 +344,9 @@ Pensados para el **despliegue** de aplicaciones (especialmente web):
 
 ## Dispositivos paravirtualizados (`virtIO`)
 
-- En virtualización completa, los dispositivos (discos, red…) están **emulados por software**
-- La VM interactúa con ellos como si fuesen físicos → **poco rendimiento**
-- KVM ofrece una alternativa: los **dispositivos paravirtualizados**, agrupados como **`virtIO`**
+- En virtualización completa, los dispositivos (discos, red…) están **emulados por software**: el invitado cree que habla con hardware real, y cada operación se traduce mediante una capa de emulación
+- Un dispositivo **paravirtualizado** es distinto: el invitado *sabe* que está virtualizado y usa un **driver específico** que habla directamente con el hipervisor mediante una interfaz simple y eficiente, sin fingir ser hardware real
+- KVM agrupa estos dispositivos bajo el estándar **`virtIO`**
 
 <div class="cols-2" style="margin-top:0.8rem">
 
@@ -386,9 +364,9 @@ Pensados para el **despliegue** de aplicaciones (especialmente web):
 
 ### Dispositivos `virtIO`
 
-- Drivers específicos en el invitado
+- **`virtio-net`** — tarjeta de red
+- **`virtio-blk` / `virtio-scsi`** — disco
 - **Rendimiento muy cercano al real**
-- Recomendado para discos y tarjetas de red
 
 </div>
 
