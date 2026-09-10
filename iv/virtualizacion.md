@@ -53,29 +53,9 @@ footer: ''
 
 ## ¿Para qué se utiliza?
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Producción y servicios
-
-- **Aislamiento e independencia** de servicios y contenidos
-- **Migración en vivo** entre servidores
-- Creación de **clústeres** y sistemas distribuidos
-
-</div>
-
-<div class="card card-green">
-
-### Desarrollo y formación
-
-- **Laboratorio de pruebas** sin riesgo
-- Virtualización de **arquitecturas** de las que no se dispone
-- **Herramientas de aprendizaje** y experimentación
-
-</div>
-
-</div>
+- **Servidores**: aislar servicios, migrar en vivo entre hosts, montar clústeres
+- **Desarrollo y formación**: laboratorios de pruebas sin riesgo, entornos aislados y desechables
+- **Aprovechamiento del hardware**: varios sistemas sobre el mismo equipo físico
 
 ---
 
@@ -87,11 +67,9 @@ footer: ''
 
 ### Ventajas
 
-- Importante **ahorro económico**
-- Mayor **seguridad** y aislamiento
+- **Ahorro** económico y energético
 - Mejor **aprovechamiento** de recursos
-- **Migración en vivo** entre hosts
-- Notable **ahorro energético**
+- **Aislamiento** entre servicios
 
 </div>
 
@@ -99,48 +77,23 @@ footer: ''
 
 ### Desventajas
 
-- Muchos sistemas dependen de un **único equipo físico**
-- Ligera **penalización** en rendimiento
+- Depende de un **único equipo físico** — requiere alta disponibilidad
 - Mayor **complejidad** de gestión
 
 </div>
 
 </div>
 
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>La <strong>alta disponibilidad</strong> es imprescindible cuando concentramos varios servicios virtualizados en un mismo host.</div>
-</div>
-
 ---
 
 ## Conceptos básicos
 
-<div class="cols-2" style="margin-top:0.8rem">
+- **Anfitrión** (*host*): controla el hardware real
+- **Invitado** (*guest*): sistema virtualizado que se ejecuta sobre el anfitrión
+- **Hipervisor**: gestiona los invitados y reparte los recursos del host
 
-<div class="card card-blue">
-
-### Anfitrión (*host*)
-
-Sistema operativo que ejecuta el software de virtualización. **Controla el hardware real**.
-
-### Invitado / huésped (*guest*)
-
-Sistema operativo **virtualizado** que se ejecuta sobre el anfitrión.
-
-</div>
-
-<div class="card card-green">
-
-### Hipervisor
-
-Software de virtualización que **gestiona los invitados** y reparte los recursos del host.
-
-### Soporte hardware
-
-Desde 2005, **Intel VT** y **AMD-V** añaden extensiones de virtualización al procesador para mejorar el rendimiento.
-
-</div>
-
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Desde 2005, <strong>Intel VT</strong> y <strong>AMD-V</strong> añaden soporte de virtualización al procesador.</div>
 </div>
 
 ---
@@ -153,6 +106,40 @@ Desde 2005, **Intel VT** y **AMD-V** añaden extensiones de virtualización al p
 # Tipos de virtualización
 
 ## Emulación, virtualización completa (tipo 1 y 2) y contenedores
+
+---
+
+## ¿Por qué hacen falta extensiones de virtualización?
+
+> Una **extensión de virtualización** es una ampliación del juego de instrucciones del procesador, pensada específicamente para ejecutar hipervisores de forma eficiente y segura.
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-red">
+
+### Sin extensiones
+
+- El procesador solo está pensado para **un sistema operativo al mando**
+- El hipervisor tiene que **vigilar y traducir por software** cada instrucción sensible del invitado antes de dejarla pasar
+- Complejo y con **peor rendimiento**
+
+</div>
+
+<div class="card card-green">
+
+### Con extensiones (Intel VT-x / AMD-V)
+
+- El procesador añade un **modo especial** que distingue entre el hipervisor y las máquinas virtuales
+- El invitado ejecuta la mayoría de sus instrucciones **directamente sobre el hardware real**
+- Solo se avisa al hipervisor cuando de verdad hace falta (p. ej. al acceder a un dispositivo)
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Es lo que se conoce como <strong>virtualización asistida por hardware</strong> — la base de KVM y del resto de hipervisores de Tipo 1 modernos.</div>
+</div>
 
 ---
 
@@ -213,7 +200,8 @@ Desde 2005, **Intel VT** y **AMD-V** añaden extensiones de virtualización al p
 
 ### Tipo 1 — nativo / *bare-metal*
 
-- El hipervisor se ejecuta **directamente sobre el hardware**, sin un SO anfitrión de por medio
+- El hipervisor tiene **acceso directo al hardware**: no hay un sistema operativo de propósito general por debajo controlándolo
+- Puede ser un núcleo propio y especializado (ESXi, Hyper-V), o integrarse en el kernel de un SO existente — así es como **KVM convierte Linux en hipervisor**
 - **Mayor rendimiento**: es la opción habitual para servidores
 
 #### Ejemplos
