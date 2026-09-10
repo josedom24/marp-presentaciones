@@ -81,7 +81,35 @@ Según el tipo de pool puede ser:
 | vdi, vmdk | Formatos de otros sistemas de virtualización (VirtualBox, VMware) |
 
 <div class="alerta alerta-warning" style="margin-top:0.5rem">
-<span>⚠️</span><div>El tipo <code>dir</code> <strong>no ofrece almacenamiento compartido</strong> entre hosts.</div>
+<span>⚠️</span><div>El tipo <code>dir</code> <strong>no ofrece almacenamiento compartido</strong> entre hosts. En este curso trabajaremos principalmente con pools <code>dir</code>.</div>
+</div>
+
+---
+
+## Almacenamiento en red: NAS y SAN
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### NAS (*Network Attached Storage*)
+
+- Almacenamiento en red a nivel de **archivo**
+- Se accede mediante protocolos como **NFS** o SMB
+- El pool `netfs` de libvirt monta un recurso NAS
+
+</div>
+
+<div class="card card-green">
+
+### SAN (*Storage Area Network*)
+
+- Almacenamiento en red a nivel de **bloque**
+- El host ve el recurso remoto como si fuera un **disco local** (p.ej. vía **iSCSI**)
+- El pool `iSCSI` de libvirt se conecta a un disco SAN
+
+</div>
+
 </div>
 
 ---
@@ -123,6 +151,10 @@ Según el tipo de pool puede ser:
 
 </div>
 
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>La práctica con pools <code>logical</code>, <code>netfs</code> e <code>iSCSI</code> se plantea como una tarea optativa.</div>
+</div>
+
 ---
 
 <!-- _class: capitulo -->
@@ -138,14 +170,15 @@ Según el tipo de pool puede ser:
 
 ## Dos enfoques para gestionar volúmenes
 
+Trabajamos sobre un pool de tipo **`dir`**:
+
 <div class="cols-2" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
 ### Con libvirt (`virsh` / `virt-manager`)
 
-- Pool `dir` → crea una **imagen de disco** (qcow2, raw…)
-- Pool `logical` → crea un **volumen lógico LVM**
+Crea la **imagen de disco** (qcow2, raw…) directamente.
 
 Toda la gestión queda registrada en libvirt.
 
@@ -155,10 +188,7 @@ Toda la gestión queda registrada en libvirt.
 
 ### Con herramientas específicas
 
-- Pool `dir` → `qemu-img create …`  
-  → después `pool-refresh`
-- Pool `logical` → `lvcreate …`  
-  → después `pool-refresh`
+`qemu-img create …` y después `pool-refresh`.
 
 </div>
 
@@ -292,41 +322,23 @@ virsh vol-resize vol2.qcow2 3G --pool vm-images
 sudo qemu-img resize /srv/images/vol2.qcow2 3G
 ```
 
-Con la MV **en ejecución** (en caliente):
+Con la MV **en caliente**, y redimensionando después el SF dentro de la MV:
 
 ```bash
-virsh domblklist prueba4
 virsh blockresize prueba4 /srv/images/vol2.qcow2 3G
-```
-
-Después, dentro de la MV, redimensionar el sistema de ficheros:
-
-```bash
-resize2fs /dev/vdb
+resize2fs /dev/vdb    # dentro de la MV
 ```
 
 ---
 
 ## Redimensión del SF sin entrar en la MV
 
-Usamos **`virt-resize`** para expandir el sistema de ficheros desde el host:
+- **`virt-resize`** (paquete `libguestfs-tools`) expande el sistema de ficheros de una imagen **sin arrancar la MV**
+- Es la alternativa cuando no se puede, o no interesa, entrar en la MV para ejecutar `resize2fs`
+- Siempre trabaja sobre una **copia** de la imagen: nunca modifica directamente el fichero original
 
-```bash
-# 1. Ampliar el fichero de imagen
-qemu-img resize vol1.qcow2 10G
-
-# 2. Copiar la imagen (virt-resize trabaja origen → destino)
-cp vol1.qcow2 newvol1.qcow2
-
-# 3. Expandir la partición dentro de la imagen
-virt-resize --expand /dev/sda1 vol1.qcow2 newvol1.qcow2
-
-# 4. Reemplazar la imagen original
-mv newvol1.qcow2 vol1.qcow2
-```
-
-<div class="alerta alerta-warning" style="margin-top:0.5rem">
-<span>⚠️</span><div><code>virt-resize</code> requiere el paquete <code>libguestfs-tools</code> y <strong>siempre trabaja sobre una copia</strong> del fichero original.</div>
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Requiere el paquete <code>libguestfs-tools</code> y trabaja siempre sobre una copia del fichero original.</div>
 </div>
 
 ---
@@ -426,11 +438,7 @@ Herramienta que **personaliza la MV en su primer arranque**: hostname, usuarios,
 
 ## Imágenes cloud: plantillas listas para usar
 
-Las imágenes cloud son discos base preconfigurados y optimizados para entornos virtualizados:
-
-- **Generalizadas**: sin hostname, sin usuarios locales fijos, sin claves SSH
-- **Aprovisionamiento ligero**: arranque rápido, tamaño mínimo
-- **Personalizables** en el primer arranque mediante `cloud-init`
+Discos base preconfigurados y optimizados para virtualización: **generalizados** (sin hostname ni usuarios fijos), con **aprovisionamiento ligero**, y **personalizables** en el primer arranque mediante `cloud-init`.
 
 Distribuciones que ofrecen imágenes cloud:
 
@@ -475,6 +483,10 @@ Lee una **configuración en formato YAML** (`cloud-config`) y la aplica en el pr
 
 </div>
 
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Documentación oficial: <code>https://cloudinit.readthedocs.io/</code></div>
+</div>
+
 ---
 
 ## Configuración: fichero cloud-config
@@ -504,14 +516,18 @@ Con este fichero se cambia el nombre de la MV, se actualizan los paquetes y se e
 
 ---
 
-## Preparar la imagen: descarga y clonación enlazada
+## Descargar la imagen cloud
 
-Descargamos la imagen cloud y la guardamos en el pool:
+Descargamos la imagen cloud y la guardamos en el pool de libvirt:
 
 ```bash
 wget https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
 sudo mv noble-server-cloudimg-amd64.img /var/lib/libvirt/images
 ```
+
+---
+
+## Clonación enlazada de la imagen cloud
 
 Creamos una **clonación enlazada** usando la imagen cloud como *backing store*:
 
@@ -545,39 +561,39 @@ virt-install --connect qemu:///system \
              --noautoconsole
 ```
 
-El parámetro `--import` indica que el disco ya tiene SO instalado. El parámetro `--cloud-init` pasa el fichero de configuración a la MV para que `cloud-init` lo aplique en el primer arranque.
+El parámetro `--import` indica que el disco ya tiene SO instalado; `--cloud-init` pasa el fichero de configuración a la MV para que se aplique en el primer arranque.
 
-Una vez arrancada, accedemos por consola serie:
+---
+
+## Acceso tras el primer arranque
+
+Con `--noautoconsole` la MV se crea sin abrir consola gráfica. Una vez arrancada, accedemos por consola serie:
 
 ```bash
 virsh console ubuntu-vm
 ```
 
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>La primera vez que arranca, <code>cloud-init</code> aplica la configuración de <code>cloud.yaml</code> antes de que puedas iniciar sesión.</div>
+</div>
+
 ---
 
 ## Instantáneas de MV (*snapshots*)
 
-- Guardan el **estado del disco y de la memoria** en un momento dado
-- Permiten **volver a un estado anterior**
-- Requieren imagen de disco en formato **`qcow2`**
-- Se pueden hacer con la MV **apagada o encendida**
+- Guardan el estado de disco y memoria en un momento dado, para poder **volver atrás** si algo falla
+- Requieren imagen en formato **`qcow2`**; se pueden crear con la MV apagada o encendida
 
 ```bash
-# Crear instantánea
-virsh snapshot-create-as prueba2 \
-      --name "instantánea1" \
-      --description "Creada carpeta importante" \
-      --atomic
+# Crear
+virsh snapshot-create-as prueba2 --name "instantánea1" --atomic
 
-# Listar y obtener info
+# Listar y restaurar
 virsh snapshot-list prueba2
-sudo qemu-img info /var/lib/libvirt/images/prueba2.qcow2
-
-# Restaurar
 virsh snapshot-revert prueba2 instantánea1
 ```
 
-Otros subcomandos: `snapshot-dumpxml`, `snapshot-info`, `snapshot-delete`.
+Otros subcomandos: `snapshot-info`, `snapshot-dumpxml`, `snapshot-delete`.
 
 ---
 
