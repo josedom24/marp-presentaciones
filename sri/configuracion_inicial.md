@@ -63,6 +63,46 @@ La autenticación por contraseña es vulnerable a **ataques de fuerza bruta** y 
 
 ---
 
+## Cifrado simétrico vs. asimétrico
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Simétrico
+
+- Una **única clave** cifra y descifra
+- Rápido: se usa para cifrar grandes volúmenes de datos
+- Es lo que usa el propio **canal SSH** para cifrar el tráfico, una vez establecida la conexión
+
+</div>
+
+<div class="card card-green">
+
+### Asimétrico
+
+- Un **par de claves** matemáticamente vinculado
+- Lo que cifra una clave, solo lo descifra la otra
+- Más lento: se reserva para la fase de **autenticación de identidad**
+
+</div>
+
+</div>
+
+---
+
+## Firma digital y reto criptográfico
+
+- Cifrar con la clave **pública** de alguien: solo esa persona puede descifrarlo, con su clave **privada**. Sirve para que solo el destinatario pueda leer el mensaje.
+- Cifrar con mi propia clave **privada**: a esto se le llama **firmar**. Cualquiera puede descifrarlo con mi clave **pública** — eso es **verificar la firma**. Como solo yo he podido cifrarlo con mi privada, demuestra que el mensaje es mío.
+- El **reto criptográfico**: un dato que el servidor envía para que el cliente lo firme (lo cifre con su clave privada) en el momento. El servidor lo verifica descifrándolo con la clave pública del cliente.
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>Así se demuestra que el cliente posee la clave privada, <strong>sin que esta viaje nunca por la red</strong>.</div>
+</div>
+
+---
+
 ## Criptografía asimétrica: la idea fundamental
 
 > Un par de claves matemáticamente vinculadas: lo cifrado con una sólo puede verificarse con la otra.
