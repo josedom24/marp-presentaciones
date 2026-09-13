@@ -369,7 +369,7 @@ Para entender cómo un LLM llega de tu pregunta a la respuesta, vamos a seguirla
 
 ## Paso 2 — Cada token se convierte en números
 
-**Embedding**: cada token se transforma en un vector de números que captura su significado — el modelo no procesa palabras, solo números.
+**Embedding**: cada token se transforma en un vector de números, de modo que tokens en contextos relacionados quedan próximos en ese espacio numérico — el modelo no procesa palabras, solo números.
 
 ```
 "capital"  →  [0.31, -0.55, 0.12, ..., 0.44]   (cientos de números)
@@ -419,12 +419,14 @@ Todo este proceso —tokenizar, convertir en embeddings, procesar con atención,
 
 ## ¿Recuerda la IA entre sesiones?
 
-En una misma conversación, cada mensaje que escribes hace que se reenvíe **toda la conversación completa** como contexto — no es que el modelo recuerde, es que ese texto sigue estando físicamente ahí.
+Cuando hablas de "lo que sabe" una IA, en realidad hay **tres cosas distintas** en juego:
 
-Al cerrar la conversación, ese contexto se pierde. Como la inferencia no modifica los pesos del modelo, **por defecto no hay memoria entre sesiones**: la próxima vez empieza completamente en blanco.
+- **Contexto** — lo que le has escrito en esta conversación. Se pierde al cerrarla
+- **Memoria de la aplicación** — notas que la app (ChatGPT, Claude Code...) guarda sobre ti aparte, y te **reinyecta como contexto** al empezar una sesión nueva
+- **Conocimiento del modelo** — lo que aprendió durante el entrenamiento. Fijo: no cambia por hablar con él
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>💡</span><div>¿Cómo "recuerdan" entonces herramientas como ChatGPT o Claude Code? Guardan tus notas o preferencias en un fichero aparte y, al empezar una sesión nueva, se las <strong>reinyectan como contexto</strong> antes de que escribas nada. No es memoria del modelo: es una chuleta que alguien le vuelve a leer.</div>
+<span>💡</span><div>Que una IA "recuerde" algo no significa que ese conocimiento esté dentro de sus <strong>parámetros</strong> — casi siempre es una de las dos primeras cosas, no la tercera.</div>
 </div>
 
 ---
@@ -444,6 +446,20 @@ Por tres cosas que ya hemos visto, trabajando juntas:
 
 <div class="alerta alerta-ok" style="margin-top:0.6rem">
 <span>✅</span><div>No es que el modelo "corrija" el texto por dentro: tokens parecidos + embeddings parecidos + atención al contexto completo hacen que la falta de ortografía apenas mueva la aguja.</div>
+</div>
+
+---
+
+## ¿Por qué parece que habla cualquier idioma?
+
+Por el mismo mecanismo, aplicado a idiomas en vez de a erratas:
+
+- Se entrena con texto de internet en **decenas de idiomas a la vez** — sin ningún "módulo" especial por idioma: el mismo Transformer, los mismos pesos, procesan cualquier lengua igual
+- Los **embeddings acaban compartidos**: "perro" (español) y "dog" (inglés) aparecen en contextos parecidísimos (mascotas, veterinario, pasear...) y acaban con vectores cercanos, aunque nadie le haya dicho que son la misma palabra
+- Responder en francés no es un proceso distinto: sigue siendo predecir el token más probable, solo que condicionado a que el contexto pide francés
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>No todos los idiomas van igual de bien: los que tienen poco texto en internet están mucho peor representados, y el modelo alucina más en ellos — es el mismo <strong>sesgo</strong> de los datos de entrenamiento que ya vimos.</div>
 </div>
 
 ---
@@ -591,6 +607,22 @@ Ni siquiera el número de parámetros es público: a diferencia de un modelo abi
 
 <div class="alerta alerta-info" style="margin-top:0.5rem">
 <span>ℹ️</span><div>El número en el nombre de un modelo (<code>llama3.2:3b</code>, <code>qwen3:30b</code>) son sus <strong>parámetros en miles de millones</strong> (<em>billion</em>): más B, más capacidad — pero también más memoria (RAM/VRAM) y GPU necesarias para ejecutarlo en local.</div>
+</div>
+
+---
+
+## Formas de usar una IA "no local"
+
+| Modalidad | Cómo funciona | Para quién |
+|:--|:--|:--|
+| **Gratis** | Con límites de uso: menos mensajes, modelo más básico | Probar, uso ocasional |
+| **Suscripción** (Pro/Plus) | Cuota mensual fija, menos límites, mejores modelos | Uso personal habitual |
+| **API** | Pagas por token consumido, sin interfaz — solo código | Integrarla en tus propias apps |
+| **Equipos/Empresa** | Como la suscripción, con gestión centralizada y más garantías de privacidad | Organizaciones |
+| **Vía proveedor cloud** (Azure, AWS, GCP) | El mismo modelo, contratado dentro de la nube que ya usa la empresa | Empresas ya montadas en esa nube |
+
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>☁️</span><div>La última opción es la más cercana a vuestro perfil: así es como una empresa que ya trabaja en AWS o Azure mete IA en su infraestructura sin salir de ese ecosistema — misma facturación, mismos controles.</div>
 </div>
 
 ---
