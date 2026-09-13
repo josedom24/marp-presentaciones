@@ -417,6 +417,19 @@ Todo este proceso —tokenizar, convertir en embeddings, procesar con atención,
 
 ---
 
+## Modelos de razonamiento: pensar antes de responder
+
+Lo que hemos visto —predecir la siguiente palabra sin pausa— es cómo funcionan la mayoría de LLM. Pero los modelos más recientes (OpenAI o1/o3, DeepSeek R1, Claude con *"thinking"*) añaden un paso más:
+
+- Antes de dar la respuesta final, generan una **cadena de razonamiento** interna — una especie de borrador donde "piensan en voz alta" el problema paso a paso
+- Ese razonamiento consume **más tiempo y más cómputo**, pero mejora mucho el resultado en tareas lógicas, matemáticas o de código
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>🧠</span><div>Sigue siendo predicción de tokens — no hay magia nueva — pero dedicar "tiempo de pensar" antes de contestar es la mejora más importante de los últimos dos años.</div>
+</div>
+
+---
+
 ## ¿Recuerda la IA entre sesiones?
 
 Cuando hablas de "lo que sabe" una IA, en realidad hay **tres cosas distintas** en juego:
@@ -427,6 +440,10 @@ Cuando hablas de "lo que sabe" una IA, en realidad hay **tres cosas distintas** 
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>💡</span><div>Que una IA "recuerde" algo no significa que ese conocimiento esté dentro de sus <strong>parámetros</strong> — casi siempre es una de las dos primeras cosas, no la tercera.</div>
+</div>
+
+<div class="alerta alerta-warning" style="margin-top:0.5rem">
+<span>🐦</span><div>Por eso casi nadie deja que un modelo "aprenda solo" en producción: Tay, el chatbot de Microsoft de 2016, aprendía en tiempo real de Twitter y hubo que apagarlo en 24 horas tras ser manipulado.</div>
 </div>
 
 ---
@@ -542,7 +559,7 @@ Son como "manuales" que el agente consulta cuando la tarea lo requiere.
 </div>
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Es lo que hace que un agente pase de "saber hablar" a <strong>saber hacer</strong>: buscar en internet, ejecutar un script, consultar una base de datos.</div>
+<span>ℹ️</span><div>Es lo que hace que un agente pase de "saber hablar" a <strong>saber hacer</strong>: buscar en internet, ejecutar un script, consultar una base de datos. <strong>MCP</strong> (<em>Model Context Protocol</em>, impulsado por Anthropic) es el estándar que se está imponiendo para conectar agentes con herramientas e IDEs de forma unificada.</div>
 </div>
 
 ---
@@ -555,6 +572,20 @@ Un agente que usa herramientas (buscar en la web, leer un fichero, consultar un 
 
 <div class="alerta alerta-warning" style="margin-top:0.6rem">
 <span>⚠️</span><div>Un agente no debería tratar automáticamente <strong>todo</strong> el texto que recupera como una orden de confianza — solo lo que le has pedido tú. Es un problema de seguridad real, no una curiosidad teórica.</div>
+</div>
+
+---
+
+## Mínimo privilegio: dar acceso a un agente sin riesgo
+
+Si un agente puede ejecutar comandos, aplica las mismas reglas de siempre en sysadmin:
+
+- **Nunca** como `root`, y nunca con credenciales de producción a mano
+- **Sandboxing**: ejecútalo en un contenedor Docker desechable o una máquina de pruebas, no en el sistema real
+- Dale acceso **solo** a lo que necesita para la tarea concreta — ni una carpeta más
+
+<div class="alerta alerta-danger" style="margin-top:0.6rem">
+<span>🛑</span><div>Un agente no distingue un comando seguro de uno destructivo si la instrucción le llega por un cauce no confiable (prompt injection). El aislamiento es lo que limita el daño cuando falla.</div>
 </div>
 
 ---
@@ -599,7 +630,7 @@ Es el patrón **dominante hoy** en entornos profesionales.
 
 ### Abiertos
 
-Llama, Mistral, DeepSeek, Qwen, Gemma — con distintos grados de apertura (pesos, datos, licencia). Se descargan y ejecutan en **infraestructura propia** — la frontera interesante para un sysadmin.
+Llama, Mistral, DeepSeek, Qwen, Gemma — no todas con la misma licencia: Mistral/Qwen son *Apache 2.0*/*MIT* (libres); Llama tiene restricciones de uso comercial. Se descargan y ejecutan en **infraestructura propia**.
 
 **Ollama** es la herramienta para esto: como `docker pull` + `docker run`, pero con modelos. `ollama pull llama3.2` y ya lo tienes corriendo en tu propio servidor.
 
@@ -722,7 +753,7 @@ No hay un "coste fijo" por consulta: depende del modelo, el hardware y la refrig
 - **Reglamento Europeo de IA**, conocido como **AI Act** (*Artificial Intelligence Act*) — aprobado en 2024, aplicación escalonada hasta 2027. Clasifica los sistemas por **nivel de riesgo**: inaceptable, alto, de transparencia y mínimo. Los sistemas de IA en selección de personal o evaluación educativa se consideran de **alto riesgo**
 - **RGPD** (Reglamento General de Protección de Datos) — cualquier sistema de IA que trate datos personales sigue plenamente sujeto a él
 - **LOPDGDD** (Ley Orgánica de Protección de Datos Personales y Garantía de los Derechos Digitales) — en España, el consentimiento propio para tus datos (también por una IA) solo es válido a partir de los **14 años**; por debajo, hace falta el de la familia. Es solo una de las bases legales posibles, no un salvoconducto
-- **Propiedad intelectual** — zona gris en formación: ¿se puede entrenar con contenido protegido?, ¿quién es autor de lo generado? Hay litigios en curso
+- **Propiedad intelectual** — zona gris en formación: ¿se puede entrenar con contenido protegido?, ¿quién es autor de lo generado? Hay litigios en curso. Además, código generado por IA puede arrastrar fragmentos con licencia *copyleft* (GPL) sin que te des cuenta — revísalo antes de meterlo en software propietario
 
 ---
 
@@ -859,6 +890,7 @@ Ahora sí ejecutas, pero de forma **progresiva** y en un entorno de pruebas. No 
 
 - Cambios pequeños, comprobando el resultado tras cada uno
 - Con un **plan de rollback**: cómo deshacer el cambio si algo sale mal
+- Pide a la IA **tests automáticos** (PyTest, Jest, un script de comprobación) que verifiquen objetivamente que el resultado funciona
 
 Si algo falla, **el error es el material de aprendizaje**, y la IA se convierte en herramienta de diagnóstico:
 
