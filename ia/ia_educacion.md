@@ -1,6 +1,6 @@
 ---
 marp: true
-title: IA y educación — Qué debe saber un alumno de ASIR de IA
+title: IA y educación — Qué debe saber un alumno sobre IA
 theme: profesional
 paginate: true
 header: 'IA y educación'
@@ -13,12 +13,11 @@ footer: ''
 
 # **IA y educación**
 
-## Qué debe saber un alumno de ASIR de IA
+## Qué debe saber un alumno sobre IA
 
 <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.5rem; justify-content:center; font-size:0.85rem; color:white">
   <span>📧 José Domingo Muñoz</span>
   <span>🏫 IES Gonzalo Nazareno · Dos Hermanas</span>
-  <span>📚 Formación Profesional · ASIR</span>
 </div>
 
 ---
@@ -146,9 +145,9 @@ Lo llamamos "inteligencia" porque el resultado se parece al de una persona intel
 
 ### IA simbólica (años 50–80)
 
-Codifica el conocimiento como **reglas explícitas**: *"si el paciente tiene fiebre y dolor de garganta, sospechar amigdalitis"*.
+Codifica el conocimiento como **reglas explícitas** (*"si tiene fiebre y dolor de garganta, sospechar amigdalitis"*): los **sistemas expertos**. Funcionan en dominios cerrados, pero no escalan ante la incertidumbre.
 
-Son los **sistemas expertos**. Funcionan bien en dominios cerrados (el motor de reglas de un firewall), pero no escalan ante la incertidumbre.
+*Ej.: **Akinator**, que adivina un personaje recalculando probabilidades sobre una base de datos — sin ninguna red neuronal.*
 
 </div>
 
@@ -162,6 +161,10 @@ Es donde está hoy **prácticamente toda la IA** que usamos: el **machine learni
 
 </div>
 
+</div>
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>👉</span><div>A partir de aquí, todo lo que veremos — machine learning, redes neuronales, LLM, ChatGPT, Claude — es <strong>IA conexionista</strong>: el paradigma que domina la IA actual.</div>
 </div>
 
 ---
@@ -256,11 +259,11 @@ Para entrenar hacen falta dos cosas: **muchos ejemplos de entrada** y, para cada
 1. Le mostramos un ejemplo: la imagen de un "8" escrito a mano
 2. Con los pesos aún sin ajustar, la red hace una predicción — al principio, casi al azar (quizás dice "3")
 3. Comparamos su predicción con la respuesta correcta ("8") y calculamos cuánto ha fallado: el **error**
-4. Ajustamos ligeramente los pesos, en la dirección que habría reducido ese error
-5. Repetimos con **millones de ejemplos**, una y otra vez, hasta que el error es muy pequeño
+4. Un **algoritmo** (no una persona) ajusta ligeramente cada peso, calculando matemáticamente en qué dirección habría reducido ese error
+5. Se repite con **millones de ejemplos**, una y otra vez, hasta que el error es muy pequeño
 
 <div class="alerta alerta-ok" style="margin-top:0.5rem">
-<span>🎯</span><div>Es como encestar con los ojos vendados: cada intento, alguien te dice si te has quedado corto o largo; ajustas un poco la puntería y repites cientos de veces hasta acertar casi siempre. La red hace lo mismo con sus pesos, millones de veces.</div>
+<span>🎯</span><div>Es como encestar con los ojos vendados, pero quien corrige la puntería no eres tú: es un algoritmo automático (<em>descenso de gradiente</em>) que recalcula, cada intento, cómo mover cada peso. Nadie ajusta a mano miles de millones de números.</div>
 </div>
 
 ---
@@ -274,6 +277,21 @@ Es como llamamos a una red neuronal cuando tiene **muchas capas** ("profundo" = 
 
 <div class="alerta alerta-info" style="margin-top:0.5rem">
 <span>ℹ️</span><div>El salto en eficacia se explica por tres factores que coincidieron hacia 2010: muchísimos datos (internet), potencia de cálculo barata (<strong>GPU</strong>, <em>Graphics Processing Unit</em>, el chip gráfico usado normalmente en videojuegos) y mejores algoritmos.</div>
+</div>
+
+---
+
+## ¿Por qué hacen falta tantas capas? El ejemplo de un chatbot
+
+```
+texto → [capa: caracteres] → [capa: palabras y gramática] → [capa: significado] → [capa: intención] → respuesta
+```
+
+- Una sola capa solo puede hacer una transformación simple: no puede "saltar" directamente de las letras al significado
+- Cada capa construye sobre la abstracción de la anterior — igual que para reconocer un dígito hacían falta capas de bordes → formas → partes
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>💬</span><div>Ejemplo: en <em>"El banco estaba cerrado"</em>, una sola capa que mire palabra por palabra no sabe si es una entidad financiera o el asiento de un parque. Hacen falta capas que integren todo el contexto de la frase para desambiguarlo — por eso los LLM apilan tantas: <strong>Llama 3.1 405B tiene 126 capas</strong> (GPT-3, de 2020, tenía 96).</div>
 </div>
 
 ---
@@ -333,43 +351,99 @@ Aceptan o generan varios tipos de contenido a la vez: le subes una foto y la exp
 
 ---
 
-## Conceptos clave de los LLM (I)
+## Sigamos un ejemplo: "¿Cuál es la capital de Francia?"
 
-**Token** — el modelo no procesa letras ni palabras enteras, sino "trozos" llamados tokens (≈ media palabra en español). Importa porque las APIs cobran por tokens, no por palabras.
+Para entender cómo un LLM llega de tu pregunta a la respuesta, vamos a seguirla paso a paso — cada concepto aparece justo en el momento en que entra en juego.
+
+**Paso 1 — Tokenización**: el modelo no procesa letras ni palabras enteras, sino "trozos" llamados **tokens** (≈ media palabra en español):
 
 ```
-"ordenador"  →  1 token
-"ordenador"  →  "orden" + "ador"  (2 tokens, según el modelo)
+"¿Cuál es la capital de Francia?"  →  ["¿Cuál", " es", " la", " capital", " de", " Francia", "?"]
 ```
 
-**Embedding** — forma de convertir un texto en un vector de números que captura su **significado**. Es como un mapa: palabras con significado parecido quedan cerca en ese "mapa" numérico.
-
-<div class="alerta alerta-info" style="margin-top:0.4rem">
-<span>ℹ️</span><div>"perro" y "gato" tienen embeddings parecidos; "perro" y "termodinámica" no. Es la base de <strong>RAG</strong>, que veremos más adelante.</div>
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>ℹ️</span><div>Importa porque las APIs cobran por tokens, no por palabras: "ordenador" puede ser 1 token, o partirse en "orden" + "ador", según el modelo.</div>
 </div>
 
 ---
 
-## Conceptos clave de los LLM (II)
+## Paso 2 — Cada token se convierte en números
 
-**Transformer** — arquitectura de red neuronal que hizo posible el salto cualitativo (*"Attention is all you need"*, Google, 2017). Su idea clave es la **atención**: le permite, al generar cada palabra, "fijarse" más en las partes del texto previo que son relevantes en ese momento — igual que tú, al traducir una frase larga, prestas más atención a ciertas palabras clave.
+**Embedding**: cada token se transforma en un vector de números que captura su significado — el modelo no procesa palabras, solo números.
 
-**Ventana de contexto** — cantidad máxima de texto (en tokens) que el modelo puede "tener en mente" a la vez. Si se supera, empieza a "olvidar" lo más antiguo.
+```
+"capital"  →  [0.31, -0.55, 0.12, ..., 0.44]   (cientos de números)
+```
 
-**Parámetros** — los pesos ajustados en el entrenamiento. Cifras como "Llama 70B" = 70 mil millones de parámetros.
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>ℹ️</span><div>Esos números se ajustaron durante el entrenamiento para que sean parecidos cuando el concepto también lo es: "perro" y "gato" acaban con embeddings cercanos; "termodinámica" queda lejos.</div>
+</div>
 
 ---
 
-## Entrenamiento frente a inferencia
+## Paso 3 — El Transformer procesa toda la frase a la vez
+
+El **Transformer** (la arquitectura de red neuronal detrás de los LLM actuales) recibe estos embeddings. Su pieza clave es la **atención**: no analiza palabra por palabra en orden, sino que examina toda la frase de golpe para entender el contexto — así resuelve ambigüedades como "el banco" (¿financiero o del parque?) que vimos antes.
+
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>ℹ️</span><div>Con la pregunta completa a la vista, el Transformer ya puede calcular qué palabra es más probable para empezar la respuesta.</div>
+</div>
+
+---
+
+## Paso 4 — Predecir y repetir (generación "autoregresiva")
+
+El modelo elige la palabra más probable, la añade a la frase, y **repite el proceso completo** mirando otra vez todo el texto (incluido lo que él mismo acaba de escribir):
+
+```
+"La"  →  "capital"  →  "de"  →  "Francia"  →  "es"  →  "París"  →  "."
+```
+
+<div class="alerta alerta-warning" style="margin-top:0.5rem">
+<span>⚠️</span><div>Por eso a veces un chatbot empieza una respuesta y luego "se contradice": decide palabra a palabra, no piensa la frase completa de antemano. Y por eso existe la <strong>ventana de contexto</strong>: el límite de cuánto texto puede tener "en mente" a la vez — si se supera, empieza a "olvidar" lo más antiguo.</div>
+</div>
+
+---
+
+## Resultado: "La capital de Francia es París."
+
+Todo este proceso —tokenizar, convertir en embeddings, procesar con atención, predecir palabra a palabra— lo ejecutan los **parámetros** del modelo: los pesos ajustados durante el entrenamiento. Cifras como "Llama 70B" = 70 mil millones de parámetros; **GPT-3** (2020) tenía **175.000 millones**.
 
 | | Entrenamiento | Inferencia |
 |:--|:--|:--|
-| Qué es | Ajustar los parámetros a partir de enormes corpus de texto | Usar el modelo ya entrenado para responder |
+| Qué es | Ajustar los parámetros a partir de enormes corpus de texto | Usar el modelo ya entrenado para responder (lo que acabamos de ver) |
 | Coste | Lento y **carísimo** | Rápido |
 | Frecuencia | Se hace **una vez** | Cada vez que un usuario interactúa |
 
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Cuando "hablas con ChatGPT" estás haciendo <strong>inferencia</strong>, no entrenamiento: lo que escribas no modifica el modelo.</div>
+---
+
+## ¿Recuerda la IA entre sesiones?
+
+En una misma conversación, cada mensaje que escribes hace que se reenvíe **toda la conversación completa** como contexto — no es que el modelo recuerde, es que ese texto sigue estando físicamente ahí.
+
+Al cerrar la conversación, ese contexto se pierde. Como la inferencia no modifica los pesos del modelo, **por defecto no hay memoria entre sesiones**: la próxima vez empieza completamente en blanco.
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>💡</span><div>¿Cómo "recuerdan" entonces herramientas como ChatGPT o Claude Code? Guardan tus notas o preferencias en un fichero aparte y, al empezar una sesión nueva, se las <strong>reinyectan como contexto</strong> antes de que escribas nada. No es memoria del modelo: es una chuleta que alguien le vuelve a leer.</div>
+</div>
+
+---
+
+## ¿Por qué entiende aunque tengas faltas de ortografía?
+
+Por tres cosas que ya hemos visto, trabajando juntas:
+
+```
+"ordenador"  →  "orden" + "ador"
+"ordenaor"   →  "orden" + "aor"      (la mayoría del token se mantiene)
+```
+
+- **Tokenización**: un error rara vez rompe la palabra entera — el token parcial sigue dando señal
+- **Embeddings**: el modelo se entrenó con billones de textos reales llenos de erratas — una palabra mal escrita que aparece en los mismos contextos que la correcta acaba con un embedding parecido
+- **Atención**: examina toda la frase a la vez, y el resto de palabras bien escritas acotan el significado
+
+<div class="alerta alerta-ok" style="margin-top:0.6rem">
+<span>✅</span><div>No es que el modelo "corrija" el texto por dentro: tokens parecidos + embeddings parecidos + atención al contexto completo hacen que la falta de ortografía apenas mueva la aguja.</div>
 </div>
 
 ---
@@ -378,92 +452,6 @@ Aceptan o generan varios tipos de contenido a la vez: le subes una foto y la exp
 <!-- _paginate: false -->
 
 <p class="numero">04</p>
-
-# Cómo funciona un chatbot, paso a paso
-
-## Del prompt que escribes a la respuesta que recibes
-
----
-
-## Del prompt a la respuesta: visión general
-
-<div class="cols-4" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### 1. Tokenizar
-
-Tu texto se trocea en **tokens**
-
-</div>
-
-<div class="card card-green">
-
-### 2. Vectorizar
-
-Cada token se convierte en un **embedding** (vector de números)
-
-</div>
-
-<div class="card card-purple">
-
-### 3. Predecir
-
-El **Transformer** calcula qué palabra es más probable a continuación
-
-</div>
-
-<div class="card card-yellow">
-
-### 4. Repetir
-
-Se añade esa palabra al texto y se repite el proceso
-
-</div>
-
-</div>
-
-<div class="alerta alerta-info" style="margin-top:0.8rem">
-<span>ℹ️</span><div>Este ciclo se repite palabra a palabra hasta que el modelo decide que ha terminado la respuesta.</div>
-</div>
-
----
-
-## Generación palabra a palabra (proceso "autoregresivo")
-
-En cada paso, el modelo vuelve a mirar **todo** el texto anterior — incluido lo que él mismo ha ido generando — para decidir la siguiente palabra:
-
-```
-Prompt: "Hola, ¿puedes ayudarme?"
-
-Paso 1  →  "¡Claro"
-Paso 2  →  "¡Claro,"
-Paso 3  →  "¡Claro, dime"
-Paso 4  →  "¡Claro, dime qué"
-Paso 5  →  "¡Claro, dime qué necesitas."
-```
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Por eso a veces un chatbot empieza una respuesta y luego "se contradice": va decidiendo palabra a palabra, no piensa la frase completa de antemano.</div>
-</div>
-
----
-
-## Un ejemplo completo, de principio a fin
-
-1. Escribes: *"¿Cuál es la capital de Francia?"*
-2. **Tokenización**: `["¿Cuál", " es", " la", " capital", " de", " Francia", "?"]`
-3. **Embeddings**: cada token se convierte en un vector de cientos de números que representa su significado
-4. **Transformer**: procesa toda la secuencia y calcula la probabilidad de cada palabra posible del vocabulario para continuar
-5. Elige la más probable, la añade, y repite: `"La"` → `"capital"` → `"de"` → `"Francia"` → `"es"` → `"París"` → `"."`
-6. Convierte los tokens de vuelta en texto: **"La capital de Francia es París."**
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">05</p>
 
 # Vocabulario que escuchamos cada día
 
@@ -502,11 +490,11 @@ Respuesta genérica, poco útil para tu caso concreto.
 ## Chatbots, asistentes y agentes de IA
 
 - **Chatbot** — solo responde dentro de una conversación de texto: una pregunta, una respuesta
-- **Asistente** — además de hablar, puede realizar alguna acción sencilla (poner una alarma, buscar en el calendario)
-- **Agente** — usa un LLM como "cerebro" para tomar decisiones y ejecutar **acciones encadenadas**: consultar una API, leer y escribir ficheros, navegar por la web, lanzar comandos en una terminal
+- **Asistente** — ejecuta **una acción concreta ya programada de antemano** por petición (poner una alarma, añadir un evento). Tiene un catálogo fijo de cosas que sabe hacer, ni una más
+- **Agente** — usa un LLM como "cerebro" para **encadenar varias acciones, decidiendo sobre la marcha** según lo que va descubriendo — no sigue un guion prefabricado
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>🤖</span><div>Es lo que distingue un chatbot clásico de algo como <strong>Claude Code</strong> (escribe código y modifica ficheros directamente) o un asistente que reserva un vuelo de principio a fin.</div>
+<span>🤖</span><div>La diferencia clave: pídele a Alexa "pon una alarma a las 7" y ejecuta esa única acción ya programada. Pídele a un agente como <strong>Claude Code</strong> "arregla este error" y él solo lee el código, ejecuta pruebas, interpreta el fallo y edita el fichero que corresponda — decidiendo cada paso según el resultado del anterior.</div>
 </div>
 
 ---
@@ -569,18 +557,40 @@ Es el patrón **dominante hoy** en entornos profesionales.
 
 </div>
 
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>🔎</span><div>Cuando un modelo <strong>busca en internet</strong> (por ejemplo, porque le preguntas algo posterior a su corte de conocimiento) está haciendo <strong>RAG en tiempo real</strong>: dispara una búsqueda real (código normal, sin IA), inserta los resultados en su contexto y genera la respuesta leyendo ese texto nuevo, citando la fuente.</div>
+</div>
+
 ---
 
 ## Modelos abiertos frente a cerrados
 
-| | Modelos abiertos | Modelos cerrados |
-|:--|:--|:--|
-| Ejemplos | Llama, Mistral, DeepSeek, Qwen | GPT, Claude, Gemini |
-| Uso | Se descargan y ejecutan en **infraestructura propia** | Solo vía **API** del fabricante |
-| Importa por | Privacidad, control, coste, soberanía del dato | Rendimiento de vanguardia, sin mantenimiento propio |
+<div class="cols-2" style="margin-top:0.7rem">
 
-<div class="alerta alerta-ok" style="margin-top:0.6rem">
-<span>✅</span><div>Para un perfil <strong>sysadmin</strong> es la frontera interesante: un alumno de ASIR puede levantar un Llama en un servidor con GPU y experimentar en serio.</div>
+<div class="card card-blue">
+
+### Abiertos
+
+Llama, Mistral, DeepSeek, Qwen, Gemma. Se descargan y ejecutan en **infraestructura propia** — la frontera interesante para un sysadmin.
+
+**Ollama** es la herramienta para esto: como `docker pull` + `docker run`, pero con modelos. `ollama pull llama3.2` y ya lo tienes corriendo en tu propio servidor.
+
+</div>
+
+<div class="card card-green">
+
+### Cerrados
+
+GPT, Claude, Gemini. Solo se usan vía **API** del fabricante: rendimiento de vanguardia y sin mantenimiento propio, pero sin control sobre dónde viven tus datos.
+
+Ni siquiera el número de parámetros es público: a diferencia de un modelo abierto, aquí es secreto industrial.
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>ℹ️</span><div>El número en el nombre de un modelo (<code>llama3.2:3b</code>, <code>qwen3:30b</code>) son sus <strong>parámetros en miles de millones</strong> (<em>billion</em>): más B, más capacidad — pero también más memoria (RAM/VRAM) y GPU necesarias para ejecutarlo en local.</div>
 </div>
 
 ---
@@ -588,7 +598,7 @@ Es el patrón **dominante hoy** en entornos profesionales.
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">06</p>
+<p class="numero">05</p>
 
 # Límites y marco legal
 
@@ -634,27 +644,29 @@ La misma pregunta puede dar respuestas distintas cada vez.
 
 ## El coste ambiental de la IA
 
-<div class="cols-2" style="margin-top:0.7rem">
+No hay un "coste fijo" por consulta: depende del modelo, el hardware y la refrigeración. Aun así, dan una idea del orden de magnitud:
+
+<div class="cols-2" style="margin-top:0.5rem">
 
 <div class="card card-blue">
 
-- Una consulta a una IA generativa consume unas **10 veces más electricidad** que una búsqueda web tradicional
-- Generar **una imagen** con IA gasta tanta energía como **cargar un móvil** por completo
-- Una conversación de 10-50 preguntas equivale al consumo de **medio litro de agua potable**
+- Una consulta puede consumir del orden de **10 veces más electricidad** que una búsqueda tradicional
+- Generar **una imagen** puede gastar tanta energía como **cargar un móvil** entero
+- Una conversación de 10-50 preguntas puede equivaler a **medio litro de agua potable**
 
 </div>
 
 <div class="card card-green">
 
-- El **uso** del modelo (inferencia) puede suponer hasta el **90% de la huella ecológica total**, no solo el entrenamiento
-- Las GPU de los centros de datos tienen una vida útil de solo **3-5 años** → mucho residuo electrónico
+- El **uso** (inferencia) puede suponer hasta el **90% de la huella ecológica total**, no solo el entrenamiento
+- Las GPU de datacenter tienen una vida útil de solo **3-5 años** → mucho residuo electrónico
 
 </div>
 
 </div>
 
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>🌍</span><div>Fuente: INTEF, <em>Guía sobre el uso de la IA en el ámbito educativo</em> (2026).</div>
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>🌍</span><div>Cifras orientativas — Fuente: INTEF, <em>Guía sobre el uso de la IA en el ámbito educativo</em> (2026).</div>
 </div>
 
 ---
@@ -678,18 +690,10 @@ Saber qué es la IA, interactuar con ella con criterio, crear y gestionar con su
 
 ---
 
-<!-- _class: destacado -->
-
-# Hasta aquí, el **qué**
-
-## Ahora vamos con el **cómo**: usar la IA para aprender de verdad
-
----
-
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">07</p>
+<p class="numero">06</p>
 
 # Usar la IA para aprender
 
@@ -699,7 +703,7 @@ Saber qué es la IA, interactuar con ella con criterio, crear y gestionar con su
 
 ## El cambio de mentalidad previo
 
-El objetivo de un alumno de ASIR **ya no es** aprender a ejecutar tareas de memoria, sino **aprender a tomar decisiones técnicas fundamentadas**. Ese cambio de enfoque lo condiciona todo lo demás.
+El objetivo **ya no es** aprender a ejecutar tareas de memoria, sino **aprender a tomar decisiones técnicas fundamentadas**. Ese cambio de enfoque lo condiciona todo lo demás.
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>💡</span><div>Memorizar comandos, rutas de configuración o flags pierde sentido casi por completo. Lo que hay que desarrollar es entender <strong>qué</strong> hay que hacer y <strong>por qué</strong>, y usar la IA para ejecutarlo.</div>
@@ -740,7 +744,7 @@ No como tema opcional o curiosidad, sino como parte del flujo de trabajo habitua
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">08</p>
+<p class="numero">07</p>
 
 # Metodología de trabajo con IA
 
@@ -783,6 +787,21 @@ La IA responde. **No ejecutas nada todavía.** Primero te preguntas:
 
 <div class="alerta alerta-ok" style="margin-top:0.6rem">
 <span>✅</span><div>Si hay algo que no entiendes, pregúntaselo a la propia IA antes de continuar. Esta etapa es la que más diferencia a quien <strong>aprende</strong> de quien <strong>copia</strong>.</div>
+</div>
+
+---
+
+## El verdadero peligro: no darte cuenta cuando falla
+
+No es solo que la IA se equivoque — es que, si sabes menos que ella, **no tienes forma de notarlo**.
+
+**Ejemplo:** la IA te da una solución técnicamente impecable, pero incompatible con tu versión del sistema.
+
+- **El alumno que sabe** lo detecta, lo corrige y sigue
+- **El alumno que no sabe** la copia, la pega, y cuando falla piensa *"la IA se ha equivocado"* — sin darse cuenta de que **él no la ha verificado**
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Por eso la Etapa 1 y esta etapa no son un trámite: son lo que te permite detectar el fallo. Sin base técnica, la IA no solo se puede equivocar — <strong>tú no lo sabrás</strong>.</div>
 </div>
 
 ---
@@ -842,7 +861,7 @@ La etapa que más se suele saltar y **más valor tiene**. Documenta con tus prop
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">09</p>
+<p class="numero">08</p>
 
 # Buenas prácticas
 
@@ -928,15 +947,30 @@ Eso es exactamente lo que el mercado laboral te va a exigir: **saber qué pedirl
 
 ---
 
+<!-- _class: destacado -->
+
+# Si la IA puede hacer tu trabajo...
+
+## ¿qué tienes que saber **tú**?
+
+1. Saber **qué pedir**
+2. Saber **cuándo está equivocada**
+3. Saber **por qué** funciona la solución
+
+<div class="alerta alerta-ok" style="margin-top:1rem">
+<span>🎯</span><div><strong>Eso</strong> es lo que significa saber trabajar con IA.</div>
+</div>
+
+---
+
 <!-- _class: cierre -->
 <!-- _paginate: false -->
 
 # ¡Gracias!
 
-## IA y educación — Qué debe saber un alumno de ASIR de IA
+## IA y educación — Qué debe saber un alumno sobre IA
 
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>
   <span>🏫 IES Gonzalo Nazareno · Dos Hermanas</span>
-  <span>📚 ASIR</span>
 </div>
