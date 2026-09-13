@@ -36,7 +36,7 @@ footer: ''
 
 ## ¿Qué es la IA?
 
-Conjunto de técnicas informáticas que permiten a una máquina realizar tareas que, hechas por una persona, diríamos que requieren inteligencia: reconocer una cara, traducir un texto, mantener una conversación, conducir un coche.
+La **Inteligencia Artificial**, o simplemente **IA**, es el conjunto de técnicas informáticas que permiten a una máquina realizar tareas que, hechas por una persona, diríamos que requieren inteligencia: reconocer una cara, traducir un texto, mantener una conversación, conducir un coche.
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>ℹ️</span><div>Definición clásica de John McCarthy (1956): <strong>«la ciencia e ingeniería de hacer máquinas inteligentes»</strong>.</div>
@@ -46,9 +46,39 @@ La IA **no** es lo mismo que la automatización (un script de Bash automatiza, p
 
 ---
 
+## La IA que ya usas cada día
+
+Aunque no lo parezca, llevas años conviviendo con IA:
+
+<div class="cols-2" style="margin-top:0.7rem">
+
+<div class="card card-blue">
+
+- 📷 **Face ID** de tu móvil reconoce tu cara
+- 🗣️ **Siri, Alexa o Google Assistant** entienden lo que dices
+- 🎬 **Netflix o Spotify** te recomiendan qué ver o escuchar
+
+</div>
+
+<div class="card card-green">
+
+- ✉️ El **filtro de spam** de tu correo decide qué es publicidad
+- 🌐 **Google Translate** traduce un texto al instante
+- 💬 **ChatGPT o Claude** responden a tus preguntas
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>💡</span><div>Todo esto son ejemplos de <strong>IA débil o estrecha</strong>: cada sistema resuelve muy bien <strong>una</strong> tarea concreta, y solo esa.</div>
+</div>
+
+---
+
 ## La idea clave: reglas frente a ejemplos
 
-<div class="cols-2" style="margin-top:0.8rem">
+<div class="cols-2" style="margin-top:0.7rem">
 
 <div class="card card-red">
 
@@ -78,23 +108,39 @@ No se escriben reglas: se le muestran al sistema **muchísimos ejemplos** y apre
 
 ---
 
-## IA débil frente a IA general
+## ¿Es realmente "inteligente" la IA actual?
 
-| | IA débil (estrecha) | IA general (AGI) |
-|:--|:--|:--|
-| Qué es | Resuelve **una** tarea concreta | Capacidad cognitiva equivalente a la humana en **cualquier** dominio |
-| Ejemplos | Jugar al ajedrez, traducir, clasificar spam, ChatGPT, Claude | No existe todavía |
-| Estado | Es **todo** lo que existe hoy en producción | Objetivo de investigación, no un producto |
+Un chatbot escribe con fluidez, resuelve ejercicios, incluso programa. Es fácil pensar que "entiende" lo que dice. Pero conviene matizarlo:
+
+- **No tiene conciencia** ni sabe que existe
+- **No razona** como una persona: no "piensa" la respuesta, la calcula estadísticamente
+- **No entiende el significado** como tú lo entiendes: predice qué palabra es más probable a continuación, a partir de patrones aprendidos en billones de textos
 
 <div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Aunque un chatbot "parezca" hablar con inteligencia general, sigue siendo IA débil: no le atribuyas propiedades que no tiene.</div>
+<span>🎭</span><div>Es como un actor que interpreta a un médico de forma muy convincente en una serie: suena creíble, pero no ha estudiado medicina.</div>
+</div>
+
+Lo llamamos "inteligencia" porque el resultado se parece al de una persona inteligente, no porque la máquina piense como una.
+
+---
+
+## IA actual (estrecha) frente a IA general (AGI)
+
+| | IA actual (estrecha) | IA general (AGI) |
+|:--|:--|:--|
+| Qué es | Resuelve **una** tarea concreta y ya está | Razonaría y aprendería en **cualquier** ámbito, como una persona |
+| Ejemplos | Ajedrez, traducir, ChatGPT, Claude, Face ID | No existe todavía |
+| Estado | Es **todo** lo que existe hoy en producción | Objetivo de investigación, no un producto |
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div><strong>AGI</strong> son las siglas de <em>Artificial General Intelligence</em> (Inteligencia Artificial General). Aunque algunas empresas dicen estar cerca, a día de hoy sigue siendo un objetivo, no una realidad.</div>
 </div>
 
 ---
 
 ## Dos enfoques históricos
 
-<div class="cols-2" style="margin-top:0.8rem">
+<div class="cols-2" style="margin-top:0.7rem">
 
 <div class="card card-yellow">
 
@@ -112,7 +158,7 @@ Son los **sistemas expertos**. Funcionan bien en dominios cerrados (el motor de 
 
 Abandona las reglas explícitas y **aprende de ejemplos** con redes inspiradas vagamente en el cerebro (neuronas conectadas).
 
-Es donde está hoy **prácticamente toda la IA** que usamos: el <strong>machine learning</strong>.
+Es donde está hoy **prácticamente toda la IA** que usamos: el **machine learning**.
 
 </div>
 
@@ -127,21 +173,23 @@ Es donde está hoy **prácticamente toda la IA** que usamos: el <strong>machine 
 
 # Cómo aprende una máquina
 
-## Machine learning y deep learning
+## Machine learning, redes neuronales y deep learning
 
 ---
 
-## Aprendizaje automático (Machine Learning)
+## Aprendizaje automático (Machine Learning, ML)
 
 El sistema mejora su rendimiento a partir de datos, sin ser programado explícitamente para la tarea. Tres modalidades:
 
-<div class="cols-3" style="margin-top:0.8rem">
+<div class="cols-3" style="margin-top:0.7rem">
 
 <div class="card card-blue">
 
 ### Supervisado
 
-Ejemplos ya **etiquetados** ("este correo es spam"). Aprende a clasificar casos nuevos, como con un profesor que corrige cada respuesta.
+Ejemplos ya **etiquetados** ("este correo es spam"). Aprende a clasificar casos nuevos.
+
+*Ej.: diagnosticar una radiografía a partir de miles ya etiquetadas por médicos.*
 
 </div>
 
@@ -149,7 +197,9 @@ Ejemplos ya **etiquetados** ("este correo es spam"). Aprende a clasificar casos 
 
 ### No supervisado
 
-Datos **sin etiquetar**. El sistema descubre patrones o anomalías por sí mismo. Útil cuando no sabemos qué buscamos (ej.: tráfico de red anómalo).
+Datos **sin etiquetar**. El sistema descubre patrones por sí mismo.
+
+*Ej.: agrupar a los clientes de una tienda online según lo que compran.*
 
 </div>
 
@@ -157,7 +207,9 @@ Datos **sin etiquetar**. El sistema descubre patrones o anomalías por sí mismo
 
 ### Por refuerzo
 
-Aprende por **ensayo y error**, con recompensas al acertar. Así aprenden a jugar al ajedrez o a caminar los robots.
+Aprende por **ensayo y error**, con recompensas al acertar.
+
+*Ej.: AlphaGo aprendiendo a jugar al Go contra sí mismo.*
 
 </div>
 
@@ -165,20 +217,63 @@ Aprende por **ensayo y error**, con recompensas al acertar. Así aprenden a juga
 
 ---
 
-## Aprendizaje profundo (Deep Learning)
+## ¿Qué es una red neuronal artificial?
 
-Subcampo del ML basado en **redes neuronales artificiales** con muchas capas ("profundo"). Cada capa transforma la información un poco más hasta llegar al resultado final.
+Es la estructura matemática que hace posible que una máquina "aprenda". Está formada por **neuronas artificiales** conectadas entre sí y organizadas en capas, inspiradas (muy vagamente) en el cerebro.
+
+Cada neurona:
+
+1. Recibe varios números de entrada
+2. Los combina aplicando un **peso** a cada uno (la importancia que le da a esa entrada)
+3. Produce un número de salida que pasa a la siguiente capa
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Los <strong>pesos</strong> son justamente los <strong>parámetros</strong> del modelo de los que hablaremos más adelante: los números que se ajustan durante el entrenamiento.</div>
+</div>
+
+---
+
+## De la entrada a la salida: capas y entrenamiento
 
 ```
-Píxeles → bordes → formas → partes (ojos, hocico) → concepto (gato)
+píxeles  →  [capa: bordes]  →  [capa: formas]  →  [capa: partes]  →  "8"
 ```
 
-- Los **parámetros** (o pesos) son los números que la red ajusta durante el entrenamiento
-- Un modelo moderno puede tener desde millones hasta cientos de miles de millones de parámetros
-- Es la técnica detrás de casi todos los avances recientes: visión artificial, voz, chatbots
+- La **primera capa** recibe los datos en bruto (por ejemplo, los píxeles de una imagen)
+- Las **capas intermedias** detectan patrones cada vez más complejos: bordes → formas → partes → concepto completo
+- La **última capa** da el resultado: una predicción, una clasificación, la siguiente palabra…
 
 <div class="alerta alerta-info" style="margin-top:0.5rem">
-<span>ℹ️</span><div>Su salto en eficacia se explica por tres factores que coincidieron hacia 2010: muchísimos datos (internet), potencia de cálculo barata (GPUs) y mejores algoritmos.</div>
+<span>ℹ️</span><div>Esto es lo que la red hace <strong>una vez ya entrenada</strong>. Pero, ¿cómo llega a saber qué pesos usar? Eso lo vemos en la siguiente diapositiva.</div>
+</div>
+
+---
+
+## ¿Cómo aprende exactamente? El ciclo de entrenamiento
+
+Para entrenar hacen falta dos cosas: **muchos ejemplos de entrada** y, para cada uno, **la respuesta correcta ya conocida** (por eso se llama aprendizaje *supervisado*).
+
+1. Le mostramos un ejemplo: la imagen de un "8" escrito a mano
+2. Con los pesos aún sin ajustar, la red hace una predicción — al principio, casi al azar (quizás dice "3")
+3. Comparamos su predicción con la respuesta correcta ("8") y calculamos cuánto ha fallado: el **error**
+4. Ajustamos ligeramente los pesos, en la dirección que habría reducido ese error
+5. Repetimos con **millones de ejemplos**, una y otra vez, hasta que el error es muy pequeño
+
+<div class="alerta alerta-ok" style="margin-top:0.5rem">
+<span>🎯</span><div>Es como encestar con los ojos vendados: cada intento, alguien te dice si te has quedado corto o largo; ajustas un poco la puntería y repites cientos de veces hasta acertar casi siempre. La red hace lo mismo con sus pesos, millones de veces.</div>
+</div>
+
+---
+
+## Aprendizaje profundo (Deep Learning)
+
+Es como llamamos a una red neuronal cuando tiene **muchas capas** ("profundo" = muchas capas apiladas). Es el tipo de red que hay detrás de casi todos los avances recientes: reconocimiento facial, traducción automática, asistentes de voz y los chatbots como ChatGPT o Claude.
+
+- Un modelo moderno puede tener desde millones hasta **cientos de miles de millones** de parámetros (pesos)
+- Cuantas más capas y más parámetros, más patrones complejos puede aprender — pero también hace falta más dato y más potencia de cálculo
+
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>ℹ️</span><div>El salto en eficacia se explica por tres factores que coincidieron hacia 2010: muchísimos datos (internet), potencia de cálculo barata (<strong>GPU</strong>, <em>Graphics Processing Unit</em>, el chip gráfico usado normalmente en videojuegos) y mejores algoritmos.</div>
 </div>
 
 ---
@@ -208,7 +303,7 @@ El modelo genera la salida **palabra a palabra** (o píxel a píxel), calculando
 
 ## Tres familias de modelos generativos
 
-<div class="cols-3" style="margin-top:0.8rem">
+<div class="cols-3" style="margin-top:0.7rem">
 
 <div class="card card-purple">
 
@@ -222,7 +317,7 @@ Imagen y vídeo (Stable Diffusion, DALL·E, Midjourney). Parten de **ruido aleat
 
 ### LLM
 
-Texto y código (ChatGPT, Claude, Gemini, Llama, Mistral). El código también es texto con reglas estrictas.
+*Large Language Model* — modelo de lenguaje de gran tamaño. Texto y código (ChatGPT, Claude, Gemini, Llama, Mistral).
 
 </div>
 
@@ -247,21 +342,21 @@ Aceptan o generan varios tipos de contenido a la vez: le subes una foto y la exp
 "ordenador"  →  "orden" + "ador"  (2 tokens, según el modelo)
 ```
 
-**Embedding** — forma de convertir un texto en un vector de números que captura su **significado**. Las palabras parecidas quedan cerca en ese espacio numérico:
+**Embedding** — forma de convertir un texto en un vector de números que captura su **significado**. Es como un mapa: palabras con significado parecido quedan cerca en ese "mapa" numérico.
 
 <div class="alerta alerta-info" style="margin-top:0.4rem">
-<span>ℹ️</span><div>"perro" y "gato" tienen embeddings parecidos; "perro" y "termodinámica" no. Es la base de <strong>RAG</strong>.</div>
+<span>ℹ️</span><div>"perro" y "gato" tienen embeddings parecidos; "perro" y "termodinámica" no. Es la base de <strong>RAG</strong>, que veremos más adelante.</div>
 </div>
 
 ---
 
 ## Conceptos clave de los LLM (II)
 
-**Transformer** — arquitectura de red neuronal que hizo posible el salto cualitativo (*"Attention is all you need"*, Google, 2017). Su idea clave es la **atención**: pondera qué partes del texto previo son relevantes para predecir lo siguiente.
+**Transformer** — arquitectura de red neuronal que hizo posible el salto cualitativo (*"Attention is all you need"*, Google, 2017). Su idea clave es la **atención**: le permite, al generar cada palabra, "fijarse" más en las partes del texto previo que son relevantes en ese momento — igual que tú, al traducir una frase larga, prestas más atención a ciertas palabras clave.
 
 **Ventana de contexto** — cantidad máxima de texto (en tokens) que el modelo puede "tener en mente" a la vez. Si se supera, empieza a "olvidar" lo más antiguo.
 
-**Parámetros** — los pesos ajustados en el entrenamiento. Cifras como "Llama 70B" = 70 mil millones de parámetros. Da idea del tamaño, no equivale exactamente a calidad.
+**Parámetros** — los pesos ajustados en el entrenamiento. Cifras como "Llama 70B" = 70 mil millones de parámetros.
 
 ---
 
@@ -284,9 +379,95 @@ Aceptan o generan varios tipos de contenido a la vez: le subes una foto y la exp
 
 <p class="numero">04</p>
 
-# Trabajar con IA
+# Cómo funciona un chatbot, paso a paso
 
-## Vocabulario imprescindible en el día a día
+## Del prompt que escribes a la respuesta que recibes
+
+---
+
+## Del prompt a la respuesta: visión general
+
+<div class="cols-4" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### 1. Tokenizar
+
+Tu texto se trocea en **tokens**
+
+</div>
+
+<div class="card card-green">
+
+### 2. Vectorizar
+
+Cada token se convierte en un **embedding** (vector de números)
+
+</div>
+
+<div class="card card-purple">
+
+### 3. Predecir
+
+El **Transformer** calcula qué palabra es más probable a continuación
+
+</div>
+
+<div class="card card-yellow">
+
+### 4. Repetir
+
+Se añade esa palabra al texto y se repite el proceso
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>Este ciclo se repite palabra a palabra hasta que el modelo decide que ha terminado la respuesta.</div>
+</div>
+
+---
+
+## Generación palabra a palabra (proceso "autoregresivo")
+
+En cada paso, el modelo vuelve a mirar **todo** el texto anterior — incluido lo que él mismo ha ido generando — para decidir la siguiente palabra:
+
+```
+Prompt: "Hola, ¿puedes ayudarme?"
+
+Paso 1  →  "¡Claro"
+Paso 2  →  "¡Claro,"
+Paso 3  →  "¡Claro, dime"
+Paso 4  →  "¡Claro, dime qué"
+Paso 5  →  "¡Claro, dime qué necesitas."
+```
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Por eso a veces un chatbot empieza una respuesta y luego "se contradice": va decidiendo palabra a palabra, no piensa la frase completa de antemano.</div>
+</div>
+
+---
+
+## Un ejemplo completo, de principio a fin
+
+1. Escribes: *"¿Cuál es la capital de Francia?"*
+2. **Tokenización**: `["¿Cuál", " es", " la", " capital", " de", " Francia", "?"]`
+3. **Embeddings**: cada token se convierte en un vector de cientos de números que representa su significado
+4. **Transformer**: procesa toda la secuencia y calcula la probabilidad de cada palabra posible del vocabulario para continuar
+5. Elige la más probable, la añade, y repite: `"La"` → `"capital"` → `"de"` → `"Francia"` → `"es"` → `"París"` → `"."`
+6. Convierte los tokens de vuelta en texto: **"La capital de Francia es París."**
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">05</p>
+
+# Vocabulario que escuchamos cada día
+
+## Términos que te vas a encontrar constantemente trabajando con IA
 
 ---
 
@@ -318,6 +499,50 @@ Respuesta genérica, poco útil para tu caso concreto.
 
 ---
 
+## Chatbots, asistentes y agentes de IA
+
+- **Chatbot** — solo responde dentro de una conversación de texto: una pregunta, una respuesta
+- **Asistente** — además de hablar, puede realizar alguna acción sencilla (poner una alarma, buscar en el calendario)
+- **Agente** — usa un LLM como "cerebro" para tomar decisiones y ejecutar **acciones encadenadas**: consultar una API, leer y escribir ficheros, navegar por la web, lanzar comandos en una terminal
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>🤖</span><div>Es lo que distingue un chatbot clásico de algo como <strong>Claude Code</strong> (escribe código y modifica ficheros directamente) o un asistente que reserva un vuelo de principio a fin.</div>
+</div>
+
+---
+
+## Herramientas y Skills
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Herramientas (*tool use*)
+
+Capacidad de un agente de **usar programas externos**: una calculadora, un buscador web, un intérprete de código, una **API** (*Application Programming Interface*, la forma en que dos programas se comunican entre sí).
+
+El modelo decide **cuándo** y **con qué datos** llamar a cada herramienta.
+
+</div>
+
+<div class="card card-green">
+
+### Skills
+
+Paquetes de **instrucciones y conocimiento especializado** que se le dan a un agente para una tarea concreta (por ejemplo, cómo corregir un examen con un formato determinado).
+
+Son como "manuales" que el agente consulta cuando la tarea lo requiere.
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Es lo que hace que un agente pase de "saber hablar" a <strong>saber hacer</strong>: buscar en internet, ejecutar un script, consultar una base de datos.</div>
+</div>
+
+---
+
 ## Fine-tuning y RAG
 
 <div class="cols-2" style="margin-top:0.8rem">
@@ -334,24 +559,14 @@ Menos común hoy: RAG suele dar mejores resultados con menos coste.
 
 <div class="card card-blue">
 
-### RAG (Retrieval-Augmented Generation)
+### RAG
 
-En lugar de reentrenar, se le da al modelo acceso a una **fuente externa** (base documental, wiki interna) en el momento de la consulta.
+*Retrieval-Augmented Generation* — generación aumentada por recuperación. En lugar de reentrenar, se le da al modelo acceso a una **fuente externa** (base documental, wiki interna) en el momento de la consulta.
 
 Es el patrón **dominante hoy** en entornos profesionales.
 
 </div>
 
-</div>
-
----
-
-## Agentes de IA
-
-Un **agente** es un sistema que usa un LLM como "cerebro" para tomar decisiones y ejecutar **acciones encadenadas**: consultar una API, leer y escribir ficheros, navegar por la web, lanzar comandos en una terminal.
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>🤖</span><div>Es lo que distingue a un <strong>chatbot</strong> (solo responde) de algo como <strong>Claude Code</strong> (escribe código y modifica ficheros directamente) o un asistente que reserva vuelos.</div>
 </div>
 
 ---
@@ -373,7 +588,7 @@ Un **agente** es un sistema que usa un LLM como "cerebro" para tomar decisiones 
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">05</p>
+<p class="numero">06</p>
 
 # Límites y marco legal
 
@@ -389,7 +604,7 @@ Un **agente** es un sistema que usa un LLM como "cerebro" para tomar decisiones 
 
 ### Alucinaciones
 
-Puede generar información falsa con total aplomo. No es un fallo puntual: genera lo **plausible**, no lo verdadero.
+Puede generar información falsa con total aplomo, como inventarse una opción de un comando que no existe. No es un fallo puntual: genera lo **plausible**, no lo verdadero.
 
 ### Sesgo
 
@@ -417,11 +632,49 @@ La misma pregunta puede dar respuestas distintas cada vez.
 
 ---
 
+## El coste ambiental de la IA
+
+<div class="cols-2" style="margin-top:0.7rem">
+
+<div class="card card-blue">
+
+- Una consulta a una IA generativa consume unas **10 veces más electricidad** que una búsqueda web tradicional
+- Generar **una imagen** con IA gasta tanta energía como **cargar un móvil** por completo
+- Una conversación de 10-50 preguntas equivale al consumo de **medio litro de agua potable**
+
+</div>
+
+<div class="card card-green">
+
+- El **uso** del modelo (inferencia) puede suponer hasta el **90% de la huella ecológica total**, no solo el entrenamiento
+- Las GPU de los centros de datos tienen una vida útil de solo **3-5 años** → mucho residuo electrónico
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>🌍</span><div>Fuente: INTEF, <em>Guía sobre el uso de la IA en el ámbito educativo</em> (2026).</div>
+</div>
+
+---
+
 ## Marco ético y legal
 
-- **Reglamento Europeo de IA (AI Act)** — aprobado en 2024, aplicación escalonada hasta 2027. Clasifica los sistemas por **nivel de riesgo** (inaceptable, alto, limitado, mínimo). Los sistemas de IA en selección de personal o evaluación educativa se consideran de **alto riesgo**
-- **RGPD** — cualquier sistema de IA que trate datos personales sigue plenamente sujeto a él
+- **Reglamento Europeo de IA**, conocido como **AI Act** (*Artificial Intelligence Act*) — aprobado en 2024, aplicación escalonada hasta 2027. Clasifica los sistemas por **nivel de riesgo**: inaceptable, alto, de transparencia y mínimo. Los sistemas de IA en selección de personal o evaluación educativa se consideran de **alto riesgo**
+- **RGPD** (Reglamento General de Protección de Datos) — cualquier sistema de IA que trate datos personales sigue plenamente sujeto a él
+- **LOPDGDD** (Ley Orgánica de Protección de Datos Personales y Garantía de los Derechos Digitales) — en España, el consentimiento propio para que tus datos sean tratados (también por una IA) solo es válido a partir de los **14 años**; por debajo, hace falta el de la familia
 - **Propiedad intelectual** — zona gris en formación: ¿se puede entrenar con contenido protegido?, ¿quién es autor de lo generado? Hay litigios en curso
+
+---
+
+## Todo esto tiene un nombre: alfabetización en IA
+
+Saber qué es la IA, interactuar con ella con criterio, crear y gestionar con su ayuda, y entender sus límites: eso es lo que el INTEF, la OCDE y la Comisión Europea llaman **alfabetización en IA**.
+
+<div class="alerta alerta-ok" style="margin-top:0.6rem">
+<span>🎓</span><div>No es un contenido más: es una <strong>competencia</strong> tan necesaria hoy como saber buscar información o usar una hoja de cálculo. Todo lo que hemos visto hasta aquí es, en el fondo, eso.</div>
+</div>
 
 ---
 
@@ -436,7 +689,7 @@ La misma pregunta puede dar respuestas distintas cada vez.
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">06</p>
+<p class="numero">07</p>
 
 # Usar la IA para aprender
 
@@ -487,7 +740,7 @@ No como tema opcional o curiosidad, sino como parte del flujo de trabajo habitua
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">07</p>
+<p class="numero">08</p>
 
 # Metodología de trabajo con IA
 
@@ -515,7 +768,7 @@ Aquí se entrena una habilidad nueva: **saber hablar con la IA con precisión t�
 
 > *"Necesito crear una VM con KVM en Ubuntu 22.04 con 4GB de RAM, 2 vCPUs y disco virtio, conectada a un bridge br0 ya existente. Quiero hacerlo desde línea de comandos con virt-install de forma desatendida."*
 
-Esto se entrena y se evalúa, no se da por supuesto.
+Otro ejemplo: en vez de *"configura DNS"*, pregunta *"configura un servidor DNS con BIND9 en Debian 13 que resuelva el dominio interno empresa.local y reenvíe el resto de consultas a 8.8.8.8"*. Esto se entrena y se evalúa, no se da por supuesto.
 
 ---
 
@@ -568,7 +821,7 @@ La etapa que más se suele saltar y **más valor tiene**. Documenta con tus prop
 - Qué aprendiste que no sabías antes
 
 <div class="alerta alerta-ok" style="margin-top:0.6rem">
-<span>✅</span><div>Consolida el aprendizaje real y genera un <strong>portfolio técnico</strong> que podrás llevar a una entrevista de trabajo.</div>
+<span>✅</span><div>Consolida el aprendizaje real y genera un <strong>portfolio técnico</strong> que podrás llevar a una entrevista de trabajo. El propio INTEF propone en su guía un modelo oficial de <strong>"declaración de uso de IA"</strong> con esta misma idea.</div>
 </div>
 
 ---
@@ -589,11 +842,47 @@ La etapa que más se suele saltar y **más valor tiene**. Documenta con tus prop
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">08</p>
+<p class="numero">09</p>
 
 # Buenas prácticas
 
 ## Qué hacer y qué evitar al usar IA en tus prácticas
+
+---
+
+## Riesgos de depender demasiado de la IA
+
+<div class="cols-3" style="margin-top:0.7rem">
+
+<div class="card card-red">
+
+### Externalización cognitiva
+
+Delegar en la IA funciones clave como el juicio crítico, la revisión o la verificación, en lugar de ejercerlas tú.
+
+</div>
+
+<div class="card card-yellow">
+
+### Ilusión de competencia
+
+Creer que dominas un tema porque la IA te lo explicó bien, sin haberlo trabajado tú mismo.
+
+</div>
+
+<div class="card card-purple">
+
+### Sedentarismo cognitivo
+
+Perder práctica en memoria, comprensión o razonamiento por delegar en exceso, incluso en tareas que ya dominabas.
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Términos del INTEF en su guía sobre IA en educación (2026): no son casos aislados, son los riesgos que el propio Ministerio pide vigilar en el aula.</div>
+</div>
 
 ---
 
