@@ -484,6 +484,44 @@ systemctl restart networking   # Aplica cambios en interfaces
 
 ---
 
+## Ejemplo: `/etc/network/interfaces`
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### IP estática
+
+```
+auto eth0
+iface eth0 inet static
+    address 192.168.1.10
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    dns-nameservers 8.8.8.8 1.1.1.1
+```
+
+</div>
+
+<div class="card card-green">
+
+### IP dinámica (DHCP)
+
+```
+auto eth1
+iface eth1 inet dhcp
+```
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>La interfaz de <strong>loopback</strong> también se declara siempre: <code>auto lo</code> / <code>iface lo inet loopback</code>.</div>
+</div>
+
+---
+
 ## NetworkManager
 
 - Pensada para **gestión dinámica** de la red
@@ -603,6 +641,37 @@ Artículos del blog con explicaciones detalladas y ejemplos de cada herramienta:
 
 ---
 
+## Ejemplos de la línea `hosts:` en `nsswitch.conf`
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Servidor sin systemd-resolved
+
+```
+hosts: files dns
+```
+
+- `/etc/hosts` primero, DNS después
+- Configuración clásica con `ifupdown`
+
+</div>
+
+<div class="card card-green">
+
+### Escritorio con systemd-resolved
+
+<pre style="white-space:pre-wrap; overflow-wrap:anywhere; font-size:0.62em;"><code>hosts: files mdns4_minimal [NOTFOUND=return] resolve [!UNAVAIL=return] dns</code></pre>
+
+- `files` → `mdns4_minimal` (`.local`) → `resolve` (systemd-resolved) → `dns`
+
+</div>
+
+</div>
+
+---
+
 ## Archivos clásicos: hosts y resolv.conf
 
 <div class="cols-2" style="margin-top:0.8rem">
@@ -643,6 +712,17 @@ Servicio moderno que **centraliza** la resolución de nombres en el sistema.
 - Servidor DNS local de reenvío en `127.0.0.53`
 - Integración con **NSS** mediante módulos propios (`resolve`, `myhostname`, `mymachines`)
 - Combina resolución estática (`/etc/hosts`), DNS remoto y nombres de contenedores
+
+---
+
+## Módulos NSS que pueden aparecer en `hosts:`
+
+| Módulo | Resuelve |
+|:-------|:---------|
+| `mdns4_minimal` | Nombres `.local` (multicast DNS) |
+| `resolve` | Delega en **systemd-resolved** |
+| `myhostname` | El propio hostname y `localhost`, sin red |
+| `mymachines` | Contenedores/VMs locales (`systemd-nspawn`) |
 
 ---
 
@@ -724,7 +804,7 @@ getent ahosts ejemplo.com
 
 # Router Linux, SNAT y DNAT
 
-## Enrutamiento y traducción de direcciones con iptables
+## Enrutamiento y traducción de direcciones con iptables y nftables
 
 ---
 
@@ -785,38 +865,99 @@ sysctl --system
 
 ---
 
+## nftables: el sucesor de iptables
+
+`nftables` es el framework de filtrado y NAT del kernel Linux que **sustituye** a `iptables`, `ip6tables`, `arptables` y `ebtables` por un único subsistema.
+
+- Unifica **IPv4 e IPv6** en una sola sintaxis: ya no hay que duplicar reglas en `ip6tables`
+- Las reglas se agrupan en **tablas y cadenas definidas por el usuario**, cargadas de forma **atómica**
+- En Debian/Ubuntu recientes, el propio comando `iptables` es en realidad **`iptables-nft`**: por debajo traduce las reglas a nftables
+- `nft` es la herramienta **nativa**, con sintaxis declarativa propia
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div><code>iptables</code> sigue funcionando gracias a esa capa de compatibilidad, pero <strong>nftables es el sustituto recomendado</strong> para configuraciones nuevas.</div>
+</div>
+
+---
+
 ## SNAT — Source NAT
 
 Permite que una red local con **direcciones privadas** salga a Internet usando la **IP pública** del router. Cambia la **IP de origen** de los paquetes salientes.
 
-### Regla con `iptables`
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### iptables
 
 ```bash
-iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j SNAT --to-source 192.0.2.1
+iptables -t nat -A POSTROUTING \
+  -o eth0 -s 192.168.0.0/24 \
+  -j SNAT --to-source 192.0.2.1
 ```
 
-- `-o eth0` — interfaz de salida (hacia Internet)
-- `-s 192.168.0.0/24` — red de origen que tendrá acceso a Internet
-- `--to-source 192.0.2.1` — IP pública del router
+</div>
+
+<div class="card card-green">
+
+### nftables
+
+```
+table ip nat {
+  chain postrouting {
+    type nat hook postrouting priority 100;
+    ip saddr 192.168.0.0/24 oifname "eth0" snat to 192.0.2.1
+  }
+}
+```
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div><code>192.0.2.1</code> es la IP pública fija del router; iptables añade una regla, nftables la declara dentro de la cadena <code>postrouting</code>.</div>
+</div>
 
 ---
 
 ## SNAT con IP dinámica: MASQUERADE
 
-Cuando la IP pública del router **no es fija** (por ejemplo, asignada por DHCP del proveedor), conviene usar `MASQUERADE` en lugar de `SNAT`.
+Cuando la IP pública del router **no es fija** (por ejemplo, asignada por DHCP del proveedor), conviene usar `MASQUERADE`/`masquerade` en lugar de indicar la IP.
 
-### Regla equivalente
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### iptables
 
 ```bash
-iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j MASQUERADE
+iptables -t nat -A POSTROUTING \
+  -o eth0 -s 192.168.0.0/24 \
+  -j MASQUERADE
 ```
 
-- Toma **automáticamente** la IP de la interfaz de salida
-- No hay que especificar la IP pública
-- Más cómodo cuando la dirección puede cambiar
+</div>
+
+<div class="card card-green">
+
+### nftables
+
+```
+table ip nat {
+  chain postrouting {
+    type nat hook postrouting priority 100;
+    ip saddr 192.168.0.0/24 oifname "eth0" masquerade
+  }
+}
+```
+
+</div>
+
+</div>
 
 <div class="alerta alerta-info" style="margin-top:0.8rem">
-<span>ℹ️</span><div><code>MASQUERADE</code> es una variante de <code>SNAT</code> pensada para enlaces con IP dinámica: paga un pequeño coste extra por consultar la IP cada vez.</div>
+<span>ℹ️</span><div>Toma automáticamente la IP de la interfaz de salida: no hay que especificarla, ideal cuando puede cambiar.</div>
 </div>
 
 ---
@@ -825,18 +966,39 @@ iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j MASQUERADE
 
 Se usa para **redirigir tráfico entrante** desde el exterior hacia una máquina de la red interna. Cambia la **IP de destino** de los paquetes.
 
-### Regla con `iptables`
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### iptables
 
 ```bash
-iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination 192.168.1.100:80
+iptables -t nat -A PREROUTING \
+  -i eth0 -p tcp --dport 80 \
+  -j DNAT --to-destination 192.168.1.100:80
 ```
 
-- `-i eth0` — interfaz por la que entra el tráfico
-- `-p tcp --dport 80` — protocolo y puerto de destino
-- `--to-destination 192.168.1.100:80` — máquina interna a la que se redirige
+</div>
+
+<div class="card card-green">
+
+### nftables
+
+```
+table ip nat {
+  chain prerouting {
+    type nat hook prerouting priority -100;
+    iifname "eth0" tcp dport 80 dnat to 192.168.1.100:80
+  }
+}
+```
+
+</div>
+
+</div>
 
 <div class="alerta alerta-info" style="margin-top:0.8rem">
-<span>ℹ️</span><div>Se aplica en la cadena <code>PREROUTING</code> porque la decisión de redirigir se toma <strong>antes</strong> de enrutar el paquete.</div>
+<span>ℹ️</span><div>Se aplica en <code>PREROUTING</code> porque la decisión de redirigir se toma <strong>antes</strong> de enrutar el paquete.</div>
 </div>
 
 ---
@@ -873,22 +1035,51 @@ iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination
 
 ---
 
-## Hacer las reglas de iptables persistentes
+## Hacer las reglas persistentes
 
-Las reglas de `iptables` **no sobreviven a un reinicio**. Hay que guardarlas para que se restauren automáticamente al arrancar.
+Ni las reglas de `iptables` ni las de `nftables` **sobreviven a un reinicio** por defecto. Hay que guardarlas.
 
-### Con el paquete `iptables-persistent` (Debian / Ubuntu)
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### iptables (`iptables-persistent`)
 
 ```bash
-# Guardar las reglas actuales
 iptables-save > /etc/iptables/rules.v4
 ```
 
-- Las reglas se restauran **automáticamente** al iniciar el sistema
-- Existe el equivalente para IPv6 en `/etc/iptables/rules.v6`
+Equivalente IPv6 en `/etc/iptables/rules.v6`.
+
+</div>
+
+<div class="card card-green">
+
+### nftables
+
+```bash
+nft list ruleset > /etc/nftables.conf
+systemctl enable --now nftables
+```
+
+El servicio carga ese fichero al arrancar.
+
+</div>
+
+</div>
 
 <div class="alerta alerta-warning" style="margin-top:0.8rem">
 <span>⚠️</span><div>Después de modificar reglas, no olvides <strong>volver a guardarlas</strong>: si no, los cambios se perderán en el próximo reinicio.</div>
+</div>
+
+---
+
+## Para profundizar — nftables
+
+- [nftables: cortafuegos perimetral y NAT](https://www.josedomingo.org/pledin/2020/01/nftables-cortafuegos-perimetral-nat/)
+
+<div class="alerta alerta-info" style="margin-top:0.8rem">
+<span>ℹ️</span><div>El artículo desarrolla la configuración de un cortafuegos perimetral completo con <code>nftables</code>, incluyendo SNAT y DNAT.</div>
 </div>
 
 ---
