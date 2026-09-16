@@ -156,9 +156,7 @@ Ejecutar la misma configuración **varias veces** da siempre el mismo resultado
 
 > **Ansible** es una herramienta de **gestión de configuración y automatización** que permite definir, en ficheros de texto YAML, el estado deseado de servidores y aplicaciones, y aplicarlo **sin instalar agentes** en los nodos (usa SSH).
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### Características
 
@@ -170,7 +168,11 @@ Ejecutar la misma configuración **varias veces** da siempre el mismo resultado
 
 </div>
 
-<div class="card card-green">
+---
+
+## ¿Para qué sirve Ansible?
+
+<div class="card card-green" style="margin-top:0.8rem">
 
 ### ¿Para qué sirve?
 
@@ -179,8 +181,6 @@ Ejecutar la misma configuración **varias veces** da siempre el mismo resultado
 - Desplegar aplicaciones
 - Orquestar tareas en **múltiples máquinas** a la vez
 - Gestionar actualizaciones del sistema
-
-</div>
 
 </div>
 
@@ -285,9 +285,7 @@ ansible <hosts> -m <módulo> -a "<parámetros>"
 
 ## Módulos esenciales (I)
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### ping
 
@@ -295,21 +293,31 @@ Comprueba la conectividad con los nodos. No es un ping ICMP, sino una verificaci
 
 ```bash
 ansible all -m ping
-ansible servidores -m ping
 ```
+
+</div>
+
+---
+
+## Módulos esenciales (II)
+
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### command / shell
 
 Ejecuta comandos en el nodo remoto. `shell` permite pipes, redirecciones y variables de entorno.
 
 ```bash
-ansible all -m command -a "uptime"
 ansible all -m shell -a "echo $HOME | wc -c"
 ```
 
 </div>
 
-<div class="card card-green">
+---
+
+## Módulos esenciales (III)
+
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### copy
 
@@ -320,21 +328,16 @@ Copia ficheros desde el nodo de control al nodo remoto.
 - `mode` — permisos (opcional)
 
 ```bash
-ansible all -m copy \
-  -a "src=./index.html dest=/tmp/index.html mode=0644"
+ansible all -m copy -a "src=./index.html dest=/tmp/index.html mode=0644"
 ```
-
-</div>
 
 </div>
 
 ---
 
-## Módulos esenciales (II)
+## Módulos esenciales (IV)
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### apt
 
@@ -344,9 +347,16 @@ Instala, actualiza o elimina paquetes en sistemas Debian/Ubuntu.
 - `state` — `present`, `absent`, `latest`
 
 ```bash
-ansible nodo1 -m apt \
-  -a "name=apache2 state=present" --become
+ansible nodo1 -m apt -a "name=apache2 state=present" --become
 ```
+
+</div>
+
+---
+
+## Módulos esenciales (V)
+
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### service
 
@@ -357,13 +367,16 @@ Gestiona servicios del sistema.
 - `enabled` — arranque automático
 
 ```bash
-ansible nodo1 -m service \
-  -a "name=apache2 state=started enabled=yes" --become
+ansible nodo1 -m service -a "name=apache2 state=started enabled=yes" --become
 ```
 
 </div>
 
-<div class="card card-green">
+---
+
+## Módulos esenciales (VI)
+
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### file
 
@@ -374,9 +387,16 @@ Gestiona ficheros, directorios y permisos.
 - `mode` — permisos
 
 ```bash
-ansible all -m file \
-  -a "path=/tmp/demo state=directory mode=0755"
+ansible all -m file -a "path=/tmp/demo state=directory mode=0755"
 ```
+
+</div>
+
+---
+
+## Módulos esenciales (VII)
+
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### user
 
@@ -387,11 +407,8 @@ Crea, modifica o elimina usuarios.
 - `shell`, `groups`
 
 ```bash
-ansible all -m user \
-  -a "name=demo shell=/bin/bash state=present" --become
+ansible all -m user -a "name=demo shell=/bin/bash state=present" --become
 ```
-
-</div>
 
 </div>
 
@@ -489,16 +506,7 @@ ansible-playbook site.yml
       ansible.builtin.apt:
         update_cache: true
 
-    - name: Instalar Apache
-      ansible.builtin.apt:
-        name: apache2
-        state: present
-
-    - name: Copiar página de inicio
-      ansible.builtin.copy:
-        src: files/index.html
-        dest: /var/www/html/index.html
-        mode: "0644"
+    # ... resto de la lista de tareas
 ```
 
 ---
@@ -507,9 +515,15 @@ ansible-playbook site.yml
 
 Ansible puede trabajar con variables obtenidas de distintas fuentes:
 
-<div class="cols-3" style="margin-top:0.8rem">
+- **Nivel de nodo** — definidas en el inventario para un host concreto
+- **Nivel de grupo** — ficheros en `group_vars/` para todos los hosts de un grupo
+- **Gathering Facts** — recopiladas automáticamente por Ansible de cada nodo
 
-<div class="card card-blue">
+---
+
+## Variables: nivel de nodo
+
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### Nivel de nodo
 
@@ -520,62 +534,37 @@ hosts:
   nodo1:
     ansible_ssh_host: 192.168.1.10
     ansible_ssh_user: jose
-    ansible_ssh_private_key_file: ~/.ssh/id_rsa
     http_port: 80
 ```
 
 </div>
 
-<div class="card card-green">
+---
+
+## Variables: nivel de grupo
+
+<div class="card card-green" style="margin-top:0.8rem">
 
 ### Nivel de grupo
 
-Variables en el directorio **`group_vars/`** que se aplican a todos los hosts de un grupo.
+Variables en **`group_vars/`** que se aplican a todos los hosts de un grupo.
 
 ```
-group_vars/
-├── all        # Todos los hosts
-└── servidores # Solo el grupo servidores
+mi-proyecto/
+└── group_vars/
+    ├── all          # Globales
+    └── servidores   # Del grupo
 ```
-
-</div>
-
-<div class="card card-purple">
-
-### Gathering Facts
-
-Variables que Ansible **recopila automáticamente** de cada nodo al inicio de cada play (SO, IPs, hostname…).
-
-```bash
-# Ver todas las facts de un nodo
-ansible nodo1 -m setup
-```
-
-</div>
 
 </div>
 
 ---
 
-## Variables de grupo: group_vars
+## group_vars/all
 
-El directorio `group_vars/` contiene ficheros YAML con variables accesibles en los plays:
+<div class="card card-blue" style="margin-top:0.8rem">
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div>
-
-```
-mi-proyecto/
-├── hosts
-├── ansible.cfg
-├── site.yml
-└── group_vars/
-    ├── all          # Variables globales
-    └── servidores   # Variables del grupo servidores
-```
-
-**`group_vars/all`:**
+### Contenido
 
 ```yaml
 ---
@@ -589,11 +578,15 @@ paquetes:
 
 </div>
 
-<div class="card card-blue">
+---
+
+## Uso de group_vars en el playbook
+
+<div class="card card-green" style="margin-top:0.8rem">
 
 ### Uso en el playbook
 
-Las variables se referencian con dobles llaves `{{ }}`:
+Se referencian con dobles llaves `{{ }}`:
 
 ```yaml
 - name: Instalar paquetes
@@ -601,14 +594,7 @@ Las variables se referencian con dobles llaves `{{ }}`:
     name: "{{ item }}"
     state: present
   loop: "{{ paquetes }}"
-
-- name: Crear usuario de la app
-  ansible.builtin.user:
-    name: "{{ usuario_app }}"
-    state: present
 ```
-
-</div>
 
 </div>
 
@@ -618,9 +604,7 @@ Las variables se referencian con dobles llaves `{{ }}`:
 
 Al inicio de cada play, Ansible ejecuta automáticamente la tarea **Gather Facts** que recopila información del nodo remoto.
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### Variables disponibles
 
@@ -634,29 +618,36 @@ Al inicio de cada play, Ansible ejecuta automáticamente la tarea **Gather Facts
 
 </div>
 
-<div class="card card-green">
+---
+
+## Uso de las facts en plantillas y tareas
+
+<div class="card card-green" style="margin-top:0.8rem">
 
 ### Uso en plantillas y tareas
 
 ```yaml
 - name: Mensaje de bienvenida
   ansible.builtin.copy:
-    content: "Servidor: {{ ansible_hostname }}
-Sistema: {{ ansible_distribution }}
-               {{ ansible_distribution_version }}"
+    content: >
+      Servidor: {{ ansible_hostname }}
+      Sistema: {{ ansible_distribution }}
+      {{ ansible_distribution_version }}
     dest: /etc/motd
 ```
 
-Ver todas las facts de un nodo:
+</div>
+
+---
+
+## Ver las facts de un nodo
+
+Se pueden consultar todas las facts recopiladas de un nodo con el módulo `setup`:
 
 ```bash
 ansible nodo1 -m setup
 ansible nodo1 -m setup -a "filter=ansible_distribution*"
 ```
-
-</div>
-
-</div>
 
 ---
 
@@ -698,6 +689,14 @@ Las plantillas se guardan en el directorio **`templates/`** con extensión `.j2`
     mode: "0644"
 ```
 
+</div>
+
+</div>
+
+---
+
+## Condicionales y bucles en Jinja2
+
 Jinja2 permite también **condicionales** y **bucles** dentro de las plantillas:
 
 ```jinja2
@@ -709,10 +708,6 @@ Sistema compatible.
 - {{ pkg }}
 {% endfor %}
 ```
-
-</div>
-
-</div>
 
 ---
 
@@ -744,9 +739,7 @@ mi-proyecto/
 ansible-playbook site.yml
 ```
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### Colores de la salida
 
@@ -759,9 +752,9 @@ ansible-playbook site.yml
 
 </div>
 
-<div class="card card-green">
+---
 
-### Resumen final (PLAY RECAP)
+## Resumen final (PLAY RECAP)
 
 ```
 PLAY RECAP **********************
@@ -772,10 +765,6 @@ nodo1 : ok=4  changed=2  unreachable=0
 - `ok` + `changed` — tareas ejecutadas
 - Si `changed=0` en la segunda ejecución → **idempotencia** funcionando
 - `unreachable` o `failed` → hay que revisar errores
-
-</div>
-
-</div>
 
 ---
 
@@ -819,8 +808,6 @@ Un proyecto con dos servidores:
 - **`apache2`** → instala y configura el servidor web
 - **`mariadb`** → instala y configura la base de datos
 
-Cada rol se ejecuta solo en los hosts que corresponden.
-
 </div>
 
 </div>
@@ -856,9 +843,13 @@ roles/
 
 El fichero `site.yml` asigna cada rol al grupo de hosts que corresponde:
 
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
 ```yaml
 ---
-# Tareas comunes a todos los nodos
+# Tareas comunes
 - name: Configuración común
   hosts: all
   become: true
@@ -871,7 +862,13 @@ El fichero `site.yml` asigna cada rol al grupo de hosts que corresponde:
   become: true
   roles:
     - apache2
+```
 
+</div>
+
+<div class="card card-green">
+
+```yaml
 # Servidor de base de datos
 - name: Configurar servidor de base de datos
   hosts: servidores_bd
@@ -879,6 +876,10 @@ El fichero `site.yml` asigna cada rol al grupo de hosts que corresponde:
   roles:
     - mariadb
 ```
+
+</div>
+
+</div>
 
 ---
 
@@ -915,9 +916,7 @@ El parámetro `notify` indica qué handler activar si la tarea produce un cambio
     state: restarted
 ```
 
-### ¿Por qué handlers y no una tarea normal?
-
-Una tarea normal se ejecuta siempre. El handler **solo se dispara si hubo un cambio real**, evitando reinicios innecesarios del servicio.
+Una tarea normal se ejecuta siempre; el handler **solo se dispara si hubo un cambio real**.
 
 </div>
 
@@ -996,6 +995,10 @@ Permite **modificar una línea concreta** de un fichero remoto sin sobreescribir
   notify: Reiniciar MariaDB
 ```
 
+---
+
+## Parámetros de lineinfile
+
 | Parámetro | Descripción |
 |:--|:--|
 | `path` | Fichero a modificar en el nodo remoto |
@@ -1013,9 +1016,7 @@ Los módulos para MariaDB/MySQL pertenecen a la colección **`community.mysql`**
 ansible-galaxy collection install community.mysql
 ```
 
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
+<div class="card card-blue" style="margin-top:0.8rem">
 
 ### community.mysql.mysql_db
 
@@ -1031,9 +1032,11 @@ Crea, elimina o importa bases de datos.
 
 </div>
 
-<div class="card card-green">
+---
 
-### community.mysql.mysql_user
+## community.mysql.mysql_user
+
+<div class="card card-green" style="margin-top:0.8rem">
 
 Gestiona usuarios y sus privilegios.
 
@@ -1047,8 +1050,6 @@ Gestiona usuarios y sus privilegios.
     state: present
     login_unix_socket: /var/run/mysqld/mysqld.sock
 ```
-
-</div>
 
 </div>
 
@@ -1071,43 +1072,6 @@ ansible-galaxy collection install community.mysql
 # Ver roles instalados
 ansible-galaxy list
 ```
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Usar un rol de Galaxy en el playbook
-
-```yaml
-- name: Configurar servidor web
-  hosts: servidores_web
-  become: true
-  roles:
-    - geerlingguy.apache
-```
-
-</div>
-
-<div class="card card-green">
-
-### requirements.yml
-
-Declara las dependencias del proyecto para instalarlas todas a la vez:
-
-```yaml
-roles:
-  - name: geerlingguy.apache
-collections:
-  - name: community.mysql
-```
-
-```bash
-ansible-galaxy install -r requirements.yml
-```
-
-</div>
-
-</div>
 
 ---
 

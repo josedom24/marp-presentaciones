@@ -393,11 +393,11 @@ section.destacado h1 { color: var(--teal-800); }
 .card-purple { border-top: 3px solid var(--purple);    background: #faf5ff; }
 
 /* Grid de columnas */
-.cols-2     { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; }
-.cols-3     { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.4rem; }
-.cols-4     { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.2rem; }
-.cols-60-40 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.8rem; }
-.cols-40-60 { display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.8rem; }
+.cols-2     { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1.6rem; }
+.cols-3     { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1.4rem; }
+.cols-4     { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1.2rem; }
+.cols-60-40 { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,1fr); gap: 1.8rem; }
+.cols-40-60 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.5fr); gap: 1.8rem; }
 
 /* Badges / etiquetas */
 .badge {
