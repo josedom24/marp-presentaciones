@@ -30,11 +30,11 @@ footer: ''
 
 # Infraestructura como Código
 
-## Recordatorio
+## Orquestación, Configuración y DevOps
 
 ---
 
-## Recordatorio: Infraestructura como Código
+## Infraestructura como Código
 
 > Gestionar y aprovisionar infraestructura mediante **ficheros de código**, en lugar de configurarla manualmente.
 
