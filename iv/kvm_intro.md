@@ -270,7 +270,7 @@ Crea una MV desde la línea de comandos (`apt install virtinst`):
 virt-install \
              --virt-type kvm \
              --name prueba1 \
-             --cdrom ~/iso/debian-11.3.0-amd64-netinst.iso \
+             --cdrom /var/lib/libvirt/images/debian-11.3.0-amd64-netinst.iso \
              --os-variant debian10 \
              --disk size=10 \
              --memory 1024 \
@@ -405,10 +405,10 @@ Aplicación gráfica para gestionar libvirt:
 virt-install \
              --virt-type kvm \
              --name prueba4 \
-             --cdrom ~/iso/Win10_21H2_Spanish_x64.iso \
+             --cdrom /var/lib/libvirt/images/Win10_21H2_Spanish_x64.iso \
              --os-variant win10 \
              --disk size=40,bus=virtio \
-             --disk ~/iso/virtio-win-0.1.217.iso,device=cdrom \
+             --disk /var/lib/libvirt/images/virtio-win-0.1.217.iso,device=cdrom \
              --network=default,model=virtio \
              --memory 2048 \
              --vcpus 2
