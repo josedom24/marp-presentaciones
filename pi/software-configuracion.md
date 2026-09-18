@@ -46,7 +46,7 @@ footer: ''
 
 Crea escenarios completos: máquinas, redes, almacenamiento…
 
-**Ya visto: OpenTofu**
+**Terraform / OpenTofu**
 
 </div>
 
@@ -56,7 +56,7 @@ Crea escenarios completos: máquinas, redes, almacenamiento…
 
 Configura el **software** de las máquinas ya creadas.
 
-**Toca ahora: Ansible**
+**Puppet, Chef, Salt, Ansible**
 
 </div>
 
