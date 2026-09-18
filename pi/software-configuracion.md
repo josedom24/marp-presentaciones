@@ -3,7 +3,7 @@ marp: true
 title: Software de Gestión de la Configuración
 theme: profesional
 paginate: true
-header: 'PI · Gestión de la Configuración'
+header: 'PI · Proyecto Interdisciplinar'
 footer: ''
 ---
 
