@@ -414,41 +414,6 @@ ansible all -m user -a "name=demo shell=/bin/bash state=present" --become
 
 ---
 
-## Declarativo e idempotencia
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Enfoque declarativo
-
-Ansible **no** usa un esquema imperativo (*"instala apache"*).
-
-Declaramos el **estado deseado** del servidor:
-
-> *"Quiero que el servidor tenga apache2 instalado"*
-
-Ansible hará todas las operaciones necesarias para que ese estado se cumpla.
-
-</div>
-
-<div class="card card-green">
-
-### Idempotencia
-
-Si el estado declarado **ya se ha alcanzado**, Ansible no ejecuta ninguna operación adicional.
-
-- Primera ejecución: instala apache → salida en **amarillo** (`changed`)
-- Segunda ejecución: ya está instalado → salida en **verde** (`ok`)
-
-Podemos ejecutar el mismo playbook **múltiples veces** con total seguridad.
-
-</div>
-
-</div>
-
----
-
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
@@ -508,6 +473,41 @@ ansible-playbook site.yml
 
     # ... resto de la lista de tareas
 ```
+
+---
+
+## Declarativo e idempotencia
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Enfoque declarativo
+
+Ansible **no** usa un esquema imperativo (*"instala apache"*).
+
+Declaramos el **estado deseado** del servidor:
+
+> *"Quiero que el servidor tenga apache2 instalado"*
+
+Ansible hará todas las operaciones necesarias para que ese estado se cumpla.
+
+</div>
+
+<div class="card card-green">
+
+### Idempotencia
+
+Si el estado declarado **ya se ha alcanzado**, Ansible no ejecuta ninguna operación adicional.
+
+- Primera ejecución: instala apache → salida en **amarillo** (`changed`)
+- Segunda ejecución: ya está instalado → salida en **verde** (`ok`)
+
+Podemos ejecutar el mismo playbook **múltiples veces** con total seguridad.
+
+</div>
+
+</div>
 
 ---
 
