@@ -151,9 +151,21 @@ Según el tipo de pool puede ser:
 
 </div>
 
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>La práctica con pools <code>logical</code>, <code>netfs</code> e <code>iSCSI</code> se plantea como una tarea optativa.</div>
-</div>
+---
+
+## Cuadro comparativo de pools
+
+<table style="font-size:0.6em; margin-top:0.8rem">
+<thead>
+<tr><th>Pool</th><th>Volumen</th><th>Gestión con <code>virsh</code></th><th>Herramienta específica</th><th>Nivel</th><th>Compartido</th><th>qcow2 / snapshots</th></tr>
+</thead>
+<tbody>
+<tr><td><code>dir</code></td><td>Fichero de imagen en un directorio local</td><td rowspan="4"><code>pool-define-as</code><br><code>pool-build</code><br><code>pool-start</code><br><code>vol-create-as</code><br><code>vol-list</code><br><code>vol-resize</code><br><code>vol-delete</code><br><code>pool-refresh</code></td><td><code>qemu-img</code></td><td>Archivo</td><td>❌</td><td>✅</td></tr>
+<tr><td><code>logical</code></td><td>Volumen lógico (LV) de un grupo de volúmenes LVM</td><td>LVM: <code>lvcreate</code>, <code>lvextend</code>, <code>lvremove</code></td><td>Bloque</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>netfs</code></td><td>Fichero de imagen en un directorio NFS montado</td><td><code>qemu-img</code> (servidor: NFS, <code>exportfs</code>)</td><td>Archivo</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>iSCSI</code></td><td>LUN ofrecido por el <em>target</em> iSCSI</td><td>En el servidor: <code>targetcli</code> (libvirt no crea volúmenes)</td><td>Bloque</td><td>✅</td><td>❌</td></tr>
+</tbody>
+</table>
 
 ---
 
