@@ -209,7 +209,7 @@ virsh vol-delete vol1.qcow2 default
 
 ## Gestión de volúmenes con `qemu-img`
 
-En un pool de tipo **`dir`** (el pool `default`):
+En un pool de tipo **`dir`**, por ejemplo el pool `default`:
 
 ```bash
 cd /var/lib/libvirt/images
