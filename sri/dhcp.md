@@ -377,14 +377,18 @@ Almacenamiento de las concesiones activas.
 
 ```json
 "valid-lifetime": 86400,
-"max-valid-lifetime": 86400
+"max-valid-lifetime": 86400,
+"renew-timer": 43200,
+"rebind-timer": 75600
 ```
 
 - **`valid-lifetime`** — duración por defecto de cada concesión, en segundos (`86400` = 24 h)
 - **`max-valid-lifetime`** — tope máximo aceptado si el cliente solicita más tiempo
+- **`renew-timer`** — tiempo de renovación (**T1**)
+- **`rebind-timer`** — tiempo de reenganche (**T2**)
 
 <div class="alerta alerta-info" style="margin-top:0.8rem">
-<span>ℹ️</span><div>De aquí derivan los temporizadores <strong>T1</strong> y <strong>T2</strong> que regulan los estados <code>RENEWING</code> y <code>REBINDING</code>.</div>
+<span>ℹ️</span><div><code>renew-timer</code> y <code>rebind-timer</code> son opcionales. Si no se indican, <strong>T1</strong> y <strong>T2</strong> se calculan a partir de la duración de la concesión: <strong>T1 = 0,5 × T3</strong> y <strong>T2 = 0,875 × T3</strong>.</div>
 </div>
 
 ---
