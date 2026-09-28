@@ -47,8 +47,8 @@ Recurso de almacenamiento gestionado por libvirt.
 **Tipos principales:**
 - `dir` — directorio del sistema de archivos
 - `logical` — grupo de volúmenes LVM
-- `netfs` — directorio NAS (NFS…)
-- `iSCSI` — disco desde servidor iSCSI
+- `disk` — disco físico completo
+- `netfs` — directorio de un servidor NFS
 
 </div>
 
@@ -61,7 +61,7 @@ Medio de almacenamiento que representa el **disco de una MV**.
 Según el tipo de pool puede ser:
 - Un **fichero de imagen** (`dir`, `netfs`)
 - Un **volumen lógico LVM** (`logical`)
-- Un **disco iSCSI** (`iscsi`)
+- Una **partición** del disco (`disk`)
 
 </div>
 
@@ -86,35 +86,7 @@ Según el tipo de pool puede ser:
 
 ---
 
-## Almacenamiento en red: NAS y SAN
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### NAS (*Network Attached Storage*)
-
-- Almacenamiento en red a nivel de **archivo**
-- Se accede mediante protocolos como **NFS** o SMB
-- El pool `netfs` de libvirt monta un recurso NAS
-
-</div>
-
-<div class="card card-green">
-
-### SAN (*Storage Area Network*)
-
-- Almacenamiento en red a nivel de **bloque**
-- El host ve el recurso remoto como si fuera un **disco local** (p.ej. vía **iSCSI**)
-- El pool `iSCSI` de libvirt se conecta a un disco SAN
-
-</div>
-
-</div>
-
----
-
-## Tipos de pool: `logical`, `netfs`, `iSCSI`
+## Otros tipos de pool: `logical`, `disk`, `netfs`
 
 <div class="cols-3" style="margin-top:0.8rem">
 
@@ -122,50 +94,33 @@ Según el tipo de pool puede ser:
 
 ### `logical`
 
-- Controla un **Grupo de Volúmenes LVM**
-- Los volúmenes son **LVs**
+- Controla un **grupo de volúmenes** (VG) de LVM
+- Los volúmenes son **volúmenes lógicos** (LV)
 - Sin almacenamiento compartido
-- Sin snapshots ni aprovisionamiento ligero
+- Sin qcow2 ni snapshots
 
 </div>
 
 <div class="card card-green">
 
-### `netfs`
+### `disk`
 
-- Monta un **directorio desde un servidor NAS** (NFS…)
-- Los volúmenes son **ficheros de imagen**
-- **Almacenamiento compartido** entre hosts
+- Controla un **disco físico** completo
+- Los volúmenes son **particiones** del disco
 
 </div>
 
 <div class="card card-purple">
 
-### `iSCSI`
+### `netfs`
 
-- Monta un **disco desde un servidor iSCSI**
-- Los datos se guardan directamente en ese disco
-- **Almacenamiento compartido** (con las consideraciones de acceso concurrente)
-
-</div>
+- Monta un **directorio de un servidor NFS**
+- Los volúmenes son **ficheros de imagen**
+- **Almacenamiento compartido** entre hosts
 
 </div>
 
----
-
-## Cuadro comparativo de pools
-
-<table style="font-size:0.6em; margin-top:0.8rem">
-<thead>
-<tr><th>Pool</th><th>Volumen</th><th>Gestión con <code>virsh</code></th><th>Herramienta específica</th><th>Nivel</th><th>Compartido</th><th>qcow2 / snapshots</th></tr>
-</thead>
-<tbody>
-<tr><td><code>dir</code></td><td>Fichero de imagen en un directorio local</td><td rowspan="4"><code>pool-define-as</code><br><code>pool-build</code><br><code>pool-start</code><br><code>vol-create-as</code><br><code>vol-list</code><br><code>vol-resize</code><br><code>vol-delete</code><br><code>pool-refresh</code></td><td><code>qemu-img</code></td><td>Archivo</td><td>❌</td><td>✅</td></tr>
-<tr><td><code>logical</code></td><td>Volumen lógico (LV) de un grupo de volúmenes LVM</td><td>LVM: <code>lvcreate</code>, <code>lvextend</code>, <code>lvremove</code></td><td>Bloque</td><td>❌</td><td>❌</td></tr>
-<tr><td><code>netfs</code></td><td>Fichero de imagen en un directorio NFS montado</td><td><code>qemu-img</code> (servidor: NFS, <code>exportfs</code>)</td><td>Archivo</td><td>✅</td><td>✅</td></tr>
-<tr><td><code>iSCSI</code></td><td>LUN ofrecido por el <em>target</em> iSCSI</td><td>En el servidor: <code>targetcli</code> (libvirt no crea volúmenes)</td><td>Bloque</td><td>✅</td><td>❌</td></tr>
-</tbody>
-</table>
+</div>
 
 ---
 
@@ -182,32 +137,34 @@ Según el tipo de pool puede ser:
 
 ## Dos enfoques para gestionar volúmenes
 
-Trabajamos sobre un pool de tipo **`dir`**:
+Sirven para **cualquier tipo de pool**:
 
 <div class="cols-2" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
-### Con libvirt (`virsh` / `virt-manager`)
+### Con libvirt (`virsh vol-*` / `virt-manager`)
 
-Crea la **imagen de disco** (qcow2, raw…) directamente.
-
-Toda la gestión queda registrada en libvirt.
+Los mismos comandos en todos los pools: libvirt crea el volumen **del tipo que corresponde** al pool (fichero de imagen, LV o partición).
 
 </div>
 
 <div class="card card-green">
 
-### Con herramientas específicas
+### Con la herramienta propia del pool
 
-`qemu-img create …` y después `pool-refresh`.
+- `dir`, `netfs`: `qemu-img`
+- `logical`: `lvcreate`, `lvextend`, `lvremove`
+- `disk`: `parted`
+
+Y después **`virsh pool-refresh`**.
 
 </div>
 
 </div>
 
 <div class="alerta alerta-info" style="margin-top:0.8rem">
-<span>ℹ️</span><div>Tras crear o modificar un volumen con herramientas externas, hay que ejecutar <code>virsh pool-refresh &lt;pool&gt;</code> para que libvirt lo detecte.</div>
+<span>ℹ️</span><div>libvirt no se entera de lo que hacen otras herramientas: tras crear, modificar o borrar un volumen con ellas, hay que ejecutar <code>virsh pool-refresh &lt;pool&gt;</code> para que lo detecte.</div>
 </div>
 
 ---
@@ -252,7 +209,7 @@ virsh vol-delete vol1.qcow2 default
 
 ## Gestión de volúmenes con `qemu-img`
 
-Trabajamos con un pool de tipo **`dir`**:
+En un pool de tipo **`dir`** (el pool `default`):
 
 ```bash
 cd /var/lib/libvirt/images
@@ -264,7 +221,7 @@ qemu-img create -f qcow2 vol2.qcow2 2G
 qemu-img info vol2.qcow2
 
 # Hacer que libvirt detecte el nuevo fichero
-virsh pool-refresh vm-images
+virsh pool-refresh default
 ```
 
 ---
@@ -288,6 +245,41 @@ Otras formas de indicar el disco:
 --disk path=/var/lib/libvirt/images/vol1.qcow2
 --disk pool=vm-images,size=10
 ```
+
+---
+
+## El mismo esquema en un pool `logical`
+
+Con un pool `vg-kvm` que controla el grupo de volúmenes LVM del mismo nombre:
+
+```bash
+# Con libvirt
+virsh vol-create-as vg-kvm vol3 5G
+
+# Con LVM
+sudo lvcreate -L 5G -n vol3 vg-kvm
+virsh pool-refresh vg-kvm
+```
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>En los dos casos, <code>virsh vol-list vg-kvm</code> muestra el volumen y se usa en <code>virt-install</code> con <code>--disk vol=vg-kvm/vol3</code>.</div>
+</div>
+
+---
+
+## Cuadro comparativo de pools
+
+<table style="font-size:0.6em; margin-top:0.8rem">
+<thead>
+<tr><th>Pool</th><th>Volumen</th><th>Gestión con <code>virsh</code></th><th>Herramienta propia<br>(+ <code>pool-refresh</code>)</th><th>Nivel</th><th>Compartido</th><th>qcow2 / snapshots</th></tr>
+</thead>
+<tbody>
+<tr><td><code>dir</code></td><td>Fichero de imagen en un directorio local</td><td rowspan="4"><code>vol-create-as</code><br><code>vol-list</code><br><code>vol-info</code><br><code>vol-resize</code><br><code>vol-delete</code></td><td><code>qemu-img</code></td><td>Archivo</td><td>❌</td><td>✅</td></tr>
+<tr><td><code>logical</code></td><td>Volumen lógico (LV) de un grupo de volúmenes LVM</td><td><code>lvcreate</code>, <code>lvextend</code>, <code>lvremove</code></td><td>Bloque</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>disk</code></td><td>Partición de un disco físico</td><td><code>parted</code></td><td>Bloque</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>netfs</code></td><td>Fichero de imagen en un directorio NFS montado</td><td><code>qemu-img</code></td><td>Archivo</td><td>✅</td><td>✅</td></tr>
+</tbody>
+</table>
 
 ---
 
