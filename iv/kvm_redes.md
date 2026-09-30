@@ -133,7 +133,7 @@ Plantilla en `/usr/share/libvirt/networks/default.xml`:
 
 ---
 
-## Definición XML — red aislada e red muy aislada
+## Definición XML — red aislada
 
 Red **aislada** (con DHCP, sin salida al exterior):
 
@@ -149,6 +149,14 @@ Red **aislada** (con DHCP, sin salida al exterior):
 </network>
 ```
 
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>En redes aisladas, eliminar la etiqueta <code>&lt;dhcp&gt;</code> desactiva el servidor DHCP.</div>
+</div>
+
+---
+
+## Definición XML — red muy aislada
+
 Red **muy aislada** (sin host, sin DHCP, sin exterior):
 
 ```xml
@@ -158,8 +166,8 @@ Red **muy aislada** (sin host, sin DHCP, sin exterior):
 </network>
 ```
 
-<div class="alerta alerta-info" style="margin-top:0.4rem">
-<span>ℹ️</span><div>En redes aisladas, eliminar la etiqueta <code>&lt;dhcp&gt;</code> desactiva el servidor DHCP.</div>
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Sin etiqueta <code>&lt;ip&gt;</code>, el host no tiene dirección en esta red: las máquinas solo se ven entre ellas.</div>
 </div>
 
 ---
