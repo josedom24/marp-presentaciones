@@ -197,6 +197,46 @@ contenedor1 RUNNING 1         -      10.0.3.10, 192.168.122.196  -    false
 
 ---
 
+## Redes en LXC — netplan dentro del contenedor
+
+En los contenedores Debian la red la gestiona **`systemd-networkd`**. Para configurarla con **netplan**:
+
+```bash
+apt install netplan.io
+chmod 600 /etc/netplan/10-lxc.yaml     # el fichero debe tener permisos restrictivos
+```
+
+```yaml
+# /etc/netplan/10-lxc.yaml
+network:
+  version: 2
+  ethernets:
+    eth1:
+      addresses: [10.0.0.10/24]
+```
+
+Se aplica con `netplan apply`.
+
+---
+
+## Redes en LXC — `netplan apply` en el contenedor
+
+`netplan apply` da error porque en el contenedor **no está `udev`**. Se puede simular que está:
+
+```bash
+mkdir -p /usr/local/bin
+echo -e '#!/bin/sh\nexit 0' > /usr/local/bin/udevadm
+chmod +x /usr/local/bin/udevadm
+```
+
+Después, `netplan apply` ya funciona.
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div><code>/usr/local/bin</code> va antes que <code>/usr/bin</code> en el <code>PATH</code>: netplan encuentra este <code>udevadm</code>, que no hace nada y termina sin error.</div>
+</div>
+
+---
+
 ## Almacenamiento en LXC — montar directorios del host
 
 Para compartir un directorio del host con un contenedor:
