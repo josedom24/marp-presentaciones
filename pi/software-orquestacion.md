@@ -656,6 +656,45 @@ output "server1" {
 
 ---
 
+## Del `output` al inventario de Ansible
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div>
+
+**`inventario.tf`**
+
+```hcl
+resource "local_file" "inventario" {
+  filename = "${path.module}/hosts"
+  content = templatefile(
+    "${path.module}/inventario.tftpl", {
+      ip_web = try(libvirt_domain.web
+        .network_interface[0].addresses[0], "")
+  })
+}
+```
+
+</div>
+
+<div>
+
+**`inventario.tftpl`** (la plantilla)
+
+```ini
+[servidores_web]
+web ansible_host=${ip_web} ansible_user=debian
+```
+
+</div>
+
+</div>
+
+- **`templatefile`** rellena la plantilla con las IP · **`local_file`** la escribe en tu equipo (provider `hashicorp/local`: repite `tofu init`)
+- Cada `apply` genera el inventario con las IP correctas: **primero OpenTofu, después Ansible**
+
+---
+
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
