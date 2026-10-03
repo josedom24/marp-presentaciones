@@ -3,7 +3,7 @@ marp: true
 title: Software de Orquestación
 theme: profesional
 paginate: true
-header: 'PI · Software de Orquestación'
+header: 'PI · Unidad 1 — Software de Orquestación'
 footer: ''
 ---
 
@@ -18,7 +18,7 @@ footer: ''
 <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.5rem; justify-content:center; font-size:0.85rem; color:white">
   <span>📧 José Domingo Muñoz</span>
   <span>🏫 IES Gonzalo Nazareno · Dos Hermanas</span>
-  <span>📚 PI · Puesta en Producción de Aplicaciones</span>
+  <span>📚 PI · Proyecto Intermodular</span>
 </div>
 
 ---
@@ -84,8 +84,7 @@ Los servicios de virtualización y Cloud Computing son **software**, y todo soft
 
 - Escenarios **replicables** y predecibles
 - **Control de versiones** de toda la infraestructura
-- **Auditoría** completa de los cambios
-- Recuperación ante desastres mucho más rápida
+- **Auditoría** de los cambios y recuperación rápida ante desastres
 
 </div>
 
@@ -225,7 +224,7 @@ Herramienta de orquestación creada por **HashiCorp** (2014), lenguaje declarati
 
 ### OpenTofu
 
-*Fork* libre de Terraform 1.5.x creado por la comunidad y gobernado por la **Linux Foundation**. Licencia **MPL 2.0** (libre), 100% compatible con los ficheros `.tf` y providers existentes.
+*Fork* libre de Terraform 1.5.x creado por la comunidad y gobernado por la **Linux Foundation**. Licencia **MPL 2.0** (libre), compatible con los ficheros `.tf` y con los providers de Terraform.
 
 </div>
 
@@ -257,13 +256,15 @@ Herramienta de orquestación creada por **HashiCorp** (2014), lenguaje declarati
 ### Ejemplo
 
 ```hcl
-resource "aws_instance" "web" {
-  ami           = var.imagen
-  instance_type = "t2.micro"
+variable "memoria" { default = 1024 }
+
+resource "libvirt_domain" "web" {
+  name   = "web"
+  memory = var.memoria
 }
 
-output "ip_publica" {
-  value = aws_instance.web.public_ip
+output "nombre" {
+  value = libvirt_domain.web.name
 }
 ```
 
@@ -288,7 +289,7 @@ Un **provider** es un plugin que conecta OpenTofu con una plataforma concreta. C
 
 ---
 
-## Ficheros más importantes de un proyecto
+## Ficheros de un proyecto
 
 <div class="cols-2" style="margin-top:0.8rem">
 
@@ -296,10 +297,12 @@ Un **provider** es un plugin que conecta OpenTofu con una plataforma concreta. C
 
 ### Los escribimos nosotros
 
-- **`provider.tf`** — configura el/los provider a usar
-- **`variables.tf`** — declara las variables reutilizables
-- **`main.tf`** — define los recursos: VMs, redes, discos…
-- **`output.tf`** — muestra información al finalizar (IPs, IDs…)
+- **`provider.tf`** — el provider y su versión
+- **`variables.tf`** — las variables reutilizables
+- **`main.tf`** — los recursos: VMs, discos…
+- **`network.tf`** — las redes
+- **`output.tf`** — lo que se muestra al terminar (IPs…)
+- **`cloud-init/`** — la configuración inicial de cada VM
 
 </div>
 
@@ -308,9 +311,10 @@ Un **provider** es un plugin que conecta OpenTofu con una plataforma concreta. C
 ### Lo genera OpenTofu
 
 - **`terraform.tfstate`** — el **estado** de la infraestructura
-- **`.terraform/`** — providers y módulos descargados por `init`
+- **`.terraform/`** — providers descargados por `init`
+- **`.terraform.lock.hcl`** — versiones exactas de los providers
 
-No se editan a mano.
+No se editan a mano ni se suben a Git (`.gitignore`).
 
 </div>
 
@@ -318,9 +322,28 @@ No se editan a mano.
 
 ---
 
+## Dependencias entre recursos
+
+```hcl
+resource "libvirt_volume" "disco" {
+  name = "web.qcow2"
+  ...
+}
+
+resource "libvirt_domain" "web" {
+  disk { volume_id = libvirt_volume.disco.id }   # referencia a otro recurso
+}
+```
+
+- Al usar `libvirt_volume.disco.id`, OpenTofu sabe que **el disco va antes** que la máquina
+- Con esas referencias construye un **grafo de dependencias**: crea en orden, lo independiente a la vez, y **destruye al revés**
+- No importa en qué orden se escriban los recursos ni en qué fichero: se leen todos los `.tf` del directorio
+
+---
+
 ## El estado de la infraestructura
 
-> El **estado** (`terraform.tfstate`) es un fichero donde OpenTofu guarda **qué recursos ha creado realmente** y con qué identificadores (IDs, IPs, dependencias…).
+> El **estado** (`terraform.tfstate`) es un fichero donde OpenTofu guarda **qué recursos ha creado realmente** y con qué identificadores.
 
 <div class="cols-2" style="margin-top:0.8rem">
 
@@ -328,9 +351,8 @@ No se editan a mano.
 
 ### ¿Por qué se guarda?
 
-- Es la única forma de saber **qué existe ya** sin preguntar a la plataforma recurso a recurso
+- Es la forma de saber **qué existe ya** sin preguntar a la plataforma recurso a recurso
 - Permite **comparar** lo declarado en el código con lo que hay realmente creado
-- Sin él, OpenTofu no sabría qué modificar o eliminar
 
 </div>
 
@@ -339,7 +361,7 @@ No se editan a mano.
 ### Cuidado con el estado
 
 - **No se edita a mano**
-- Si varios usuarios trabajan a la vez, hace falta un **backend remoto** compartido para evitar conflictos
+- Si trabajan varios a la vez, hace falta un **backend remoto** compartido
 - Si el estado se pierde, OpenTofu "olvida" lo que había creado
 
 </div>
@@ -359,6 +381,22 @@ No se editan a mano.
 | `tofu validate` | Verifica que la sintaxis de los ficheros `.tf` sea correcta |
 | `tofu show` | Muestra el estado actual de los recursos creados |
 | `tofu output` | Muestra los valores definidos en los bloques `output` |
+| `tofu refresh` | Actualiza el estado con lo que hay realmente en la plataforma |
+
+---
+
+## Flujo de trabajo habitual
+
+```bash
+tofu init       # 1. Una sola vez: descarga el provider
+tofu plan       # 2. Revisar qué se va a crear, cambiar o borrar
+tofu apply      # 3. Crear el escenario (pide confirmación)
+tofu output     # 4. Ver la información del output (IPs…)
+tofu destroy    # 5. Eliminar todo el escenario
+```
+
+- Si cambias los ficheros, vuelve a `plan` y `apply`: OpenTofu solo aplica **la diferencia**
+- Todos los comandos se ejecutan **en el directorio del proyecto**
 
 ---
 
@@ -397,6 +435,251 @@ Lo que **hay de verdad** en la plataforma (puede haber cambiado a mano: *drift*)
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>💡</span><div><code>plan</code> es la red de seguridad antes de aplicar: revisa siempre su salida antes de ejecutar <code>apply</code>.</div>
 </div>
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">04</p>
+
+# OpenTofu + libvirt
+
+## Máquinas virtuales con KVM y cloud-init
+
+---
+
+## El provider `libvirt`
+
+```hcl
+terraform {
+  required_providers {
+    libvirt = {
+      source  = "dmacvicar/libvirt"
+      version = "0.8.3"
+    }
+  }
+}
+
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+```
+
+- **`uri`** — la conexión a libvirt, la misma que `virsh -c qemu:///system`
+- Versión **fijada** a la `0.8.3`: desde la `0.9` se reescribió con otra sintaxis
+
+---
+
+## Imágenes cloud y el pool
+
+Las **imágenes cloud** son sistemas ya instalados, mínimos, en formato `qcow2` y preparados para configurarse con cloud-init en el primer arranque.
+
+```bash
+cd /var/lib/libvirt/images                  # directorio del pool "default"
+sudo wget <url de la imagen> -O debian13-base.qcow2
+sudo qemu-img resize debian13-base.qcow2 10G
+sudo virsh pool-refresh default             # que libvirt vea el fichero nuevo
+```
+
+- Se descargan **una vez** y se usan como **imagen base** de todas las máquinas
+- En los ejemplos: `debian13-base.qcow2` (Debian 13) y `ubuntu2604-base.qcow2` (Ubuntu 26.04)
+
+---
+
+## Los discos: `libvirt_volume`
+
+**Clon ligero** de la imagen base (*backing store*: solo guarda los cambios) y disco extra vacío de 1 GB:
+
+```hcl
+resource "libvirt_volume" "server1-disk" {
+  name             = "server1.qcow2"
+  pool             = var.libvirt_pool_name
+  base_volume_name = var.base_image
+  base_volume_pool = var.libvirt_pool_name
+  format           = "qcow2"
+}
+
+resource "libvirt_volume" "server1-extra" {
+  name   = "server1-extra.qcow2"
+  pool   = var.libvirt_pool_name
+  format = "qcow2"
+  size   = 1 * 1024 * 1024 * 1024
+}
+```
+
+---
+
+## cloud-init
+
+Configura la máquina en su **primer arranque**, a partir de dos ficheros:
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div>
+
+**`user-data`**: usuarios, claves, paquetes…
+
+```yaml
+#cloud-config
+hostname: server1
+users:
+  - name: debian
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAA... tu clave
+packages:
+  - qemu-guest-agent
+```
+
+</div>
+
+<div>
+
+**`network-config`**: la red (netplan)
+
+```yaml
+network:
+  version: 2
+  ethernets:
+    ens3:
+      dhcp4: true
+    ens4:
+      addresses: ["10.0.0.1/24"]
+```
+
+</div>
+
+</div>
+
+---
+
+## La máquina virtual: `libvirt_domain`
+
+```hcl
+# Disco ISO con los ficheros de cloud-init
+resource "libvirt_cloudinit_disk" "server1-cloudinit" {
+  name           = "server1-cloudinit.iso"
+  pool           = var.libvirt_pool_name
+  user_data      = file("${path.module}/cloud-init/user-data1.yaml")
+  network_config = file("${path.module}/cloud-init/network-config1.yaml")
+}
+
+resource "libvirt_domain" "server1" {
+  name       = "server1"
+  memory     = 1024
+  vcpu       = 2
+  qemu_agent = true
+  network_interface { network_name = "default" }
+  disk { volume_id = libvirt_volume.server1-disk.id }
+  cloudinit = libvirt_cloudinit_disk.server1-cloudinit.id
+}
+```
+
+---
+
+## Redes de libvirt
+
+| Tipo | Definición | ¿El anfitrión tiene IP? | ¿Salida al exterior? |
+|:--|:--|:--|:--|
+| **NAT** | `mode = "nat"` + `addresses` | Sí (la `.1`) | Sí |
+| **Aislada** | `mode = "none"` + `addresses` | Sí (la `.1`) | No |
+| **Muy aislada** | `mode = "none"`, sin `addresses` | No | No |
+
+```hcl
+resource "libvirt_network" "nat-dhcp" {
+  name      = "nat-dhcp"
+  mode      = "nat"
+  addresses = ["192.168.100.0/24"]
+  dhcp { enabled = true }
+  autostart = true
+}
+```
+
+---
+
+## Conectar la máquina a las redes
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Red que no gestiona OpenTofu
+
+Por su **nombre** (por ejemplo, `default`):
+
+```hcl
+network_interface {
+  network_name   = "default"
+  wait_for_lease = true
+}
+```
+
+</div>
+
+<div class="card card-green">
+
+### Red creada por OpenTofu
+
+Por su **id**:
+
+```hcl
+network_interface {
+  network_id     = libvirt_network.nat-dhcp.id
+  wait_for_lease = true
+}
+```
+
+</div>
+
+</div>
+
+- **`wait_for_lease = true`** — esperar a que el DHCP le dé IP: **solo** en redes con DHCP
+- Cada `network_interface` es una interfaz más (`ens3`, `ens4`…), que hay que configurar en el **`network-config`**
+
+---
+
+## Las IP en el `output`
+
+```hcl
+output "server1" {
+  value = {
+    ip1 = try(libvirt_domain.server1.network_interface[0].addresses[0], "No disponible")
+  }
+}
+```
+
+- Sin agente, OpenTofu solo conoce las IP que reparte el **DHCP** de libvirt
+- Con **`qemu_agent = true`**, se las pregunta al agente **`qemu-guest-agent`** de la máquina (lo instala cloud-init): también las **estáticas**
+- **`try(…, "No disponible")`** — si aún no hay IP, el `output` no da error
+- Si sale «No disponible», el agente aún no funcionaba: `tofu refresh` y `tofu output`
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">05</p>
+
+# Resumen
+
+## Problemas frecuentes
+
+---
+
+## Problemas frecuentes
+
+| Síntoma | Causas habituales |
+|:--|:--|
+| `storage volume not found` | Falta `virsh pool-refresh default` · el nombre de la imagen no coincide con `variables.tf` |
+| La red ya existe o se solapa | No se ha destruido el escenario anterior (mismo nombre o rango) |
+| `Permission denied (publickey)` | No has puesto tu clave pública en el `user-data` |
+| El `apply` se queda esperando | `wait_for_lease` en una red sin DHCP |
+| Una interfaz sin IP | Falta en el `network-config` · nombre de interfaz equivocado |
+| cloud-init termina con error | La máquina no tiene salida al exterior y se instalan paquetes |
+| Errores de sintaxis del provider | Se ha cambiado la versión fijada (`0.8.3`) · documentación de la `0.9` |
+
+Antes de aplicar: `tofu validate` y `tofu plan`. Dentro de la máquina: `cloud-init status --long`.
 
 ---
 

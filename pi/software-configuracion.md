@@ -3,7 +3,7 @@ marp: true
 title: Software de Gestión de la Configuración
 theme: profesional
 paginate: true
-header: 'PI · Proyecto Interdisciplinar'
+header: 'PI · Unidad 1 — Software de Gestión de la Configuración'
 footer: ''
 ---
 
@@ -18,7 +18,7 @@ footer: ''
 <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.5rem; justify-content:center; font-size:0.85rem; color:white">
   <span>📧 José Domingo Muñoz</span>
   <span>🏫 IES Gonzalo Nazareno · Dos Hermanas</span>
-  <span>📚 PI · Puesta en Producción de Aplicaciones</span>
+  <span>📚 PI · Proyecto Intermodular</span>
 </div>
 
 ---
