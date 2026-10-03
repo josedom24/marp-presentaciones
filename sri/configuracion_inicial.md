@@ -1089,7 +1089,7 @@ El servicio carga ese fichero al arrancar.
 
 # ¡Gracias!
 
-## Configuración inicial → Servicios de red
+## Configuración inicial
 
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>

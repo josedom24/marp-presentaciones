@@ -3,7 +3,7 @@ marp: true
 title: Protocolo DHCP y servidor Kea
 theme: profesional
 paginate: true
-header: 'SRI · Unidad 2 — Protocolo DHCP y servidor Kea'
+header: 'SRI · Unidad 1 — Protocolo DHCP y servidor Kea'
 footer: ''
 ---
 
@@ -460,7 +460,7 @@ Con el backend `memfile`, las concesiones se almacenan en `/var/lib/kea/kea-leas
 
 # ¡Gracias!
 
-## DHCP → Resolución de nombres con BIND
+## DHCP
 
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>

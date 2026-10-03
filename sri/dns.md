@@ -536,7 +536,7 @@ dig -x 172.22.0.1
 
 # ¡Gracias!
 
-## DNS → Servidor BIND en la práctica
+## DNS
 
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>

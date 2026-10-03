@@ -681,7 +681,7 @@ El cliente del usuario también necesita **enviar correos** a través de nuestro
 
 # ¡Gracias!
 
-## Correo electrónico → Postfix y Dovecot en la práctica
+## Correo electrónico
 
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>

@@ -3,7 +3,7 @@ marp: true
 title: Servicios de almacenamiento
 theme: profesional
 paginate: true
-header: 'SRI · Unidad 4 — Servicios de almacenamiento'
+header: 'SRI · Unidad 2 — Servicios de almacenamiento'
 footer: ''
 ---
 
@@ -82,11 +82,28 @@ Almacenamiento en la **nube** orientado a objetos (S3, Swift…).
 
 ---
 
+## ¿Ficheros o bloques?
+
+<div style="display:flex;align-items:center;justify-content:center;gap:0.8rem;margin:0.6rem 0">
+<div style="border:2px solid #64748b;border-radius:8px;padding:0.4rem 0.9rem;background:#f1f5f9;font-weight:600;text-align:center;width:15rem">Cliente<br><small>ve carpetas y ficheros</small></div>
+<div style="text-align:center;color:var(--teal-600);font-weight:600">⟷<br><small>ficheros (NFS)</small></div>
+<div style="border:2px solid var(--teal-600);border-radius:8px;padding:0.4rem 0.9rem;background:var(--teal-50);font-weight:600;text-align:center;width:17rem">Servidor <strong>NAS</strong><br><small>sistema de ficheros + disco</small></div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:center;gap:0.8rem;margin:0.6rem 0">
+<div style="border:2px solid var(--teal-600);border-radius:8px;padding:0.4rem 0.9rem;background:var(--teal-50);font-weight:600;text-align:center;width:15rem">Cliente<br><small>sistema de ficheros</small></div>
+<div style="text-align:center;color:var(--teal-600);font-weight:600">⟷<br><small>bloques (iSCSI)</small></div>
+<div style="border:2px solid #64748b;border-radius:8px;padding:0.4rem 0.9rem;background:#f1f5f9;font-weight:600;text-align:center;width:17rem">Servidor <strong>SAN</strong><br><small>disco</small></div>
+</div>
+
+- En una **NAS**, el sistema de ficheros está en el **servidor**: el cliente pide ficheros
+- En una **SAN**, el servidor solo ofrece un disco: el **cliente lo formatea** y lo gestiona
+
+---
+
 ## DAS — Direct Attached Storage
 
 > El disco está **físicamente conectado** al servidor que lo usa.
-
-### Características
 
 - Conexión **directa**: SATA, SAS, NVMe, USB…
 - **Máximo rendimiento** y la menor latencia posible
@@ -105,8 +122,6 @@ Almacenamiento en la **nube** orientado a objetos (S3, Swift…).
 
 > Un servidor comparte **sistemas de ficheros completos** por la red.
 
-### Características
-
 - Trabaja a nivel de **archivo**: el cliente ve carpetas y ficheros
 - Habitualmente sobre **TCP/IP**, en redes de uso general
 - Protocolos típicos: **NFS** (Unix/Linux), **SMB/CIFS** (Windows)
@@ -123,8 +138,6 @@ Almacenamiento en la **nube** orientado a objetos (S3, Swift…).
 
 > Una **red dedicada** ofrece a los servidores **dispositivos de bloques**.
 
-### Características
-
 - Trabaja a nivel de **bloque**: el cliente ve un disco "como si fuera local"
 - Red **dedicada**, normalmente de **alta velocidad** (10 Gbps, fibra…)
 - El cliente **formatea** el disco con su sistema de ficheros preferido
@@ -140,8 +153,6 @@ Almacenamiento en la **nube** orientado a objetos (S3, Swift…).
 ## Cloud Storage
 
 > Almacenamiento ofrecido como servicio en la nube, generalmente **orientado a objetos**.
-
-### Características
 
 - **API HTTP** (REST) para subir, descargar y gestionar objetos
 - Estándar de facto: **S3** de Amazon (y compatibles: MinIO, Ceph RGW…)
@@ -168,10 +179,92 @@ Almacenamiento en la **nube** orientado a objetos (S3, Swift…).
 
 ---
 
+## Escenario de los ejemplos
+
+| Máquina | Papel | IP (red de datos) |
+|:--|:--|:--|
+| **almacenamiento** | Servidor NAS (NFS) y SAN (iSCSI), con RAID 5 y LVM | `192.168.200.10` |
+| **servidorweb** | Cliente iSCSI | `192.168.200.20` |
+| **backend1** · **backend2** | Clientes NFS | `192.168.200.21` · `.22` |
+
+- El servidor de almacenamiento tiene **tres discos** adicionales: `/dev/vdb`, `/dev/vdc` y `/dev/vdd`
+- Lo que se comparte son **volúmenes lógicos** creados sobre el RAID 5
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Es el escenario de la práctica: en el tuyo, cambia las IP por las de tu red.</div>
+</div>
+
+---
+
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
 <p class="numero">02</p>
+
+# Preparar el almacenamiento
+
+## RAID 5 con mdadm y LVM
+
+---
+
+## RAID 5 con `mdadm`
+
+**RAID 5** reparte los datos y la **paridad** entre todos los discos: si falla **un** disco, no se pierde nada.
+
+```bash
+sudo apt install mdadm
+sudo mdadm --create /dev/md0 --level=5 --raid-devices=3 /dev/vdb /dev/vdc /dev/vdd
+
+cat /proc/mdstat             # estado y progreso de la sincronización
+sudo mdadm --detail /dev/md0
+lsblk /dev/md0
+```
+
+- Tamaño útil: **(n − 1) × tamaño del disco**, porque un disco se dedica a la paridad
+- Necesita al menos **3 discos**
+
+---
+
+## Que el RAID sobreviva al reinicio
+
+Hay que guardar la definición del RAID y actualizar el *initramfs*:
+
+```bash
+sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf
+sudo update-initramfs -u
+```
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Sin estos pasos, tras reiniciar el RAID puede aparecer como <code>/dev/md127</code> y fallar lo que dependa de <code>/dev/md0</code>.</div>
+</div>
+
+Comprobar tras reiniciar: `cat /proc/mdstat`.
+
+---
+
+## LVM sobre el RAID
+
+**LVM** divide el RAID en **volúmenes lógicos** que se pueden crear, ampliar o borrar sin reparticionar.
+
+```bash
+sudo apt install lvm2
+sudo pvcreate /dev/md0                        # volumen físico
+sudo vgcreate vgalmacen /dev/md0              # grupo de volúmenes
+sudo lvcreate -L 512M -n lun1 vgalmacen       # volúmenes lógicos
+sudo lvcreate -L 512M -n lun2 vgalmacen
+sudo lvcreate -L 1G   -n nfs  vgalmacen
+sudo lvs
+```
+
+- Cada volumen es un dispositivo de bloques: `/dev/vgalmacen/lun1`, `/dev/vgalmacen/nfs`…
+- Los de la SAN **no se formatean** en el servidor (lo hace el cliente); el de la NAS **sí**
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">03</p>
 
 # NAS con NFS
 
@@ -183,12 +276,10 @@ Almacenamiento en la **nube** orientado a objetos (S3, Swift…).
 
 > **Network File System** es un protocolo para **compartir ficheros y directorios** por red. Originalmente desarrollado por **Sun Microsystems**, es el estándar de NAS en entornos Unix y Linux.
 
-### Datos clave
-
 - El servidor **exporta** uno o varios directorios
 - El cliente los **monta** como si fueran locales
 - Las operaciones de lectura y escritura se realizan **remotamente** sobre TCP/IP
-- Puerto **2049/tcp** (también admite UDP)
+- **NFSv4** (la versión que se monta por defecto) usa solo el puerto **2049/tcp**
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>ℹ️</span><div>Es transparente para las aplicaciones: leen y escriben en una ruta como cualquier otra.</div>
@@ -199,23 +290,38 @@ Almacenamiento en la **nube** orientado a objetos (S3, Swift…).
 ## Instalación del servidor NFS
 
 ```bash
-sudo apt update
 sudo apt install nfs-kernel-server
-```
-
-### Tras la instalación
-
-- El servicio queda activo (`nfs-server.service`)
-- Aún no se exporta nada: hay que configurar `/etc/exports`
-
-```bash
 systemctl status nfs-server
-systemctl restart nfs-server
 ```
+
+- El servicio queda activo, pero aún **no exporta nada**: hay que configurar `/etc/exports`
+- En Debian 13, NFS sobre **UDP** está desactivado por defecto
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>NFS se apoya en <strong>RPC</strong> (<code>rpcbind</code>): si hay cortafuegos por medio, conviene revisar también los puertos auxiliares.</div>
+<span>ℹ️</span><div><strong>NFSv3</strong> necesita además <strong>RPC</strong> (<code>rpcbind</code>, <code>mountd</code>): lo usa, por ejemplo, <code>showmount</code>. NFSv4 solo necesita el puerto 2049.</div>
 </div>
+
+---
+
+## Montaje permanente en el servidor
+
+El volumen que se va a compartir se **formatea** y se monta en el servidor de forma **permanente**:
+
+```bash
+sudo mkfs.ext4 /dev/vgalmacen/nfs
+sudo mkdir -p /srv/nfs
+```
+
+Línea en `/etc/fstab` (o una unidad `.mount`, que veremos más adelante):
+
+```
+/dev/vgalmacen/nfs   /srv/nfs   ext4   defaults   0   2
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo mount -a
+```
 
 ---
 
@@ -224,10 +330,12 @@ systemctl restart nfs-server
 Cada línea declara un **directorio exportado** y la lista de clientes con sus opciones:
 
 ```
-/srv/nfs/compartido   192.168.1.0/24(rw,sync,no_subtree_check)
-/srv/nfs/lectura      *(ro,sync,no_subtree_check)
-/srv/nfs/web          web1.lan(rw,sync) web2.lan(rw,sync)
+/srv/nfs       192.168.200.0/24(rw,sync,no_subtree_check)
+/srv/publico   192.168.200.20(ro,sync,no_subtree_check)
 ```
+
+- El primero, en **lectura y escritura** para toda la red de datos
+- El segundo, **solo lectura** y para un único cliente
 
 ### Aplicar los cambios
 
@@ -242,78 +350,130 @@ sudo exportfs -v         # muestra lo exportado actualmente
 
 | Opción | Para qué sirve |
 |:--|:--|
-| `rw` / `ro` | Lectura y escritura / sólo lectura |
-| `sync` | Confirma la escritura en disco antes de responder |
+| `rw` / `ro` | Lectura y escritura / sólo lectura (por defecto) |
+| `sync` | Confirma la escritura en disco antes de responder (por defecto) |
 | `async` | Más rápido, pero menos seguro ante caídas |
-| `no_subtree_check` | Desactiva la verificación de subdirectorio (recomendado) |
-| `root_squash` | El `root` del cliente se mapea a un usuario sin privilegios |
+| `no_subtree_check` | Desactiva la verificación de subdirectorio (por defecto) |
+| `root_squash` | El `root` del cliente se mapea a `nobody` (por defecto) |
 | `no_root_squash` | Permite que el `root` remoto sea `root` real (peligroso) |
 | `all_squash` | Todos los usuarios remotos se mapean a `nobody` |
 
 ---
 
-## Cliente NFS — instalación
+## Usuarios y permisos en NFS
 
-```bash
-sudo apt install nfs-common
-```
+- El cliente envía el **UID y el GID** (números, no nombres) y el servidor comprueba los permisos con ellos
+- Con **`root_squash`**, el `root` del cliente es `nobody` en el servidor: si el directorio es de `root`, **no puede escribir** (*Permission denied*)
 
-### Montaje manual
+<div class="cols-2" style="margin-top:0.6rem">
 
-```bash
-sudo mkdir -p /mnt/nfs/compartido
+<div class="card card-blue">
 
-sudo mount 192.168.1.10:/srv/nfs/compartido \
-           /mnt/nfs/compartido
-```
+### Soluciones
 
-A partir de ahí, `/mnt/nfs/compartido` se usa como cualquier directorio local.
+- Dar permisos en el **servidor**: `chown` del directorio al usuario que va a escribir
+- `no_root_squash`, solo si se confía plenamente en el cliente
+
+</div>
+
+<div class="card card-green">
+
+### Con un servidor web
+
+- `www-data` tiene que poder **leer** los ficheros
+- Si el montaje está fuera de `/var/www`, hace falta su `<Directory>` en Apache (lo vimos en servidores web)
+
+</div>
+
+</div>
 
 ---
 
-## Montaje persistente con `/etc/fstab`
-
-Para que el directorio se monte **automáticamente** en cada arranque, añadir una línea al `fstab`:
-
-```
-192.168.1.10:/srv/nfs/compartido  /mnt/nfs/compartido  nfs  defaults  0  0
-```
-
-### Aplicar sin reiniciar
+## Cliente NFS: montaje manual
 
 ```bash
-sudo systemctl daemon-reload
-sudo mount -a
+sudo apt install nfs-common
+
+# Lo que exporta el servidor (usa NFSv3)
+showmount -e 192.168.200.10
+
+sudo mkdir -p /var/www/nfs
+sudo mount 192.168.200.10:/srv/nfs /var/www/nfs
 ```
 
+A partir de ahí, `/var/www/nfs` se usa como cualquier directorio local.
+
+Línea equivalente en `/etc/fstab`:
+
+```
+192.168.200.10:/srv/nfs   /var/www/nfs   nfs   defaults,_netdev   0   0
+```
+
+---
+
+## Unidades de montaje de systemd
+
+Un **`.mount`** describe un montaje como una unidad más de systemd (`/etc/systemd/system/`).
+
+El nombre del fichero **tiene que coincidir** con la ruta de montaje, y se activa como cualquier servicio:
+
+```bash
+$ systemd-escape -p --suffix=mount /var/www/nfs
+var-www-nfs.mount
+$ sudo systemctl daemon-reload
+$ sudo systemctl enable --now var-www-nfs.mount
+```
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>systemd ya convierte cada línea de <code>/etc/fstab</code> en una unidad <code>.mount</code>: las dos formas son equivalentes.</div>
+</div>
+
+---
+
+## Unidad de montaje para NFS
+
+`/etc/systemd/system/var-www-nfs.mount` en **backend1** y **backend2**:
+
+```ini
+[Unit]
+Wants=network-online.target
+After=network-online.target
+
+[Mount]
+What=192.168.200.10:/srv/nfs
+Where=/var/www/nfs
+Type=nfs
+Options=_netdev
+
+[Install]
+WantedBy=remote-fs.target
+```
+
+**`After=network-online.target`** y **`_netdev`**: esperar a que haya red antes de montar.
 
 ---
 
 ## Comprobaciones útiles
 
 ```bash
-# Listar lo exportado por un servidor
-showmount -e 192.168.1.10
-
-# Ver montajes NFS activos
-mount | grep nfs
+# En el cliente: montajes NFS activos y versión usada
 findmnt -t nfs,nfs4
+nfsstat -m
 
-# Estadísticas y errores
-nfsstat
+# En el servidor: lo que se exporta y a quién
+sudo exportfs -v
+
+# Errores
 journalctl -u nfs-server
+journalctl -u var-www-nfs.mount
 ```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div><code>showmount</code> es muy útil desde el cliente para confirmar que un servidor exporta el recurso esperado.</div>
-</div>
 
 ---
 
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">03</p>
+<p class="numero">04</p>
 
 # SAN con iSCSI
 
@@ -325,12 +485,10 @@ journalctl -u nfs-server
 
 > **Internet Small Computer Systems Interface** transporta **comandos SCSI** sobre **TCP/IP**, permitiendo acceder remotamente a discos como si fueran **dispositivos de bloques locales**.
 
-### Características
-
 - Implementa **SAN** sobre redes Ethernet **estándar**, sin hardware específico
 - Alternativa **económica** a Fibre Channel
 - Habitual en redes de **1 Gbps** y **10 Gbps**
-- El cliente ve un **disco nuevo** (`/dev/sdb`, `/dev/sdc`…) que formatea y monta a su gusto
+- El cliente ve un **disco nuevo** que formatea y monta a su gusto
 - Puerto **3260/tcp** entre *initiator* y *target*
 
 ---
@@ -344,7 +502,8 @@ journalctl -u nfs-server
 ### Lado servidor
 
 - **Target** — recurso publicado por el servidor; agrupa una o varias LUN
-- **LUN** (*Logical Unit Number*) — unidad concreta de almacenamiento (un disco, una partición, un volumen lógico…)
+- **LUN** (*Logical Unit Number*) — cada disco que ofrece el target (un disco, una partición, un volumen lógico…)
+- **Portal** — IP y puerto donde escucha (`192.168.200.10:3260`)
 
 </div>
 
@@ -353,18 +512,14 @@ journalctl -u nfs-server
 ### Lado cliente
 
 - **Initiator** — el cliente iSCSI; descubre targets y se conecta a ellos
-- **IQN** (*iSCSI Qualified Name*) — identificador único del recurso
+
+### Los dos
+
+- **IQN** (*iSCSI Qualified Name*) — nombre único de cada target y de cada initiator: `iqn.2026-10.org.example:almacen` (año-mes, dominio al revés y nombre)
 
 </div>
 
 </div>
-
-### Formato IQN
-
-```
-iqn.2021-11.org.example:target1
-iqn.2020-01.org.gonzalonazareno:sdb4
-```
 
 ---
 
@@ -399,102 +554,94 @@ iqn.2020-01.org.gonzalonazareno:sdb4
 
 ---
 
-## Servidor — instalación de `tgt`
+## Servidor: configuración del target
 
-```bash
-sudo apt update
-sudo apt install tgt
+Tras `sudo apt install tgt`, fichero `/etc/tgt/conf.d/almacen.conf`:
+
+```
+<target iqn.2026-10.org.example:almacen>
+    backing-store /dev/vgalmacen/lun1
+    backing-store /dev/vgalmacen/lun2
+    initiator-address 192.168.200.20
+    incominguser usuario secreto123456
+</target>
 ```
 
-### Comprobación
-
-```bash
-systemctl status tgt
-```
-
-Por defecto **no exporta nada**: hay que crear targets y LUNs.
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Antes de exportar, prepara el bloque que vas a compartir: puede ser un <strong>disco entero</strong> (<code>/dev/vdb</code>), una <strong>partición</strong> o un <strong>volumen LVM</strong>.</div>
-</div>
+- **`backing-store`** — cada uno es una LUN · **`initiator-address`** — IP que puede conectarse
+- **`incominguser`** — usuario y contraseña **CHAP** (la contraseña, de 12 caracteres o más)
 
 ---
 
-## Crear un target con `tgtadm`
+## Servidor: aplicar y comprobar
 
 ```bash
-# 1 · Crear un target con su IQN
-sudo tgtadm --lld iscsi --op new --mode target \
-            --tid 1 -T iqn.2021-11.org.example:target1
-
-# 2 · Asociar una LUN con un dispositivo de bloques
-sudo tgtadm --lld iscsi --op new --mode logicalunit \
-            --tid 1 --lun 1 -b /dev/vdb
-
-# 3 · Permitir el acceso desde cualquier red (luego se restringe)
-sudo tgtadm --lld iscsi --op bind --mode target \
-            --tid 1 -I ALL
-
-# 4 · Comprobar la configuración
+sudo systemctl restart tgt
 sudo tgtadm --lld iscsi --op show --mode target
 ```
 
----
+En la salida se ve el target, sus **LUN**, la cuenta CHAP y las IP permitidas:
 
-## Hacer la configuración persistente
+- **LUN 0** es el controlador del target; los discos son la **LUN 1** y la **LUN 2**
+- Al reiniciar, `tgt` vuelve a leer los ficheros de `/etc/tgt/conf.d/`
 
-Las órdenes de `tgtadm` se pierden al reiniciar. Para que sobrevivan:
-
-```bash
-sudo tgt-admin --dump > /etc/tgt/conf.d/example.conf
-```
-
-A partir de ese momento, `tgt` reaplica el contenido del archivo en cada arranque.
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>El parámetro <code>-I ALL</code> permite el acceso desde cualquier dirección. En producción conviene <strong>restringirlo</strong> a las IPs concretas que deben usar el target.</div>
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>También se puede crear un target en caliente con <code>tgtadm --op new</code>, pero se pierde al reiniciar: para algo permanente, el fichero.</div>
 </div>
 
 ---
 
-## Cliente — instalación de `open-iscsi`
+## Cliente: instalación y descubrimiento
 
 ```bash
-sudo apt update
 sudo apt install open-iscsi
+cat /etc/iscsi/initiatorname.iscsi        # IQN de este initiator
 ```
 
-### Identificador del initiator
+Descubrir los targets que publica el portal:
 
-El instalador genera automáticamente el **IQN** del cliente en:
-
+```bash
+$ sudo iscsiadm -m discovery -t sendtargets -p 192.168.200.10
+192.168.200.10:3260,1 iqn.2026-10.org.example:almacen
 ```
-/etc/iscsi/initiatorname.iscsi
-```
 
-Cada cliente tiene un IQN único: si más adelante se restringe el acceso por initiator, hay que tenerlo a mano.
+El descubrimiento guarda el target en la base de datos del initiator (los **nodos**), donde se configura antes de conectarse.
 
 ---
 
-## Descubrir y conectar al target
+## Cliente: autenticación CHAP
+
+Antes de conectarse, hay que guardar en el nodo el método, el usuario y la contraseña:
 
 ```bash
-# 1 · Descubrir los targets que publica un portal (servidor)
-sudo iscsiadm --mode discovery --type sendtargets \
-              --portal 10.0.0.1
+T="-m node -T iqn.2026-10.org.example:almacen -p 192.168.200.10"
 
-# 2 · Iniciar sesión contra un target concreto
-sudo iscsiadm --mode node \
-              -T iqn.2021-11.org.example:target1 \
-              --portal 10.0.0.1 --login
+sudo iscsiadm $T -o update -n node.session.auth.authmethod -v CHAP
+sudo iscsiadm $T -o update -n node.session.auth.username   -v usuario
+sudo iscsiadm $T -o update -n node.session.auth.password   -v secreto123456
 ```
 
-Tras el `--login`, el kernel detecta un **disco nuevo** (`/dev/sdb`, por ejemplo) que se trata como cualquier otro:
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Sin <code>authmethod CHAP</code> el cliente no envía las credenciales y el login falla (<code>authorization failure</code>).</div>
+</div>
+
+---
+
+## Cliente: conectar al target
 
 ```bash
-lsblk
-sudo mkfs.ext4 /dev/sdb
-sudo mount /dev/sdb /mnt/iscsi
+sudo iscsiadm -m node -T iqn.2026-10.org.example:almacen \
+              -p 192.168.200.10 --login
+```
+
+El kernel detecta **un disco nuevo por cada LUN**:
+
+```bash
+$ lsblk -S
+NAME HCTL     TYPE VENDOR   MODEL          REV  TRAN
+sda  2:0:0:1  disk IET      VIRTUAL-DISK   0001 iscsi
+sdb  2:0:0:2  disk IET      VIRTUAL-DISK   0001 iscsi
+$ sudo mkfs.ext4 /dev/sda           # comprueba antes con lsblk cuál es
+$ sudo mkdir -p /srv/iscsi && sudo mount /dev/sda /srv/iscsi
 ```
 
 ---
@@ -502,16 +649,13 @@ sudo mount /dev/sdb /mnt/iscsi
 ## Sesiones y desconexión
 
 ```bash
-# Sesiones activas
+# Sesiones activas (con -P 3, también los discos de cada sesión)
 sudo iscsiadm -m session
+sudo iscsiadm -m session -P 3 | grep "Attached scsi disk"
 
 # Desconectar de un target concreto
-sudo iscsiadm -m node \
-              -T iqn.2021-11.org.example:target1 \
-              -p 10.0.0.1 -u
-
-# Desconectar de todos los targets de un portal
-sudo iscsiadm -m node -p 10.0.0.1 --logout
+sudo iscsiadm -m node -T iqn.2026-10.org.example:almacen \
+              -p 192.168.200.10 --logout
 ```
 
 <div class="alerta alerta-warning" style="margin-top:0.6rem">
@@ -523,39 +667,39 @@ sudo iscsiadm -m node -p 10.0.0.1 --logout
 ## Reconexión automática al arrancar
 
 ```bash
-sudo iscsiadm -m node \
-              -T iqn.2021-11.org.example:target1 \
-              -p 10.0.0.1 --op update \
+sudo iscsiadm -m node -T iqn.2026-10.org.example:almacen \
+              -p 192.168.200.10 --op update \
               -n node.startup -v automatic
 ```
 
-A partir de ese momento, el cliente **vuelve a conectarse** al target en cada arranque.
+A partir de ese momento, el cliente **vuelve a conectarse** al target en cada arranque (lo hace el servicio `open-iscsi`).
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Para que el dispositivo se monte automáticamente conviene añadirlo a <code>/etc/fstab</code> con la opción <strong><code>_netdev</code></strong>, que retrasa el montaje hasta que la red esté disponible.</div>
+<span>ℹ️</span><div>La sesión no monta el disco: para eso, una <strong>unidad <code>.mount</code></strong> que espere a que haya sesión.</div>
 </div>
 
 ---
 
-## Autenticación CHAP
+## Unidad de montaje para iSCSI
 
-iSCSI puede autenticar al cliente con **CHAP** (usuario y contraseña) para que sólo los initiator autorizados puedan conectarse.
+El nombre `/dev/sda` puede **cambiar** al reiniciar: se monta por **UUID** (`sudo blkid /dev/sda`).
 
-### En el cliente
+`/etc/systemd/system/srv-iscsi.mount` en **servidorweb**:
 
-```bash
-sudo iscsiadm --mode node \
-    -T iqn.2021-11.org.example:target1 --portal 10.0.0.1 \
-    -o update -n node.session.auth.username -v usuario
+```ini
+[Unit]
+Requires=open-iscsi.service
+After=open-iscsi.service network-online.target
 
-sudo iscsiadm --mode node \
-    -T iqn.2021-11.org.example:target1 --portal 10.0.0.1 \
-    -o update -n node.session.auth.password -v contraseña
+[Mount]
+What=/dev/disk/by-uuid/7c1e0d2a-5b3f-4e8a-9d61-2f0c4a8b9e15
+Where=/srv/iscsi
+Type=ext4
+Options=_netdev
+
+[Install]
+WantedBy=remote-fs.target
 ```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>En el servidor hay que declarar el usuario y la contraseña dentro de la definición del target, normalmente en su archivo de <code>/etc/tgt/conf.d/</code>.</div>
-</div>
 
 ---
 
@@ -571,11 +715,48 @@ sudo iscsiadm --mode node \
 
 ---
 
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">05</p>
+
+# Resumen
+
+## Problemas frecuentes
+
+---
+
+## Problemas frecuentes: NFS
+
+| Síntoma | Causas habituales |
+|:--|:--|
+| `access denied by server` | El cliente no está en la red o la IP de `/etc/exports` · falta `exportfs -ra` |
+| *Permission denied* al escribir | `root_squash` · permisos del directorio en el **servidor** |
+| El `mount` se queda colgado | Servidor parado · cortafuegos · IP mal |
+| `showmount` no responde | Solo hay NFSv4 (`showmount` usa NFSv3) |
+| El servidor web da **403** | `www-data` no puede leer · falta el `<Directory>` |
+
+---
+
+## Problemas frecuentes: iSCSI y montajes
+
+| Síntoma | Causas habituales |
+|:--|:--|
+| `authorization failure` en el login | Usuario o contraseña CHAP · falta `authmethod CHAP` · `initiator-address` |
+| No aparece ningún disco | No se ha hecho `--login` · el `backing-store` no existe |
+| Tras reiniciar, otro nombre de disco | Se monta por `/dev/sdX` en lugar de por **UUID** |
+| El RAID aparece como `md127` | Falta `mdadm.conf` o `update-initramfs -u` |
+| `Where= setting doesn't match unit name` | El nombre del `.mount` no coincide con la ruta |
+| El arranque espera mucho | Montaje sin `_netdev` · el servidor no responde |
+
+---
+
 ## Para profundizar
 
 - [Documentación oficial de NFS (kernel.org)](https://www.kernel.org/doc/Documentation/filesystems/nfs/)
 - [Wiki de Open-iSCSI](https://github.com/open-iscsi/open-iscsi)
 - [Manual de tgt — Linux SCSI target framework](https://stgt.sourceforge.net/)
+- [systemd.mount](https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html)
 
 ---
 
@@ -584,7 +765,7 @@ sudo iscsiadm --mode node \
 
 # ¡Gracias!
 
-## Almacenamiento → Alta disponibilidad y respaldo
+## Almacenamiento
 
 <div style="margin-top:2rem; display:flex; gap:2rem; justify-content:center; font-size:0.85rem; color:#64748b">
   <span>📧 José Domingo Muñoz</span>
