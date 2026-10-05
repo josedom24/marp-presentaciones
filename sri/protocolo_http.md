@@ -103,17 +103,18 @@ HTTP es un protocolo de **aplicación** que usa **TCP** como transporte.
 ## Anatomía de una URL
 
 ```
-https://www.ejemplo.com:8080/docs/manual.html?idioma=es#capitulo2
+https://www.ejemplo.com:8080/docs/manual.html?idioma=es&pagina=2#capitulo2
 ```
 
 - **Esquema** `https` — protocolo (y puerto por defecto: 80 / 443)
 - **Host** `www.ejemplo.com` — servidor; viaja en la cabecera **`Host`**
 - **Puerto** `8080` — opcional
-- **Ruta** `/docs/manual.html` y **consulta** `?idioma=es` — viajan en la **línea de petición**
+- **Ruta** `/docs/manual.html` y **consulta** `?idioma=es&pagina=2` — viajan en la **línea de petición**
+  - `?` inicia la consulta, `&` separa los parámetros y `=` separa nombre y valor
 - **Fragmento** `#capitulo2` — **no se envía**: lo usa el navegador
 
 ```
-GET /docs/manual.html?idioma=es HTTP/1.1
+GET /docs/manual.html?idioma=es&pagina=2 HTTP/1.1
 Host: www.ejemplo.com:8080
 ```
 
