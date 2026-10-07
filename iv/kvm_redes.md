@@ -271,6 +271,28 @@ virsh net-start  red_bridge
 
 ---
 
+## Gestión de Linux Bridge
+
+Con `ip` (iproute2) consultamos los bridges, independientemente del mecanismo de red que los haya creado:
+
+### Bridges
+
+```bash
+ip link show type bridge        # todos los bridges
+ip -br link show type bridge    # lo mismo en una línea por bridge
+ip -d link show br0             # detalle de un bridge (STP, forward_delay, etc.)
+ip addr show br0                # la IP del bridge (la del host en esa red)
+```
+
+### Puertos de un bridge
+
+```bash
+ip link show master br0         # solo los puertos de br0
+ip -br link show master virbr0  # los puertos de virbr0 en una línea cada uno
+```
+
+---
+
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
