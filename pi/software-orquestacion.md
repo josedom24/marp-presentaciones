@@ -124,85 +124,12 @@ Configura el **software** de las máquinas ya creadas.
 
 ---
 
-## DevOps
-
-<div class="cols-60-40" style="margin-top:0.8rem">
-
-<div>
-
-**Conflicto histórico:** los equipos de Desarrollo (Dev) y de Sistemas (Ops) han tenido objetivos y herramientas distintas.
-
-### ¿Cómo lo soluciona DevOps?
-
-- Mismas herramientas para dev y ops
-- Extiende las buenas prácticas de desarrollo (Git, revisión de código, tests) a los sistemas
-- Integración → entrega → despliegue **continuos**
-
-</div>
-
-<div class="card card-purple" style="align-self:center">
-
-### ¿Tiene relación con IaC?
-
-Sí, es una de sus piedras angulares. **Sin IaC no se puede automatizar** el aprovisionamiento de infraestructura, y sin automatización no hay DevOps.
-
-</div>
-
-</div>
-
----
-
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
 <p class="numero">02</p>
 
-# Software de Orquestación
-
-## Crear infraestructura como código
-
----
-
-## ¿Qué hace un software de orquestación?
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div>
-
-**Crea escenarios completos** con múltiples servidores, redes o contenedores (aprovisionamiento de recursos).
-
-- Útil con demanda **variable** de recursos
-- Útil cuando la configuración **cambia continuamente**
-- Puede incluir **autoescalado** y respuesta a eventos
-
-</div>
-
-<div class="card card-blue">
-
-### Enfoque declarativo
-
-En lugar de describir *cómo* crear la infraestructura, **declaramos el estado deseado** y la herramienta se encarga de alcanzarlo.
-
-```hcl
-resource "libvirt_domain" "web" {
-  name   = "servidor-web"
-  memory = 1024
-  vcpu   = 1
-}
-```
-
-</div>
-
-</div>
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">03</p>
-
-# OpenTofu
+# Software de orquestación: OpenTofu
 
 ## Orquestación de infraestructura declarativa
 
@@ -441,11 +368,27 @@ Lo que **hay de verdad** en la plataforma (puede haber cambiado a mano: *drift*)
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">04</p>
+<p class="numero">03</p>
 
 # OpenTofu + libvirt
 
 ## Máquinas virtuales con KVM y cloud-init
+
+---
+
+## Los ejemplos del repositorio `ejercicios_pi`
+
+Cada ejemplo está en su directorio **`opentofu/ejemploN`** y sus recursos llevan el prefijo **`ejN-`**:
+
+| Ejemplo | Escenario |
+|:--|:--|
+| `ejemplo1` | 1 máquina Debian en la red `default` |
+| `ejemplo2` | Igual, con un **disco adicional** de 1 GB |
+| `ejemplo3` | 1 máquina conectada a **dos redes con DHCP**: una NAT creada por OpenTofu y `default` |
+| `ejemplo4` | Red NAT con DHCP + red **aislada sin DHCP** (IP estática) |
+| `ejemplo5` | 2 máquinas (Debian y Ubuntu), red **muy aislada** e **inventario de Ansible** |
+
+- **Destruye siempre el escenario** antes de pasar al siguiente: varios usan el mismo rango (`192.168.100.0/24`)
 
 ---
 
@@ -467,7 +410,8 @@ provider "libvirt" {
 ```
 
 - **`uri`** — la conexión a libvirt, la misma que `virsh -c qemu:///system`
-- Versión **fijada** a la `0.8.3`: desde la `0.9` se reescribió con otra sintaxis
+- Versión **fijada** a la `0.8.3` (la `0.9` usa otra sintaxis): consulta **su** documentación
+- `provider.tf` y `output.tf` **no hay que modificarlos**
 
 ---
 
@@ -484,6 +428,7 @@ sudo virsh pool-refresh default             # que libvirt vea el fichero nuevo
 
 - Se descargan **una vez** y se usan como **imagen base** de todas las máquinas
 - En los ejemplos: `debian13-base.qcow2` (Debian 13) y `ubuntu2604-base.qcow2` (Ubuntu 26.04)
+- Se eligen con variables de `variables.tf`: **`var.base_image`** y **`var.libvirt_pool_name`**
 
 ---
 
@@ -492,19 +437,19 @@ sudo virsh pool-refresh default             # que libvirt vea el fichero nuevo
 **Clon ligero** de la imagen base (*backing store*: solo guarda los cambios) y disco extra vacío de 1 GB:
 
 ```hcl
-resource "libvirt_volume" "server1-disk" {
-  name             = "server1.qcow2"
+resource "libvirt_volume" "ej2-server1-disk" {
+  name             = "ej2-server1.qcow2"
   pool             = var.libvirt_pool_name
   base_volume_name = var.base_image
   base_volume_pool = var.libvirt_pool_name
   format           = "qcow2"
 }
 
-resource "libvirt_volume" "server1-extra" {
-  name   = "server1-extra.qcow2"
+resource "libvirt_volume" "ej2-server1-disk-extra1" {
+  name   = "ej2-server1-disk-extra1.qcow2"
   pool   = var.libvirt_pool_name
   format = "qcow2"
-  size   = 1 * 1024 * 1024 * 1024
+  size   = 1 * 1024 * 1024 * 1024 # 1 GB en bytes
 }
 ```
 
@@ -522,14 +467,15 @@ Configura la máquina en su **primer arranque**, a partir de dos ficheros:
 
 ```yaml
 #cloud-config
-hostname: server1
+hostname: ej4-server1
+timezone: Europe/Madrid
 users:
   - name: debian
     sudo: ALL=(ALL) NOPASSWD:ALL
-    ssh-authorized-keys:
+    ssh_authorized_keys:
       - ssh-ed25519 AAAA... tu clave
-packages:
-  - qemu-guest-agent
+package_update: true
+package_upgrade: true
 ```
 
 </div>
@@ -545,36 +491,40 @@ network:
     ens3:
       dhcp4: true
     ens4:
-      addresses: ["10.0.0.1/24"]
+      dhcp4: false
+      addresses: ["192.168.130.10/24"]
 ```
 
 </div>
 
 </div>
+
+- Se empaquetan en una **ISO** con el recurso **`libvirt_cloudinit_disk`** (parámetros `user_data` y `network_config`)
 
 ---
 
 ## La máquina virtual: `libvirt_domain`
 
 ```hcl
-# Disco ISO con los ficheros de cloud-init
-resource "libvirt_cloudinit_disk" "server1-cloudinit" {
-  name           = "server1-cloudinit.iso"
-  pool           = var.libvirt_pool_name
-  user_data      = file("${path.module}/cloud-init/user-data1.yaml")
-  network_config = file("${path.module}/cloud-init/network-config1.yaml")
-}
-
-resource "libvirt_domain" "server1" {
-  name       = "server1"
-  memory     = 1024
-  vcpu       = 2
-  qemu_agent = true
-  network_interface { network_name = "default" }
-  disk { volume_id = libvirt_volume.server1-disk.id }
-  cloudinit = libvirt_cloudinit_disk.server1-cloudinit.id
+resource "libvirt_domain" "ej1-server1" {
+  name   = "ej1-server1"
+  memory = 1024
+  vcpu   = 2
+  network_interface {
+    network_name   = "default"
+    wait_for_lease = true
+  }
+  disk { volume_id = libvirt_volume.ej1-server1-disk.id }
+  cloudinit = libvirt_cloudinit_disk.ej1-server1-cloudinit.id
+  console {
+    type        = "pty"
+    target_port = "0"
+    target_type = "serial"
+  }
 }
 ```
+
+- **`console`**: consola serie, la esperan las imágenes cloud y permite `virsh console` aunque falle la red
 
 ---
 
@@ -587,8 +537,9 @@ resource "libvirt_domain" "server1" {
 | **Muy aislada** | `mode = "none"`, sin `addresses` | No | No |
 
 ```hcl
-resource "libvirt_network" "nat-dhcp" {
-  name      = "nat-dhcp"
+# network.tf: la red se crea con "tofu apply" y se elimina con "tofu destroy"
+resource "libvirt_network" "ej3-nat-dhcp" {
+  name      = "ej3-nat-dhcp"
   mode      = "nat"
   addresses = ["192.168.100.0/24"]
   dhcp { enabled = true }
@@ -625,8 +576,8 @@ Por su **id**:
 
 ```hcl
 network_interface {
-  network_id     = libvirt_network.nat-dhcp.id
-  wait_for_lease = true
+  network_id = libvirt_network
+    .ej4-aislada-static.id
 }
 ```
 
@@ -634,91 +585,86 @@ network_interface {
 
 </div>
 
-- **`wait_for_lease = true`** — esperar a que el DHCP le dé IP: **solo** en redes con DHCP
-- Cada `network_interface` es una interfaz más (`ens3`, `ens4`…), que hay que configurar en el **`network-config`**
+- **`wait_for_lease = true`** — esperar a que el DHCP le dé IP: **solo** en redes con DHCP (sin DHCP, el `apply` se queda esperando)
+- Cada `network_interface` es una interfaz más (`ens3`, `ens4`…), que **hay que configurar** en el **`network-config`**
 
 ---
 
 ## Las IP en el `output`
 
 ```hcl
-output "server1" {
+output "ej4-server1" {
   value = {
-    ip1 = try(libvirt_domain.server1.network_interface[0].addresses[0], "No disponible")
+    nombre = "ej4-server1"
+    ip1    = try(libvirt_domain.ej4-server1.network_interface[0].addresses[0], "No disponible")
+    ip2    = "192.168.130.10" # estática: está en cloud-init/network-config1.yaml
   }
 }
 ```
 
-- Sin agente, OpenTofu solo conoce las IP que reparte el **DHCP** de libvirt
-- Con **`qemu_agent = true`**, se las pregunta al agente **`qemu-guest-agent`** de la máquina (lo instala cloud-init): también las **estáticas**
-- **`try(…, "No disponible")`** — si aún no hay IP, el `output` no da error
-- Si sale «No disponible», el agente aún no funcionaba: `tofu refresh` y `tofu output`
+- Con **`wait_for_lease`**, OpenTofu lee la IP de las **concesiones** (*leases*) del DHCP de libvirt
+- Las IP **estáticas** OpenTofu no las conoce: se escriben en el `output`, las mismas que en el `network-config`
+- **`try(…, "No disponible")`** — si no hay IP, el `output` no da error
+- Sin `wait_for_lease`, `apply` termina en cuanto arranca la máquina, todavía sin IP: «No disponible»
+
+---
+
+## Ciclo de vida de los recursos
+
+Si cambiamos un escenario que ya existe, `tofu plan` indica qué hará con cada recurso:
+
+| Símbolo | Acción | Ejemplo |
+|:--|:--|:--|
+| `~` | **update in-place**: se modifica sin destruirlo | Añadir `autostart = true` a la máquina |
+| `-/+` | **destroy and then create replacement**: se recrea (`forces replacement`) | Cambiar la memoria · cambiar `var.base_image` |
+| `+` | **create**: se crea | Una máquina borrada a mano con `virsh` |
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>💡</span><div>Recrear una máquina es empezar de cero: se pierde lo que había en su disco y puede cambiar su IP. Los cambios se <strong>propagan</strong>: si se recrea el disco, también se recrea la máquina que lo usa.</div>
+</div>
 
 ---
 
 ## Del `output` al inventario de Ansible
 
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div>
-
-**`inventario.tf`**
+**`inventario.tf`**: genera el fichero `hosts` con las IP del escenario
 
 ```hcl
 resource "local_file" "inventario" {
-  filename = "${path.module}/hosts"
-  content = templatefile(
-    "${path.module}/inventario.tftpl", {
-      ip_web = try(libvirt_domain.web
-        .network_interface[0].addresses[0], "")
+  filename        = "${path.module}/hosts"
+  file_permission = "0644"
+  content = templatefile("${path.module}/inventario.tftpl", {
+    ip_server1 = try(libvirt_domain.ej5-server1.network_interface[0].addresses[0], "")
+    ip_server2 = "10.0.0.2" # estática: está en cloud-init/network-config2.yaml
   })
 }
 ```
 
-</div>
-
-<div>
-
-**`inventario.tftpl`** (la plantilla)
-
-```ini
-[servidores_web]
-web ansible_host=${ip_web} ansible_user=debian
-```
-
-</div>
-
-</div>
-
-- **`templatefile`** rellena la plantilla con las IP · **`local_file`** la escribe en tu equipo (provider `hashicorp/local`: repite `tofu init`)
+- **`templatefile`** rellena la plantilla con las IP · **`local_file`** la escribe en tu equipo
+- Usa el provider **`hashicorp/local`**: hay que añadirlo en `provider.tf` y repetir `tofu init`
 - Cada `apply` genera el inventario con las IP correctas: **primero OpenTofu, después Ansible**
 
 ---
 
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
+## La plantilla del inventario
 
-<p class="numero">05</p>
+**`inventario.tftpl`**: cada `${…}` se sustituye por el valor que le pasa `templatefile`
 
-# Resumen
+<div style="font-size:0.78em">
 
-## Problemas frecuentes
+```ini
+# Fichero generado por OpenTofu (inventario.tf): no lo edites a mano
+[servidores]
+ej5-server1 ansible_host=${ip_server1} ansible_user=debian
+# server2 solo es accesible a través de server1 (ProxyJump)
+ej5-server2 ansible_host=${ip_server2} ansible_user=ubuntu ansible_ssh_common_args='-o ProxyJump=debian@${ip_server1}'
+```
 
----
+</div>
 
-## Problemas frecuentes
-
-| Síntoma | Causas habituales |
-|:--|:--|
-| `storage volume not found` | Falta `virsh pool-refresh default` · el nombre de la imagen no coincide con `variables.tf` |
-| La red ya existe o se solapa | No se ha destruido el escenario anterior (mismo nombre o rango) |
-| `Permission denied (publickey)` | No has puesto tu clave pública en el `user-data` |
-| El `apply` se queda esperando | `wait_for_lease` en una red sin DHCP |
-| Una interfaz sin IP | Falta en el `network-config` · nombre de interfaz equivocado |
-| cloud-init termina con error | La máquina no tiene salida al exterior y se instalan paquetes |
-| Errores de sintaxis del provider | Se ha cambiado la versión fijada (`0.8.3`) · documentación de la `0.9` |
-
-Antes de aplicar: `tofu validate` y `tofu plan`. Dentro de la máquina: `cloud-init status --long`.
+- **`ej5-server1`** (Debian): IP por DHCP en la red NAT y `10.0.0.1` en la red muy aislada
+- **`ej5-server2`** (Ubuntu): solo está en la red muy aislada (`10.0.0.2`), así que Ansible llega a ella **a través de `ej5-server1`** (*ProxyJump*)
+- `ej5-server2` **no tiene salida al exterior**: en su `user-data` está comentada la actualización de paquetes
 
 ---
 
