@@ -345,7 +345,7 @@ virsh domiflist prueba4
 | Tipo de red | Configuración en la MV |
 |:--|:--|
 | **NAT** | DHCP automático (servidor en el host) |
-| **Aislada** | **Estática**, mismo rango que la IP del host en esa red |
+| **Aislada** | **DHCP** si la red lo tiene configurado; si no, **estática** en el rango del host |
 | **Muy aislada** | **Estática**, cualquier direccionamiento |
 | **Bridge externo** | DHCP o estática, mismo rango que el host en la red local |
 
