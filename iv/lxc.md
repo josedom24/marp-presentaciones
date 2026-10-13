@@ -44,9 +44,22 @@ footer: ''
 - Se accede a ellos por SSH, se instalan servicios, se actualizan…
 - Lo desarrolla la comunidad del proyecto **Linux Containers**; página oficial: `linuxcontainers.org`
 
+---
+
+## Instalación
+
 ```bash
 apt install lxc
 ```
+
+Junto a `lxc` se instalan sus paquetes **recomendados**; dos de ellos hacen falta en el curso:
+
+- **`apparmor`**: confina los contenedores con el perfil que genera LXC (`lxc.apparmor.profile = generated`)
+- **`lxcfs`**: hace que `free` o `/proc/cpuinfo` muestren, dentro del contenedor, los recursos limitados
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Sin <code>apparmor</code>, el contenedor no arranca: <code>lxc-start</code> da <code>Failed to receive the container state</code> y, en primer plano (<code>lxc-start -n contenedor1 -F</code>), <code>Cannot use generated profile: apparmor_parser not available</code>. Se soluciona con <code>apt install apparmor</code>.</div>
+</div>
 
 ---
 
@@ -413,7 +426,7 @@ contenedor2 RUNNING 1         -      192.168.122.228             -    false
 
 ## Configurar la segunda interfaz — *netplan*
 
-Si la red la gestiona **`systemd-networkd`**, podemos configurarla con **netplan**:
+En los contenedores **Debian** la red la gestiona **`systemd-networkd`**; podemos configurarla con **netplan** (en los contenedores **Ubuntu** ya viene instalado):
 
 ```bash
 apt install netplan.io
@@ -440,7 +453,7 @@ Se aplica con `netplan apply`.
 
 ```bash
 mkdir -p /usr/local/bin
-echo -e '#!/bin/sh\nexit 0' > /usr/local/bin/udevadm
+printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/udevadm
 chmod +x /usr/local/bin/udevadm
 ```
 
