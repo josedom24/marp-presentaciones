@@ -83,11 +83,11 @@ footer: ''
 
 - En **2015** se crea la **Cloud Native Computing Foundation (CNCF)** como proyecto de la Linux Foundation para impulsar la tecnología de contenedores
 - Todas las grandes empresas tecnológicas forman parte de la CNCF
-- Docker Inc. se unió a la CNCF en **julio de 2016**
+- También en **2015** se crea la **Open Container Initiative (OCI)**, que define los estándares abiertos de las imágenes y de la ejecución de contenedores. Docker Inc. es miembro fundador de las dos
 - Los componentes fundamentales de Docker son proyectos libres independientes:
-  - **`runC`** — motor de ejecución de contenedores
-  - **`containerd`** — gestión del ciclo de vida de contenedores
-- Las **imágenes Docker** y su distribución se convierten en estándar abierto
+  - **`runC`** — motor de ejecución de contenedores (donado a la OCI)
+  - **`containerd`** — gestión del ciclo de vida de contenedores (proyecto de la CNCF)
+- Las **imágenes Docker** y su distribución se convierten en estándar abierto (**OCI**)
 
 ---
 
@@ -97,13 +97,12 @@ footer: ''
 |:--|:--|
 | **Moby** | Proyecto de comunidad. Paquete `docker.io` en Debian |
 | **Docker CE** | *Community Edition* — proporcionado por Docker Inc. |
-| **Docker EE** | *Enterprise Edition* — Docker engine + servicios de pago |
 
-### Alternativas a Docker bajo estándares CNCF
+### Alternativas a Docker bajo los estándares OCI
 
 - **`cri-o`** — creado por Red Hat, pensado para integrarse en Kubernetes
 - **`podman`** — creado por Red Hat, alternativa sin demonio a Docker
-- **`pouch`** — creado por Alibaba
+- **`containerd` + `nerdctl`** — el motor de Docker usado directamente, con una CLI compatible
 
 ---
 
@@ -154,10 +153,12 @@ El modelo que mejor se adapta a Docker:
 Trabajamos con **Moby**, la distribución Docker de la comunidad. En Debian:
 
 ```bash
-$ apt install docker.io
+$ apt install docker.io docker-compose
 $ docker --version
 Docker version 26.1.5+dfsg1, build a72d7cd
 ```
+
+En Debian 13 (trixie), el paquete `docker-compose` es **Compose v2** (2.26): se instala como plugin de Docker y se usa con **`docker compose`**.
 
 Para usar Docker con un usuario sin privilegios, añadirlo al grupo `docker` y reiniciar la sesión:
 
@@ -178,7 +179,7 @@ Hello from Docker!   (salida recortada)
 ¿Qué ha ocurrido?
 
 1. El cliente Docker conecta con el **servidor Docker** (demonio)
-2. La imagen no estaba en el **registro local** → se descarga de **Docker Hub** (solo la primera vez)
+2. La imagen no estaba entre las **imágenes locales** → se descarga de **Docker Hub** (solo la primera vez)
 3. Se crea el contenedor, que ejecuta un proceso. **Cuando el proceso termina, el contenedor se para**
 
 ```bash
@@ -247,7 +248,7 @@ $ docker run -d --name my-apache-app -p 8080:80 httpd:2.4
 ```
 
 - `8080:80` → el puerto `8080` del host redirige al puerto `80` del contenedor
-- Accedemos con la **IP del host** y el puerto mapeado, **nunca con la IP del contenedor**
+- Accedemos con la **IP del host** y el puerto mapeado: la IP del contenedor solo es accesible desde el host y cambia al recrearlo
 
 ```bash
 $ docker logs my-apache-app       # ver logs
@@ -361,7 +362,7 @@ $ docker exec -it some-mariadb mariadb -u root -p
 ## Gestión de imágenes
 
 ```bash
-docker images               # imágenes en el registro local
+docker images               # imágenes locales
 docker pull <imagen>        # descargar imagen sin crear contenedor
 docker rmi <imagen>         # eliminar imagen (no si hay contenedores creados)
 docker search <término>     # buscar imágenes en Docker Hub
@@ -389,7 +390,7 @@ Una imagen está formada por **capas de solo lectura** apiladas con un *union fi
 ```
 
 - Cada capa representa un cambio: instalar un paquete, copiar un fichero, modificar configuración
-- Las capas se **comparten entre imágenes**: si varias usan la misma base, esa capa solo se guarda una vez (**aprovisionamiento ligero**)
+- Las capas se **comparten entre imágenes**: si varias usan la misma base, esa capa solo se guarda una vez
 
 ---
 
@@ -405,8 +406,8 @@ Al crear un contenedor, Docker monta las capas de la imagen (RO) y añade **una 
 └─────────────────────────────────┘
 ```
 
-- Un contenedor recién creado ocupa muy poco espacio (**5 B**)
-- Solo crece conforme escribe en su capa
+- Un contenedor recién creado ocupa muy poco espacio (p. ej. **5 B**; se ve con `docker ps -s`)
+- Solo ocupa lo que escribe en su capa (**aprovisionamiento ligero**)
 - **Al borrar el contenedor se pierde su capa** y todos sus datos
 
 <div class="alerta alerta-info" style="margin-top:0.5rem">
@@ -478,7 +479,7 @@ docker volume create <nombre>   # crear volumen
 docker volume ls                # listar volúmenes
 docker volume inspect <nombre>  # información detallada
 docker volume rm <nombre>       # eliminar volumen
-docker volume prune             # eliminar volúmenes sin usar
+docker volume prune [-a]        # eliminar volúmenes anónimos sin usar (-a: también los con nombre)
 ```
 
 Usar un volumen al crear el contenedor con `-v nombre:ruta_contenedor`:
@@ -509,7 +510,7 @@ $ curl http://localhost:8080
 ```
 
 <div class="alerta alerta-warning" style="margin-top:0.5rem">
-<span>⚠️</span><div>Al montar (volumen o bind mount), el contenido de la fuente <strong>sobreescribe</strong> el directorio destino del contenedor si ya existía.</div>
+<span>⚠️</span><div>Un <strong>bind mount</strong> oculta lo que había en el directorio del contenedor. Un <strong>volumen vacío</strong> se rellena con ese contenido; si ya tiene datos, se ven los del volumen.</div>
 </div>
 
 ---
@@ -543,7 +544,7 @@ fe713d203f5b   none      null      local
 
 ### `bridge` (por defecto)
 
-Red NAT con DHCP y DNS. Se usa `-p` para **exponer puertos**.
+Red NAT: Docker asigna la IP y el DNS. Se usa `-p` para **exponer puertos**.
 
 </div>
 
@@ -576,8 +577,8 @@ Los contenedores se conectan por defecto a una **red de tipo NAT** con estas car
 | Bridge en el host | `docker0` |
 | Direccionamiento | `172.17.0.0/16` |
 | IP del host | `172.17.0.1` |
-| DHCP | Sí (gestionado por el host) |
-| DNS externo | Sí (el host actúa de resolver) |
+| Asignación de IP | Automática: la asigna **Docker** al crear el contenedor |
+| DNS | Los **servidores DNS del host** |
 | Salida a Internet | Sí (el host hace NAT) |
 
 <div class="alerta alerta-warning" style="margin-top:0.6rem">
@@ -614,7 +615,7 @@ En una red definida por el usuario, los contenedores se resuelven **por nombre**
 
 ```bash
 $ docker run -it --name contenedor1 --network red1 debian bash
-root@98ab5a0c2f0c:/# apt install dnsutils -y
+root@98ab5a0c2f0c:/# apt update && apt install dnsutils -y
 root@98ab5a0c2f0c:/# dig my-apache-app
 
 ;; ANSWER SECTION:
@@ -707,7 +708,7 @@ Ejemplo: aplicación de chat **LetsChat** con base de datos **MongoDB**:
 
 - Dos servicios: `app` y `db`
 - `app` se conecta a la base de datos por el **nombre** `mongo`
-- `app` no arranca hasta que `db` está en marcha
+- `app` arranca después de `db`
 - Los datos de MongoDB se guardan en el **volumen** `mongo`
 
 </div>
@@ -726,7 +727,7 @@ Ejemplo: aplicación de chat **LetsChat** con base de datos **MongoDB**:
 | `restart: always` | Política de reinicio automático si el contenedor se para |
 | `environment` | Variables de entorno del contenedor |
 | `ports` | Mapeo de puertos `host:contenedor` |
-| `depends_on` | El contenedor no arranca hasta que el indicado esté en marcha |
+| `depends_on` | Orden de arranque: el contenedor arranca **después** del indicado (no espera a que el servicio esté listo) |
 | `volumes` | Volúmenes montados (bind mount o volumen Docker) |
 
 ---
@@ -741,7 +742,7 @@ docker compose ps             # listar contenedores del escenario
 docker compose stop           # parar contenedores
 docker compose start          # arrancar contenedores parados
 docker compose restart        # reiniciar (útil tras cambios de configuración)
-docker compose rm             # borrar contenedores parados (-f también los activos)
+docker compose rm -s          # parar y borrar los contenedores
 docker compose down           # parar, borrar contenedores y redes
 docker compose down -v        # ídem + borrar volúmenes
 
