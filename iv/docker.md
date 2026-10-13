@@ -79,15 +79,40 @@ footer: ''
 
 ---
 
-## Docker en la actualidad — CNCF
+## Docker en la actualidad — CNCF y OCI
 
-- En **2015** se crea la **Cloud Native Computing Foundation (CNCF)** como proyecto de la Linux Foundation para impulsar la tecnología de contenedores
-- Todas las grandes empresas tecnológicas forman parte de la CNCF
-- También en **2015** se crea la **Open Container Initiative (OCI)**, que define los estándares abiertos de las imágenes y de la ejecución de contenedores. Docker Inc. es miembro fundador de las dos
-- Los componentes fundamentales de Docker son proyectos libres independientes:
-  - **`runC`** — motor de ejecución de contenedores (donado a la OCI)
-  - **`containerd`** — gestión del ciclo de vida de contenedores (proyecto de la CNCF)
-- Las **imágenes Docker** y su distribución se convierten en estándar abierto (**OCI**)
+> Los componentes principales de Docker son **software libre** y Docker Inc. los **cedió** a fundaciones neutrales de la **Linux Foundation**: ya no dependen de una sola empresa.
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### OCI · *Open Container Initiative* (2015)
+
+Define los **estándares** de los contenedores:
+
+- Formato de las **imágenes**
+- Cómo se **ejecuta** un contenedor
+
+Docker cedió **`runC`**, el programa que ejecuta los contenedores
+
+</div>
+
+<div class="card card-green">
+
+### CNCF · *Cloud Native Computing Foundation* (2015)
+
+Impulsa las tecnologías **cloud native**: Kubernetes, Prometheus…
+
+Docker cedió **`containerd`**, que gestiona el ciclo de vida de los contenedores
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Gracias a estos estándares, una imagen creada con Docker funciona con <strong>podman</strong>, <strong>cri-o</strong> o <strong>Kubernetes</strong>.</div>
+</div>
 
 ---
 
