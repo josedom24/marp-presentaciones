@@ -95,8 +95,7 @@ lxc-create -n contenedor1 -t debian -- -r bookworm
 lxc-create -n contenedor2 -t ubuntu -- -r jammy
 ```
 
-- `-t` — nombre de la plantilla
-- `-r` — nombre de la versión (*release*)
+`-t`: nombre de la plantilla · `-r`: nombre de la versión (*release*)
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>ℹ️</span><div>Lista de plantillas disponibles: <code>ls /usr/share/lxc/templates/</code> o en el servidor de imágenes <code>images.linuxcontainers.org</code>.</div>
@@ -239,8 +238,6 @@ Después, `netplan apply` ya funciona.
 
 ## Almacenamiento en LXC — montar directorios del host
 
-Para compartir un directorio del host con un contenedor:
-
 1. Crear el punto de montaje **dentro del contenedor**:
 
 ```bash
@@ -283,12 +280,7 @@ lxc.mount.entry=/opt/contenedor1 srv/www none bind 0 0
 - Gestiona dos tipos de **instancias**:
   - **Contenedores** — usando LXC internamente
   - **Máquinas virtuales** — usando QEMU/KVM internamente
-- Sus comandos pueden causar confusión con los de LXC:
-
-```bash
-lxc list
-lxc launch
-```
+- Sus comandos (`lxc list`, `lxc launch`…) pueden causar confusión con los de LXC (`lxc-ls`, `lxc-start`…)
 
 ---
 
@@ -321,7 +313,7 @@ lxc launch
 </div>
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Ambos ofrecen la misma filosofía: una única herramienta para gestionar <strong>contenedores de sistema y máquinas virtuales</strong>.</div>
+<span>ℹ️</span><div>Ambos: una única herramienta para gestionar <strong>contenedores de sistema y MV</strong>.</div>
 </div>
 
 ---

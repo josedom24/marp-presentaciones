@@ -30,6 +30,121 @@ footer: ''
 
 # Introducción a Docker
 
+## Concepto, componentes y ecosistema
+
+---
+
+## ¿Qué es Docker?
+
+> **Docker** es una tecnología de virtualización ligera cuyo objetivo es el **despliegue de aplicaciones** encapsuladas en contenedores bajo la filosofía **build, ship and run**.
+
+### Características principales
+
+- *"docker"* = **estibador** (quien carga y descarga contenedores)
+- Pertenece a los **contenedores de aplicación**
+- El contenedor **ejecuta un comando** y se detiene cuando este termina
+- Cambia completamente la forma de **desplegar y distribuir** aplicaciones
+- Escrito en **Go** — software libre (no todos los componentes)
+- Desarrollado por **Docker, Inc.**
+
+---
+
+## Componentes del software Docker
+
+<div class="cols-60-40" style="margin-top:0.8rem">
+
+<div>
+
+### Docker Engine
+- **Demonio Docker** — gestiona contenedores e imágenes
+- **Docker API** — interfaz REST para automatización
+- **Docker CLI** — cliente de línea de comandos
+
+### Docker Registry
+- Distribuye las **imágenes Docker**
+- **Registro público**: Docker Hub (`hub.docker.com`)
+- **Registro privado**: instalado en un servidor local
+
+**Herramientas adicionales:** `docker compose` (aplicaciones multicontenedor) y `docker swarm` (orquestador)
+
+</div>
+
+<div style="display:flex; align-items:center">
+
+![w:100%](img/software_docker.png)
+
+</div>
+
+</div>
+
+---
+
+## Docker en la actualidad — CNCF
+
+- En **2015** se crea la **Cloud Native Computing Foundation (CNCF)** como proyecto de la Linux Foundation para impulsar la tecnología de contenedores
+- Todas las grandes empresas tecnológicas forman parte de la CNCF
+- Docker Inc. se unió a la CNCF en **julio de 2016**
+- Los componentes fundamentales de Docker son proyectos libres independientes:
+  - **`runC`** — motor de ejecución de contenedores
+  - **`containerd`** — gestión del ciclo de vida de contenedores
+- Las **imágenes Docker** y su distribución se convierten en estándar abierto
+
+---
+
+## Distribuciones de Docker
+
+| Variante | Descripción |
+|:--|:--|
+| **Moby** | Proyecto de comunidad. Paquete `docker.io` en Debian |
+| **Docker CE** | *Community Edition* — proporcionado por Docker Inc. |
+| **Docker EE** | *Enterprise Edition* — Docker engine + servicios de pago |
+
+### Alternativas a Docker bajo estándares CNCF
+
+- **`cri-o`** — creado por Red Hat, pensado para integrarse en Kubernetes
+- **`podman`** — creado por Red Hat, alternativa sin demonio a Docker
+- **`pouch`** — creado por Alibaba
+
+---
+
+## Contenedores y tipos de aplicación
+
+<div class="cols-2" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Aplicaciones monolíticas
+
+Se usa un esquema **multicapa**:
+
+- Cada servicio en un contenedor separado
+- Servicio web + base de datos + caché…
+
+</div>
+
+<div class="card card-green">
+
+### Aplicaciones con microservicios
+
+El modelo que mejor se adapta a Docker:
+
+- Cada **microservicio** en su propio contenedor
+- Comunicación vía **HTTP REST** y colas de mensajes
+- Facilita las **actualizaciones** de cada componente de forma independiente
+
+</div>
+
+</div>
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">02</p>
+
+# Primeros pasos con Docker
+
 ## Instalación y ejecución de contenedores
 
 ---
@@ -57,16 +172,14 @@ $ sudo usermod -aG docker $USER
 ```bash
 $ docker run hello-world
 Unable to find image 'hello-world:latest' locally
-latest: Pulling from library/hello-world
-...
-Hello from Docker!
+Hello from Docker!   (salida recortada)
 ```
 
 ¿Qué ha ocurrido?
 
 1. El cliente Docker conecta con el **servidor Docker** (demonio)
-2. La imagen `hello-world` no estaba en el **registro local** → se descarga de **Docker Hub**. La próxima vez no es necesario descargarla
-3. Se crea el contenedor que ejecuta un proceso. **Cuando el proceso termina, el contenedor se para**
+2. La imagen no estaba en el **registro local** → se descarga de **Docker Hub** (solo la primera vez)
+3. Se crea el contenedor, que ejecuta un proceso. **Cuando el proceso termina, el contenedor se para**
 
 ```bash
 $ docker ps -a
@@ -102,19 +215,14 @@ $ docker run -it --name contenedor1 ubuntu bash
 root@2bfa404bace0:/#
 ```
 
-El contenedor se para al salir. Para volver a acceder:
+El contenedor se para al salir. Para volver a acceder y, si está en ejecución, lanzar comandos con `exec`:
 
 ```bash
-$ docker start contenedor1
-$ docker attach contenedor1
-```
-
-Si el contenedor está en ejecución, podemos lanzar comandos con `exec`:
-
-```bash
-$ docker exec contenedor1 ls -al
-$ docker restart contenedor1     # reiniciar
-$ docker inspect contenedor1     # información detallada
+$ docker start contenedor1        # arrancarlo de nuevo
+$ docker attach contenedor1       # conectarse a su terminal
+$ docker exec contenedor1 ls -al  # ejecutar un comando (en ejecución)
+$ docker restart contenedor1      # reiniciar
+$ docker inspect contenedor1      # información detallada
 ```
 
 ---
@@ -122,7 +230,7 @@ $ docker inspect contenedor1     # información detallada
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">02</p>
+<p class="numero">03</p>
 
 # Contenedores demonio
 
@@ -139,12 +247,11 @@ $ docker run -d --name my-apache-app -p 8080:80 httpd:2.4
 ```
 
 - `8080:80` → el puerto `8080` del host redirige al puerto `80` del contenedor
-- **Nunca accedemos directamente a la IP del contenedor**; siempre usamos la IP del host y el puerto mapeado
+- Accedemos con la **IP del host** y el puerto mapeado, **nunca con la IP del contenedor**
 
 ```bash
 $ docker logs my-apache-app       # ver logs
 $ docker logs -f my-apache-app    # logs en tiempo real
-
 $ docker stop my-apache-app
 $ docker rm my-apache-app
 $ docker rm -f my-apache-app      # parar y borrar en un paso
@@ -176,22 +283,32 @@ $ docker cp index.html my-apache-app:/usr/local/apache2/htdocs/
 
 Muchas imágenes se configuran a través de **variables de entorno**. Se definen con `-e` o `--env` al crear el contenedor:
 
+<div class="cols-2">
+
+<div>
+
 ```bash
-$ docker run -it --name contenedor5 -e USUARIO=prueba ubuntu bash
+$ docker run -it --name contenedor5 \
+    -e USUARIO=prueba ubuntu bash
 root@91e81200c633:/# echo $USUARIO
 prueba
 ```
 
-Ejemplo obligatorio: imagen `mariadb` requiere `MARIADB_ROOT_PASSWORD`:
+</div>
+
+<div>
+
+La imagen `mariadb` **requiere** `MARIADB_ROOT_PASSWORD`:
 
 ```bash
 $ docker run -d --name some-mariadb \
     -e MARIADB_ROOT_PASSWORD=my-secret-pw mariadb
-
 $ docker exec -it some-mariadb mariadb -u root -p
-Enter password:
-MariaDB [(none)]>
 ```
+
+</div>
+
+</div>
 
 <div class="alerta alerta-info" style="margin-top:0.5rem">
 <span>ℹ️</span><div>La documentación de cada imagen en <strong>Docker Hub</strong> indica qué variables de entorno acepta y cuáles son obligatorias.</div>
@@ -202,7 +319,7 @@ MariaDB [(none)]>
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">03</p>
+<p class="numero">04</p>
 
 # Imágenes Docker
 
@@ -221,10 +338,23 @@ MariaDB [(none)]>
 
 ### Tipos de imágenes en Docker Hub
 
-- **Sistemas operativos**: Ubuntu, Debian, CentOS, Fedora…
+<div class="cols-2">
+
+<div>
+
+- **Sistemas operativos**: Ubuntu, Debian, Fedora…
 - **Lenguajes**: PHP, Java, Python…
+
+</div>
+
+<div>
+
 - **Servicios**: Apache, MySQL, Nginx, Tomcat…
-- **Aplicaciones completas**: WordPress, Nextcloud, MediaWiki…
+- **Aplicaciones**: WordPress, Nextcloud, MediaWiki…
+
+</div>
+
+</div>
 
 ---
 
@@ -301,7 +431,7 @@ docker run -d -p 8082:80 --name mediawiki3 mediawiki:1.39
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">04</p>
+<p class="numero">05</p>
 
 # Almacenamiento en Docker
 
@@ -311,7 +441,7 @@ docker run -d -p 8082:80 --name mediawiki3 mediawiki:1.39
 
 ## Los contenedores son efímeros
 
-> Los datos creados en un contenedor **sobreviven a las paradas**, pero se pierden si el contenedor se elimina.
+> Los datos de un contenedor **sobreviven a las paradas**, pero se pierden al **eliminarlo**.
 
 Docker ofrece dos mecanismos para **persistir datos**:
 
@@ -366,20 +496,14 @@ Al borrar y recrear el contenedor montando el mismo volumen, **los datos persist
 
 ## Bind mounts
 
-Montar un directorio del host directamente en el contenedor con `-v ruta_host:ruta_contenedor`:
+Montar un directorio del host en el contenedor con `-v ruta_host:ruta_contenedor`. Los cambios en el directorio del host se reflejan **inmediatamente** en el contenedor:
 
 ```bash
 $ mkdir web && echo "<h1>Hola</h1>" > web/index.html
-
 $ docker run -d --name my-apache-app \
-    -v /home/usuario/web:/usr/local/apache2/htdocs \
-    -p 8080:80 httpd:2.4
-```
+    -v /home/usuario/web:/usr/local/apache2/htdocs -p 8080:80 httpd:2.4
 
-Los cambios en el directorio del host se reflejan **inmediatamente** en el contenedor:
-
-```bash
-$ echo "<h1>Adios</h1>" > web/index.html
+$ echo "<h1>Adios</h1>" > web/index.html     # cambio en el host
 $ curl http://localhost:8080
 <h1>Adios</h1>
 ```
@@ -393,7 +517,7 @@ $ curl http://localhost:8080
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">05</p>
+<p class="numero">06</p>
 
 # Redes en Docker
 
@@ -419,7 +543,7 @@ fe713d203f5b   none      null      local
 
 ### `bridge` (por defecto)
 
-Red NAT con DHCP y DNS. Los contenedores se **aíslan** del exterior y usan `-p` para exponer puertos.
+Red NAT con DHCP y DNS. Se usa `-p` para **exponer puertos**.
 
 </div>
 
@@ -427,7 +551,7 @@ Red NAT con DHCP y DNS. Los contenedores se **aíslan** del exterior y usan `-p`
 
 ### `host`
 
-El contenedor **comparte la red del host** directamente. Sin IP propia; los puertos son accesibles sin mapeo.
+**Comparte la red del host**: sin IP propia ni mapeo de puertos.
 
 </div>
 
@@ -435,7 +559,7 @@ El contenedor **comparte la red del host** directamente. Sin IP propia; los puer
 
 ### `none`
 
-Sin configuración de red. Solo tiene loopback. Para procesos **completamente aislados**.
+Solo loopback: procesos **completamente aislados**.
 
 </div>
 
@@ -477,12 +601,9 @@ docker network ls
 docker network inspect red1
 docker network rm red1
 docker network prune          # borrar redes sin contenedores
-```
 
-Conectar un contenedor a una red con `--network`:
-
-```bash
-$ docker run -d --name my-apache-app --network red1 -p 8080:80 httpd:2.4
+# conectar un contenedor a una red
+docker run -d --name my-apache-app --network red1 -p 8080:80 httpd:2.4
 ```
 
 ---
@@ -511,7 +632,7 @@ my-apache-app.  600  IN  A  172.18.0.2
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">06</p>
+<p class="numero">07</p>
 
 # Docker Compose
 
@@ -555,7 +676,9 @@ Crea automáticamente una **red definida por el usuario** para que los contenedo
 
 ## El fichero `docker-compose.yaml`
 
-Ejemplo: aplicación de chat **LetsChat** con base de datos **MongoDB**:
+<div class="cols-60-40">
+
+<div>
 
 ```yaml
 services:
@@ -565,19 +688,31 @@ services:
     restart: always
     environment:
       LCB_DATABASE_URI: mongodb://mongo/letschat
-    ports:
-      - 80:8080
-    depends_on:
-      - db
+    ports: ["80:8080"]
+    depends_on: [db]
   db:
     container_name: mongo
     image: mongo:4
     restart: always
-    volumes:
-      - mongo:/data/db
+    volumes: ["mongo:/data/db"]
 volumes:
   mongo:
 ```
+
+</div>
+
+<div>
+
+Ejemplo: aplicación de chat **LetsChat** con base de datos **MongoDB**:
+
+- Dos servicios: `app` y `db`
+- `app` se conecta a la base de datos por el **nombre** `mongo`
+- `app` no arranca hasta que `db` está en marcha
+- Los datos de MongoDB se guardan en el **volumen** `mongo`
+
+</div>
+
+</div>
 
 ---
 
