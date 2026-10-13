@@ -42,7 +42,7 @@ footer: ''
 
 - Pertenece a los **contenedores de sistema**: su gestión y ciclo de vida son similares a los de una máquina virtual tradicional
 - Se accede a ellos por SSH, se instalan servicios, se actualizan…
-- Mantenido por **Canonical**; página oficial: `linuxcontainers.org`
+- Lo desarrolla la comunidad del proyecto **Linux Containers**; página oficial: `linuxcontainers.org`
 
 ```bash
 apt install lxc
@@ -59,7 +59,7 @@ apt install lxc
 ### Grupos de control (*cgroups*)
 
 - En Debian se usa **cgroups v2**
-- **Limitan el uso de recursos** de un proceso y sus hijos: memoria, CPU, I/O, red
+- **Limitan el uso de recursos** de un proceso y sus hijos: memoria, CPU, E/S de disco…
 
 </div>
 
@@ -180,7 +180,7 @@ lxc-info contenedor1
 | Opción | Muestra |
 |:--|:--|
 | `-i` | Solo la **dirección IP** |
-| `-S` | **Estadística** de información enviada y recibida por la interfaz de red |
+| `-S` | **Estadísticas** de uso: CPU, E/S de disco, memoria y datos enviados y recibidos por la red |
 | `-s` | El **estado** del contenedor |
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
@@ -241,7 +241,7 @@ lxc.net.0.flags = up
 | Parámetro | Significado |
 |:--|:--|
 | `lxc.rootfs.path` | Directorio con el **sistema de ficheros** del contenedor (cada contenedor tiene uno completo) |
-| `lxc.uts.name` | **Nombre** del contenedor |
+| `lxc.uts.name` | **Nombre de host** (*hostname*) del contenedor |
 | `lxc.net.0.*` | Configuración de la **interfaz de red**: conectada al Linux Bridge `lxcbr0` (`lxc.net.0.link`) |
 | `lxc.start.auto = 1` | El contenedor se **inicia automáticamente** al iniciar el host |
 
@@ -287,24 +287,11 @@ processor	: 0
 ...
 ```
 
-<div class="cols-2" style="margin-top:0.8rem">
+- **Memoria**: `free -h` muestra un total de **512Mi**, no la memoria del host
+- **CPU**: en `/proc/cpuinfo` aparece **un solo procesador**
 
-<div class="card card-blue">
-
-### Memoria
-
-`free -h` muestra un total de **512Mi**, no la memoria del host
-
-</div>
-
-<div class="card card-green">
-
-### CPU
-
-En `/proc/cpuinfo` aparece **un solo procesador**
-
-</div>
-
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Dentro del contenedor, <code>free</code> y <code>/proc/cpuinfo</code> muestran los límites gracias a <strong>LXCFS</strong> (paquete <code>lxcfs</code>, recomendado al instalar <code>lxc</code>). Sin él, verían los recursos del host aunque el límite se aplique.</div>
 </div>
 
 ---
@@ -324,7 +311,7 @@ En `/proc/cpuinfo` aparece **un solo procesador**
 
 LXC ofrece varios mecanismos de red; en el curso usamos conexiones de tipo **bridge**.
 
-Por defecto el contenedor está conectado (`lxc.net.0.link = lxcbr0`) al bridge **`lxcbr0`**, que crea **`lxc-net`**:
+Por defecto el contenedor está conectado (`lxc.net.0.link = lxcbr0`) al bridge **`lxcbr0`**, que crea el servicio **`lxc-net`**:
 
 - Red de tipo **NAT**, con direccionamiento **`10.0.3.0/24`**
 - El host ofrece los servicios de **DHCP** y **DNS** (`10.0.3.1`)
@@ -396,7 +383,7 @@ lxc.net.1.link = virbr0
 lxc.net.1.flags = up
 ```
 
-Reiniciamos el contenedor (`lxc-stop -r contenedor1`) y configuramos la nueva interfaz **dentro de él**, según el mecanismo de configuración de red que tenga.
+Paramos y arrancamos el contenedor (`lxc-stop` y `lxc-start`) y configuramos la nueva interfaz **dentro de él**, según el mecanismo de configuración de red que tenga.
 
 ---
 
@@ -430,7 +417,8 @@ Si la red la gestiona **`systemd-networkd`**, podemos configurarla con **netplan
 
 ```bash
 apt install netplan.io
-chmod 600 /etc/netplan/10-lxc.yaml     # el fichero debe tener permisos restrictivos
+# Creamos /etc/netplan/10-lxc.yaml; debe tener permisos restrictivos:
+chmod 600 /etc/netplan/10-lxc.yaml
 ```
 
 ```yaml
