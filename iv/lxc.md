@@ -382,49 +382,27 @@ contenedor1 RUNNING 1         -      192.168.122.228 -    false
 
 ## Conectar un contenedor a varias redes
 
-Cada interfaz se declara con **`lxc.net.X`**: `0` la primera, `1` la segunda… Cada una con una **MAC distinta**:
+Cada interfaz se declara con **`lxc.net.X`**: `0` la primera, `1` la segunda…
 
 ```
 lxc.net.0.type = veth
-lxc.net.0.hwaddr = 00:16:3e:cf:8f:c3
 lxc.net.0.link = lxcbr0
 lxc.net.0.flags = up
 
 lxc.net.1.type = veth
-lxc.net.1.hwaddr = 00:16:3e:cf:8f:d3
 lxc.net.1.link = virbr0
 lxc.net.1.flags = up
 ```
 
-Paramos y arrancamos el contenedor (`lxc-stop` y `lxc-start`) y configuramos la nueva interfaz **dentro de él**, según el mecanismo de configuración de red que tenga.
+Paramos y arrancamos el contenedor (`lxc-stop` y `lxc-start`).
+
+<div class="alerta alerta-warning" style="margin-top:0.5rem">
+<span>⚠️</span><div>La nueva interfaz hay que configurarla <strong>dentro del contenedor</strong>, según el mecanismo de configuración de red que tenga instalado (<em>ifupdown</em>, <em>systemd-networkd</em>, <em>netplan</em>…).</div>
+</div>
 
 ---
 
-## Configurar la segunda interfaz — *ifupdown*
-
-Si el contenedor usa **ifupdown**, editamos `/etc/network/interfaces`:
-
-```
-auto lo
-iface lo inet loopback
-auto eth0
-iface eth0 inet dhcp
-auto eth1
-iface eth1 inet dhcp
-```
-
-Levantamos la interfaz con `ifup eth1` y comprobamos:
-
-```bash
-$ lxc-ls -f
-NAME        STATE   AUTOSTART GROUPS IPV4                        IPV6 UNPRIVILEGED
-contenedor1 RUNNING 1         -      10.0.3.10, 192.168.122.196  -    false
-contenedor2 RUNNING 1         -      192.168.122.228             -    false
-```
-
----
-
-## Configurar la segunda interfaz — *netplan*
+## Instalación de netplan en lxc
 
 En los contenedores **Debian** la red la gestiona **`systemd-networkd`**; podemos configurarla con **netplan** (en los contenedores **Ubuntu** ya viene instalado):
 
