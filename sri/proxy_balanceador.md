@@ -154,7 +154,6 @@ Un virtual host por cada nombre público (`www.app1.org`, `www.app2.org`…):
 - **`ProxyPass`** — reenvía las peticiones al backend
 - **`ProxyPassReverse`** — reescribe `Location` en las respuestas (redirecciones)
 - El proxy tiene que **resolver** `interno.example1.org` (DNS o `/etc/hosts`)
-- **`ProxyRequests Off`** (por defecto): con `On`, Apache sería un proxy **abierto** a Internet
 
 ---
 
@@ -208,9 +207,8 @@ ProxyPassReverse "/game/" "http://192.168.100.10:8080/"
 RedirectMatch "^/(shop|game)$" "/$1/"
 ```
 
-- Las dos URL de `ProxyPass` tienen que acabar **igual**: las dos con barra o las dos sin ella
-- Sin el `RedirectMatch`, `/shop` lo sirve el `DocumentRoot` del proxy: **404**
-- Para los enlaces absolutos: `mod_proxy_html` (`ProxyHTMLEnable On`, `ProxyHTMLURLMap`)
+- Las dos URL de `ProxyPass` tienen que acabar **igual**: Apache cambia un prefijo por el otro tal cual (con `"/shop/" "http://…:3000"`, `/shop/a` iría a `http://…:3000a`)
+- `/shop` (sin barra) no coincide con `/shop/`: sin el `RedirectMatch`, lo sirve el `DocumentRoot` del proxy y da **404**
 
 ---
 
@@ -224,12 +222,15 @@ Para el backend, el cliente es el proxy. `mod_proxy_http` añade **automáticame
 | `X-Forwarded-Host` | `Host` que pidió el cliente |
 | `X-Forwarded-Server` | `ServerName` del proxy |
 
-Otras cabeceras se añaden con `mod_headers` (`sudo a2enmod headers`):
+Si hay que mandar **más cabeceras** al backend, se usa el módulo **`mod_headers`** (`sudo a2enmod headers`) con la directiva `RequestHeader`:
 
 ```apache
 RequestHeader set X-Real-IP         "expr=%{REMOTE_ADDR}"
 RequestHeader set X-Forwarded-Proto "http"
 ```
+
+- **`X-Real-IP`**: la IP del cliente, sola (sin la lista que acumula `X-Forwarded-For`)
+- **`X-Forwarded-Proto`**: si el cliente llegó por `http` o `https`, para que el backend genere enlaces y redirecciones con el protocolo correcto
 
 ---
 
