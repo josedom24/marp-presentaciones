@@ -107,7 +107,29 @@ Una redirección del backend lleva **su nombre interno** (`Location: http://inte
 </div>
 
 <div class="alerta alerta-warning" style="margin-top:0.5rem">
-<span>⚠️</span><div><strong>Publicar en una subruta</strong> (<code>www.ejemplo.org/shop/</code>): la aplicación cree que está en la raíz, así que sus rutas absolutas (<code>/css/estilo.css</code>, enlaces, redirecciones) se piden al proxy <strong>sin <code>/shop</code></strong> y la página sale rota. Solución: enlaces relativos o ruta base configurable en la aplicación, o publicarla con <strong>su propio nombre</strong>.</div>
+<span>⚠️</span><div><strong>Publicar en una subruta</strong> (<code>www.ejemplo.org/shop/</code>): la aplicación cree que está en la raíz, así que sus rutas absolutas (<code>/css/estilo.css</code>, enlaces, redirecciones) se piden al proxy <strong>sin <code>/shop</code></strong> y la página sale rota.</div>
+</div>
+
+---
+
+## Problema con los enlaces HTML
+
+Publicada en `www.ejemplo.org/shop/`, la aplicación del backend cree que está en la raíz `/`:
+
+| Enlace en la página del backend | El navegador pide | Resultado |
+|:--|:--|:--|
+| `href="/css/estilo.css"` (absoluto) | `www.ejemplo.org/css/estilo.css` | Fuera de `/shop/`: **404** |
+| `href="css/estilo.css"` (relativo) | `www.ejemplo.org/shop/css/estilo.css` | Llega al backend ✅ |
+
+El proxy puede **reescribir el HTML** al pasar, añadiendo `/shop` a los enlaces:
+
+- **Apache**: módulo `mod_proxy_html` (`ProxyHTMLURLMap "/" "/shop/"`)
+- **Nginx**: `sub_filter 'href="/' 'href="/shop/';`
+
+Solo cambia el HTML: no los enlaces que genera el JavaScript ni los del CSS.
+
+<div class="alerta alerta-info" style="margin-top:0.5rem">
+<span>ℹ️</span><div>La solución de verdad está en la aplicación: las páginas y aplicaciones web tienen que estar <strong>bien construidas</strong> para funcionar detrás de un proxy inverso (enlaces relativos o ruta base configurable). Si no, se publican con <strong>su propio nombre</strong> (<code>shop.ejemplo.org</code>).</div>
 </div>
 
 ---
@@ -278,20 +300,13 @@ server {
 `/etc/nginx/proxy_params` (Debian). Sin él, Nginx **no** añade estas cabeceras y manda `Host: $proxy_host` (el nombre de `proxy_pass`).
 
 ```nginx
-proxy_set_header Host              $http_host;
-proxy_set_header X-Real-IP         $remote_addr;
-proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Host              $http_host;                  # nombre que pidió el cliente (www.app1.org)
+proxy_set_header X-Real-IP         $remote_addr;                # IP del cliente
+proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;  # lista que traía + IP del cliente
+proxy_set_header X-Forwarded-Proto $scheme;                     # http o https, según llegó el cliente
 ```
 
-| Cabecera | Lo que lleva |
-|:--|:--|
-| `Host` | El nombre que pidió el cliente (`www.app1.org`) |
-| `X-Real-IP` | La IP del cliente |
-| `X-Forwarded-For` | La lista que traía la petición + la IP del cliente |
-| `X-Forwarded-Proto` | `http` o `https`, según cómo llegó el cliente |
-
-<div class="alerta alerta-warning" style="margin-top:0.4rem">
+<div class="alerta alerta-warning" style="margin-top:0.8rem">
 <span>⚠️</span><div>Si el backend tiene virtual hosts con los <strong>nombres internos</strong>, no uses <code>include proxy_params</code>: pon solo las cabeceras que necesites con <code>proxy_set_header</code>.</div>
 </div>
 
@@ -323,74 +338,18 @@ Equivale al `ProxyPassReverse` de Apache, que en cambio hay que escribir siempre
 server {
     listen 80;
     server_name www.ejemplo.org;
-    location /shop/ { proxy_pass http://192.168.100.10:3000/; }
-    location /game/ { proxy_pass http://192.168.100.10:8080/; }
+
+    location /shop/ {
+        proxy_pass http://192.168.100.10:3000/;
+    }
+    location /game/ {
+        proxy_pass http://192.168.100.10:8080/;
+    }
 }
 ```
 
-- **Barra final en `proxy_pass`**: con `/` al final se quita el prefijo (`/shop/a` → `/a`); sin barra, se reenvía la URL completa (`/shop/a`)
-- Si la `location` acaba en `/`, Nginx redirige solo `/shop` a `/shop/`
-- Para los enlaces absolutos: `sub_filter` (reescribe el texto del HTML)
-
----
-
-## Reescribir los enlaces del HTML
-
-Si el backend usa enlaces absolutos (`/css/…`), el proxy puede añadirles el prefijo:
-
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div>
-
-**Apache** (`a2enmod proxy_html xml2enc`)
-
-```apache
-<Location "/shop/">
-  ProxyPass "http://192.168.100.10:3000/"
-  ProxyPassReverse "http://192.168.100.10:3000/"
-  ProxyHTMLEnable On
-  ProxyHTMLURLMap "/" "/shop/"
-</Location>
-```
-
-</div>
-
-<div>
-
-**Nginx** (`sub_filter`)
-
-```nginx
-location /shop/ {
-  proxy_pass http://192.168.100.10:3000/;
-  proxy_set_header Accept-Encoding "";
-  sub_filter 'href="/' 'href="/shop/';
-  sub_filter 'src="/'  'src="/shop/';
-  sub_filter_once off;
-}
-```
-
-</div>
-
-</div>
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Solo cambia el <strong>HTML</strong>, no el JavaScript ni el CSS. Si la aplicación no funciona en una subruta, se publica con su <strong>propio nombre</strong> (<code>shop.ejemplo.org</code>).</div>
-</div>
-
----
-
-## Apache vs Nginx — proxy inverso
-
-| Aspecto | Apache | Nginx |
-|:--|:--|:--|
-| Módulos | `a2enmod proxy proxy_http` | Nativo |
-| Reenvío | `ProxyPass` | `proxy_pass` |
-| Redirecciones | `ProxyPassReverse` (hay que ponerlo) | `proxy_redirect default` (activo) |
-| `Host` por defecto | El de `ProxyPass` | El de `proxy_pass` (`$proxy_host`) |
-| `Host` del cliente | `ProxyPreserveHost On` | `proxy_params` o `proxy_set_header Host $host` |
-| `X-Forwarded-For` | Automática | `proxy_params` o `proxy_set_header` |
-| Subruta sin barra | `RedirectMatch` | Redirección automática |
-| Comprobar sintaxis | `apache2ctl configtest` | `nginx -t` |
+- La **barra final** de `proxy_pass` decide qué llega al backend: con `/`, se quita el prefijo, como en Apache (`/shop/a` → `/a`); sin barra, llega la URL entera (`/shop/a`)
+- `/shop` (sin barra) no coincide con `/shop/`, pero como la `location` acaba en `/`, Nginx **redirige solo** a `/shop/`: no hace falta el `RedirectMatch`
 
 ---
 
