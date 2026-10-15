@@ -222,6 +222,12 @@ Para el backend, el cliente es el proxy. `mod_proxy_http` añade **automáticame
 | `X-Forwarded-Host` | `Host` que pidió el cliente |
 | `X-Forwarded-Server` | `ServerName` del proxy |
 
+Con ellas el backend sabe **quién es el cliente real**: por ejemplo, para registrar su IP en el log en lugar de la del proxy.
+
+---
+
+## Añadir más cabeceras
+
 Si hay que mandar **más cabeceras** al backend, se usa el módulo **`mod_headers`** (`sudo a2enmod headers`) con la directiva `RequestHeader`:
 
 ```apache
@@ -256,37 +262,20 @@ server {
 
     location / {
         proxy_pass http://interno.example1.org/;
+        include proxy_params;
     }
 }
 ```
 
 - **`proxy_pass`** — destino al que se reenvía la petición
+- **`include proxy_params`** — incluye el fichero donde se definen las **cabeceras que se envían al backend**
 - Si Nginx **no resuelve** el nombre de `proxy_pass`, no arranca (`host not found in upstream`)
-
----
-
-## El `Host` en Nginx
-
-Por defecto Nginx envía `Host: $proxy_host`, el nombre de `proxy_pass` (`interno.example1.org`).
-
-Para enviar el que pidió el cliente:
-
-```nginx
-location / {
-    proxy_pass       http://interno.example1.org/;
-    proxy_set_header Host $host;
-}
-```
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div><code>include proxy_params</code> también cambia el <code>Host</code> por el del cliente. Si el backend tiene virtual hosts con los <strong>nombres internos</strong>, responderá su sitio por defecto.</div>
-</div>
 
 ---
 
 ## El archivo `proxy_params`
 
-`/etc/nginx/proxy_params` (Debian) envía al backend la información del cliente original:
+`/etc/nginx/proxy_params` (Debian). Sin él, Nginx **no** añade estas cabeceras y manda `Host: $proxy_host` (el nombre de `proxy_pass`).
 
 ```nginx
 proxy_set_header Host              $http_host;
@@ -295,12 +284,16 @@ proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $scheme;
 ```
 
-| Variable | Contenido |
+| Cabecera | Lo que lleva |
 |:--|:--|
-| `$http_host` | `Host` que pidió el cliente |
-| `$proxy_add_x_forwarded_for` | `X-Forwarded-For` recibido + IP del cliente (`$remote_addr`) |
+| `Host` | El nombre que pidió el cliente (`www.app1.org`) |
+| `X-Real-IP` | La IP del cliente |
+| `X-Forwarded-For` | La lista que traía la petición + la IP del cliente |
+| `X-Forwarded-Proto` | `http` o `https`, según cómo llegó el cliente |
 
-A diferencia de Apache, Nginx **no** añade estas cabeceras si no se indican.
+<div class="alerta alerta-warning" style="margin-top:0.4rem">
+<span>⚠️</span><div>Si el backend tiene virtual hosts con los <strong>nombres internos</strong>, no uses <code>include proxy_params</code>: pon solo las cabeceras que necesites con <code>proxy_set_header</code>.</div>
+</div>
 
 ---
 
@@ -394,7 +387,7 @@ location /shop/ {
 | Reenvío | `ProxyPass` | `proxy_pass` |
 | Redirecciones | `ProxyPassReverse` (hay que ponerlo) | `proxy_redirect default` (activo) |
 | `Host` por defecto | El de `ProxyPass` | El de `proxy_pass` (`$proxy_host`) |
-| `Host` del cliente | `ProxyPreserveHost On` | `proxy_set_header Host $host` |
+| `Host` del cliente | `ProxyPreserveHost On` | `proxy_params` o `proxy_set_header Host $host` |
 | `X-Forwarded-For` | Automática | `proxy_params` o `proxy_set_header` |
 | Subruta sin barra | `RedirectMatch` | Redirección automática |
 | Comprobar sintaxis | `apache2ctl configtest` | `nginx -t` |
