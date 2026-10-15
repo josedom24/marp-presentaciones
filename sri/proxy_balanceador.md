@@ -114,22 +114,16 @@ Una redirección del backend lleva **su nombre interno** (`Location: http://inte
 
 ## Problema con los enlaces HTML
 
-Publicada en `www.ejemplo.org/shop/`, la aplicación del backend cree que está en la raíz `/`:
+Las páginas y aplicaciones web tienen que **construir bien sus enlaces** para funcionar detrás de un proxy inverso. Publicada en `www.ejemplo.org/shop/`:
 
-| Enlace en la página del backend | El navegador pide | Resultado |
-|:--|:--|:--|
-| `href="/css/estilo.css"` (absoluto) | `www.ejemplo.org/css/estilo.css` | Fuera de `/shop/`: **404** |
-| `href="css/estilo.css"` (relativo) | `www.ejemplo.org/shop/css/estilo.css` | Llega al backend ✅ |
+| Enlace en la página del backend | ¿Funciona? |
+|:--|:--|
+| `https://interno.example1.org/css/estilo.css` | ❌ El cliente no llega al nombre interno |
+| `/css/estilo.css` | ❌ Se pide fuera de `/shop/` (sin subruta, sí funciona) |
+| `css/estilo.css` | ✅ Se pide dentro de `/shop/` |
 
-El proxy puede **reescribir el HTML** al pasar, añadiendo `/shop` a los enlaces:
-
-- **Apache**: módulo `mod_proxy_html` (`ProxyHTMLURLMap "/" "/shop/"`)
-- **Nginx**: `sub_filter 'href="/' 'href="/shop/';`
-
-Solo cambia el HTML: no los enlaces que genera el JavaScript ni los del CSS.
-
-<div class="alerta alerta-info" style="margin-top:0.5rem">
-<span>ℹ️</span><div>La solución de verdad está en la aplicación: las páginas y aplicaciones web tienen que estar <strong>bien construidas</strong> para funcionar detrás de un proxy inverso (enlaces relativos o ruta base configurable). Si no, se publican con <strong>su propio nombre</strong> (<code>shop.ejemplo.org</code>).</div>
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>El proxy puede <strong>reescribir el HTML</strong> al pasar (<code>mod_proxy_html</code> en Apache, <code>sub_filter</code> en Nginx), pero no cambia los enlaces que genera el JavaScript.</div>
 </div>
 
 ---
