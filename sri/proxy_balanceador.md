@@ -78,67 +78,36 @@ footer: ''
 
 ---
 
-## ¿Qué `Host` recibe el backend?
+## Lo que tiene que resolver el proxy
 
-El proxy hace una **petición nueva** al backend. ¿Qué pone en la cabecera `Host`?
+El proxy hace una **petición nueva** al backend y devuelve su respuesta: a veces tiene que **cambiar cabeceras**.
 
-| Opción | `Host` que llega al backend |
-|:--|:--|
-| Por defecto | El nombre del **destino del proxy** (`interno.example1.org`) |
-| Conservar el del cliente | El nombre **público** que pidió el cliente (`www.app1.org`) |
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Si el backend tiene <strong>virtual hosts por nombre</strong>, elige el sitio por la cabecera <code>Host</code>. Si recibe un nombre que no tiene en ningún <code>ServerName</code>, responde su <strong>sitio por defecto</strong>, no el que esperabas.</div>
-</div>
-
-- Se conserva el `Host` del cliente cuando el backend **sí** tiene configurado el nombre público
-- En el log del backend se ve qué virtual host ha atendido la petición
-
----
-
-## El problema de las redirecciones
-
-Si el backend responde con una redirección, la cabecera `Location` lleva **su nombre interno**:
-
-```
-HTTP/1.1 301 Moved Permanently
-Location: http://interno.example1.org/nuevodirectorio
-```
-
-El navegador intenta ir a `interno.example1.org`, un nombre que **no resuelve** (o que no es accesible) desde fuera.
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El proxy tiene que <strong>reescribir la cabecera <code>Location</code></strong> de la respuesta para que apunte al nombre público: <code>ProxyPassReverse</code> en Apache, <code>proxy_redirect</code> en Nginx.</div>
-</div>
-
----
-
-## Publicar en una subruta
-
-Publicar una aplicación en `www.ejemplo.org/shop` tiene **dos trampas**:
-
-<div class="cols-2" style="margin-top:0.6rem">
+<div class="cols-2" style="margin-top:0.5rem">
 
 <div class="card card-blue">
 
-### La barra final
+### `Host` (en la petición)
 
-Si el proxy está configurado para `/shop/`, una petición a `/shop` (sin barra) **no coincide**.
+Por defecto llega el nombre del **destino del proxy** (`interno.example1.org`). Si el backend tiene **virtual hosts por nombre**, puede responder otro sitio.
 
-Solución: redirigir `/shop` a `/shop/` (Nginx lo hace solo).
+→ El proxy debe mandar el **nombre que espera el backend**.
 
 </div>
 
 <div class="card card-green">
 
-### Enlaces absolutos
+### `Location` (en la respuesta)
 
-Si la página del backend enlaza `/css/estilo.css`, el navegador lo pide al proxy **sin** `/shop`: la página sale **sin estilos** o rota.
+Una redirección del backend lleva **su nombre interno** (`Location: http://interno.example1.org/nuevo`), que no se resuelve desde fuera.
 
-Solución: que la aplicación use enlaces relativos o permita indicar su ruta base, o **reescribir el HTML** en el proxy.
+→ El proxy debe **reescribirla** con el nombre público.
 
 </div>
 
+</div>
+
+<div class="alerta alerta-warning" style="margin-top:0.5rem">
+<span>⚠️</span><div><strong>Publicar en una subruta</strong> (<code>www.ejemplo.org/shop/</code>): la aplicación cree que está en la raíz, así que sus rutas absolutas (<code>/css/estilo.css</code>, enlaces, redirecciones) se piden al proxy <strong>sin <code>/shop</code></strong> y la página sale rota. Solución: enlaces relativos o ruta base configurable en la aplicación, o publicarla con <strong>su propio nombre</strong>.</div>
 </div>
 
 ---
@@ -833,47 +802,6 @@ listen estadisticas
 - **Balanceador**: reparte entre servidores **que sirven lo mismo** y retira los que fallan
 - Para el proxy, HAProxy es **un backend más**; para HAProxy, el cliente es el proxy
 - `X-Forwarded-For` **acumula** las IP: `X-Forwarded-For: <cliente>, <proxy>`
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">06</p>
-
-# Resumen
-
-## Problemas frecuentes
-
----
-
-## Problemas frecuentes: proxy inverso
-
-| Síntoma | Causas habituales |
-|:--|:--|
-| **502** Bad Gateway | El backend no responde: servicio parado, IP o puerto mal |
-| **504** Gateway Timeout | El backend tarda más que el `timeout` del proxy |
-| **Sale otro sitio** | El `Host` que recibe el backend no coincide con su `ServerName` |
-| **Redirige a un nombre interno** | Falta `ProxyPassReverse` o hay `proxy_redirect off` |
-| **Página sin estilos** en una subruta | Enlaces absolutos del backend · falta la barra final |
-| **Nginx no arranca** | No resuelve el nombre de `proxy_pass` |
-
-Probar sin tocar `/etc/hosts`: `curl -H "Host: www.app1.org" http://<ip del proxy>/`
-
-Antes de recargar: `apache2ctl configtest` o `nginx -t`. Ante un error: los logs del **proxy** y del **backend**.
-
----
-
-## Problemas frecuentes: balanceador
-
-| Síntoma | Causas habituales |
-|:--|:--|
-| **503** Service Unavailable | Todos los servidores **DOWN**: servicios parados o el *health check* pide una página que no existe |
-| En el log del servidor web sale la **IP del balanceador** | Falta `option forwardfor` o cambiar el formato del log |
-| El contador de la sesión **vuelve a 1** | Sin afinidad · o se prueba con `curl` sin guardar cookies |
-| Siempre responde **el mismo servidor** | El otro está DOWN · afinidad activa · `balance source` |
-
-Antes de recargar: `haproxy -c -f /etc/haproxy/haproxy.cfg`. El estado de cada servidor, en la página de **estadísticas**.
 
 ---
 
