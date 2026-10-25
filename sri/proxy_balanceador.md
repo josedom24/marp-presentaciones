@@ -78,67 +78,52 @@ footer: ''
 
 ---
 
-## ¿Qué `Host` recibe el backend?
+## Lo que tiene que resolver el proxy
 
-El proxy hace una **petición nueva** al backend. ¿Qué pone en la cabecera `Host`?
+El proxy hace una **petición nueva** al backend y devuelve su respuesta: a veces tiene que **cambiar cabeceras**.
 
-| Opción | `Host` que llega al backend |
-|:--|:--|
-| Por defecto | El nombre del **destino del proxy** (`interno.example1.org`) |
-| Conservar el del cliente | El nombre **público** que pidió el cliente (`www.app1.org`) |
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Si el backend tiene <strong>virtual hosts por nombre</strong>, elige el sitio por la cabecera <code>Host</code>. Si recibe un nombre que no tiene en ningún <code>ServerName</code>, responde su <strong>sitio por defecto</strong>, no el que esperabas.</div>
-</div>
-
-- Se conserva el `Host` del cliente cuando el backend **sí** tiene configurado el nombre público
-- En el log del backend se ve qué virtual host ha atendido la petición
-
----
-
-## El problema de las redirecciones
-
-Si el backend responde con una redirección, la cabecera `Location` lleva **su nombre interno**:
-
-```
-HTTP/1.1 301 Moved Permanently
-Location: http://interno.example1.org/nuevodirectorio
-```
-
-El navegador intenta ir a `interno.example1.org`, un nombre que **no resuelve** (o que no es accesible) desde fuera.
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El proxy tiene que <strong>reescribir la cabecera <code>Location</code></strong> de la respuesta para que apunte al nombre público: <code>ProxyPassReverse</code> en Apache, <code>proxy_redirect</code> en Nginx.</div>
-</div>
-
----
-
-## Publicar en una subruta
-
-Publicar una aplicación en `www.ejemplo.org/shop` tiene **dos trampas**:
-
-<div class="cols-2" style="margin-top:0.6rem">
+<div class="cols-2" style="margin-top:0.5rem">
 
 <div class="card card-blue">
 
-### La barra final
+### `Host` (en la petición)
 
-Si el proxy está configurado para `/shop/`, una petición a `/shop` (sin barra) **no coincide**.
+Por defecto llega el nombre del **destino del proxy** (`interno.example1.org`). Si el backend tiene **virtual hosts por nombre**, puede responder otro sitio.
 
-Solución: redirigir `/shop` a `/shop/` (Nginx lo hace solo).
+→ El proxy debe mandar el **nombre que espera el backend**.
 
 </div>
 
 <div class="card card-green">
 
-### Enlaces absolutos
+### `Location` (en la respuesta)
 
-Si la página del backend enlaza `/css/estilo.css`, el navegador lo pide al proxy **sin** `/shop`: la página sale **sin estilos** o rota.
+Una redirección del backend lleva **su nombre interno** (`Location: http://interno.example1.org/nuevo`), que no se resuelve desde fuera.
 
-Solución: que la aplicación use enlaces relativos o permita indicar su ruta base, o **reescribir el HTML** en el proxy.
+→ El proxy debe **reescribirla** con el nombre público.
 
 </div>
 
+</div>
+
+<div class="alerta alerta-warning" style="margin-top:0.5rem">
+<span>⚠️</span><div><strong>Publicar en una subruta</strong> (<code>www.ejemplo.org/shop/</code>): la aplicación cree que está en la raíz, así que sus rutas absolutas (<code>/css/estilo.css</code>, enlaces, redirecciones) se piden al proxy <strong>sin <code>/shop</code></strong> y la página sale rota.</div>
+</div>
+
+---
+
+## Problema con los enlaces HTML
+
+Las páginas y aplicaciones web tienen que **construir bien sus enlaces** para funcionar detrás de un proxy inverso. Publicada en `www.ejemplo.org/shop/`:
+
+| Enlace en la página del backend | ¿Funciona? |
+|:--|:--|
+| `https://interno.example1.org/css/estilo.css` | ❌ El cliente no llega al nombre interno |
+| `/css/estilo.css` | ❌ Se pide fuera de `/shop/` (sin subruta, sí funciona) |
+| `css/estilo.css` | ✅ Se pide dentro de `/shop/` |
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>El proxy puede <strong>reescribir el HTML</strong> al pasar (<code>mod_proxy_html</code> en Apache, <code>sub_filter</code> en Nginx), pero no cambia los enlaces que genera el JavaScript.</div>
 </div>
 
 ---
@@ -185,7 +170,6 @@ Un virtual host por cada nombre público (`www.app1.org`, `www.app2.org`…):
 - **`ProxyPass`** — reenvía las peticiones al backend
 - **`ProxyPassReverse`** — reescribe `Location` en las respuestas (redirecciones)
 - El proxy tiene que **resolver** `interno.example1.org` (DNS o `/etc/hosts`)
-- **`ProxyRequests Off`** (por defecto): con `On`, Apache sería un proxy **abierto** a Internet
 
 ---
 
@@ -239,9 +223,8 @@ ProxyPassReverse "/game/" "http://192.168.100.10:8080/"
 RedirectMatch "^/(shop|game)$" "/$1/"
 ```
 
-- Las dos URL de `ProxyPass` tienen que acabar **igual**: las dos con barra o las dos sin ella
-- Sin el `RedirectMatch`, `/shop` lo sirve el `DocumentRoot` del proxy: **404**
-- Para los enlaces absolutos: `mod_proxy_html` (`ProxyHTMLEnable On`, `ProxyHTMLURLMap`)
+- Las dos URL de `ProxyPass` tienen que acabar **igual**: Apache cambia un prefijo por el otro tal cual (con `"/shop/" "http://…:3000"`, `/shop/a` iría a `http://…:3000a`)
+- `/shop` (sin barra) no coincide con `/shop/`: sin el `RedirectMatch`, lo sirve el `DocumentRoot` del proxy y da **404**
 
 ---
 
@@ -255,12 +238,21 @@ Para el backend, el cliente es el proxy. `mod_proxy_http` añade **automáticame
 | `X-Forwarded-Host` | `Host` que pidió el cliente |
 | `X-Forwarded-Server` | `ServerName` del proxy |
 
-Otras cabeceras se añaden con `mod_headers` (`sudo a2enmod headers`):
+Con ellas el backend sabe **quién es el cliente real**: por ejemplo, para registrar su IP en el log en lugar de la del proxy.
+
+---
+
+## Añadir más cabeceras
+
+Si hay que mandar **más cabeceras** al backend, se usa el módulo **`mod_headers`** (`sudo a2enmod headers`) con la directiva `RequestHeader`:
 
 ```apache
 RequestHeader set X-Real-IP         "expr=%{REMOTE_ADDR}"
 RequestHeader set X-Forwarded-Proto "http"
 ```
+
+- **`X-Real-IP`**: la IP del cliente, sola (sin la lista que acumula `X-Forwarded-For`)
+- **`X-Forwarded-Proto`**: si el cliente llegó por `http` o `https`, para que el backend genere enlaces y redirecciones con el protocolo correcto
 
 ---
 
@@ -286,51 +278,31 @@ server {
 
     location / {
         proxy_pass http://interno.example1.org/;
+        include proxy_params;
     }
 }
 ```
 
 - **`proxy_pass`** — destino al que se reenvía la petición
+- **`include proxy_params`** — incluye el fichero donde se definen las **cabeceras que se envían al backend**
 - Si Nginx **no resuelve** el nombre de `proxy_pass`, no arranca (`host not found in upstream`)
-
----
-
-## El `Host` en Nginx
-
-Por defecto Nginx envía `Host: $proxy_host`, el nombre de `proxy_pass` (`interno.example1.org`).
-
-Para enviar el que pidió el cliente:
-
-```nginx
-location / {
-    proxy_pass       http://interno.example1.org/;
-    proxy_set_header Host $host;
-}
-```
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div><code>include proxy_params</code> también cambia el <code>Host</code> por el del cliente. Si el backend tiene virtual hosts con los <strong>nombres internos</strong>, responderá su sitio por defecto.</div>
-</div>
 
 ---
 
 ## El archivo `proxy_params`
 
-`/etc/nginx/proxy_params` (Debian) envía al backend la información del cliente original:
+`/etc/nginx/proxy_params` (Debian). Sin él, Nginx **no** añade estas cabeceras y manda `Host: $proxy_host` (el nombre de `proxy_pass`).
 
 ```nginx
-proxy_set_header Host              $http_host;
-proxy_set_header X-Real-IP         $remote_addr;
-proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Host              $http_host;                  # nombre que pidió el cliente (www.app1.org)
+proxy_set_header X-Real-IP         $remote_addr;                # IP del cliente
+proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;  # lista que traía + IP del cliente
+proxy_set_header X-Forwarded-Proto $scheme;                     # http o https, según llegó el cliente
 ```
 
-| Variable | Contenido |
-|:--|:--|
-| `$http_host` | `Host` que pidió el cliente |
-| `$proxy_add_x_forwarded_for` | `X-Forwarded-For` recibido + IP del cliente (`$remote_addr`) |
-
-A diferencia de Apache, Nginx **no** añade estas cabeceras si no se indican.
+<div class="alerta alerta-warning" style="margin-top:0.8rem">
+<span>⚠️</span><div>Si el backend tiene virtual hosts con los <strong>nombres internos</strong>, no uses <code>include proxy_params</code>: pon solo las cabeceras que necesites con <code>proxy_set_header</code>.</div>
+</div>
 
 ---
 
@@ -360,74 +332,18 @@ Equivale al `ProxyPassReverse` de Apache, que en cambio hay que escribir siempre
 server {
     listen 80;
     server_name www.ejemplo.org;
-    location /shop/ { proxy_pass http://192.168.100.10:3000/; }
-    location /game/ { proxy_pass http://192.168.100.10:8080/; }
+
+    location /shop/ {
+        proxy_pass http://192.168.100.10:3000/;
+    }
+    location /game/ {
+        proxy_pass http://192.168.100.10:8080/;
+    }
 }
 ```
 
-- **Barra final en `proxy_pass`**: con `/` al final se quita el prefijo (`/shop/a` → `/a`); sin barra, se reenvía la URL completa (`/shop/a`)
-- Si la `location` acaba en `/`, Nginx redirige solo `/shop` a `/shop/`
-- Para los enlaces absolutos: `sub_filter` (reescribe el texto del HTML)
-
----
-
-## Reescribir los enlaces del HTML
-
-Si el backend usa enlaces absolutos (`/css/…`), el proxy puede añadirles el prefijo:
-
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div>
-
-**Apache** (`a2enmod proxy_html xml2enc`)
-
-```apache
-<Location "/shop/">
-  ProxyPass "http://192.168.100.10:3000/"
-  ProxyPassReverse "http://192.168.100.10:3000/"
-  ProxyHTMLEnable On
-  ProxyHTMLURLMap "/" "/shop/"
-</Location>
-```
-
-</div>
-
-<div>
-
-**Nginx** (`sub_filter`)
-
-```nginx
-location /shop/ {
-  proxy_pass http://192.168.100.10:3000/;
-  proxy_set_header Accept-Encoding "";
-  sub_filter 'href="/' 'href="/shop/';
-  sub_filter 'src="/'  'src="/shop/';
-  sub_filter_once off;
-}
-```
-
-</div>
-
-</div>
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Solo cambia el <strong>HTML</strong>, no el JavaScript ni el CSS. Si la aplicación no funciona en una subruta, se publica con su <strong>propio nombre</strong> (<code>shop.ejemplo.org</code>).</div>
-</div>
-
----
-
-## Apache vs Nginx — proxy inverso
-
-| Aspecto | Apache | Nginx |
-|:--|:--|:--|
-| Módulos | `a2enmod proxy proxy_http` | Nativo |
-| Reenvío | `ProxyPass` | `proxy_pass` |
-| Redirecciones | `ProxyPassReverse` (hay que ponerlo) | `proxy_redirect default` (activo) |
-| `Host` por defecto | El de `ProxyPass` | El de `proxy_pass` (`$proxy_host`) |
-| `Host` del cliente | `ProxyPreserveHost On` | `proxy_set_header Host $host` |
-| `X-Forwarded-For` | Automática | `proxy_params` o `proxy_set_header` |
-| Subruta sin barra | `RedirectMatch` | Redirección automática |
-| Comprobar sintaxis | `apache2ctl configtest` | `nginx -t` |
+- La **barra final** de `proxy_pass` decide qué llega al backend: con `/`, se quita el prefijo, como en Apache (`/shop/a` → `/a`); sin barra, llega la URL entera (`/shop/a`)
+- `/shop` (sin barra) no coincide con `/shop/`, pero como la `location` acaba en `/`, Nginx **redirige solo** a `/shop/`: no hace falta el `RedirectMatch`
 
 ---
 
@@ -836,47 +752,6 @@ listen estadisticas
 - **Balanceador**: reparte entre servidores **que sirven lo mismo** y retira los que fallan
 - Para el proxy, HAProxy es **un backend más**; para HAProxy, el cliente es el proxy
 - `X-Forwarded-For` **acumula** las IP: `X-Forwarded-For: <cliente>, <proxy>`
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">06</p>
-
-# Resumen
-
-## Problemas frecuentes
-
----
-
-## Problemas frecuentes: proxy inverso
-
-| Síntoma | Causas habituales |
-|:--|:--|
-| **502** Bad Gateway | El backend no responde: servicio parado, IP o puerto mal |
-| **504** Gateway Timeout | El backend tarda más que el `timeout` del proxy |
-| **Sale otro sitio** | El `Host` que recibe el backend no coincide con su `ServerName` |
-| **Redirige a un nombre interno** | Falta `ProxyPassReverse` o hay `proxy_redirect off` |
-| **Página sin estilos** en una subruta | Enlaces absolutos del backend · falta la barra final |
-| **Nginx no arranca** | No resuelve el nombre de `proxy_pass` |
-
-Probar sin tocar `/etc/hosts`: `curl -H "Host: www.app1.org" http://<ip del proxy>/`
-
-Antes de recargar: `apache2ctl configtest` o `nginx -t`. Ante un error: los logs del **proxy** y del **backend**.
-
----
-
-## Problemas frecuentes: balanceador
-
-| Síntoma | Causas habituales |
-|:--|:--|
-| **503** Service Unavailable | Todos los servidores **DOWN**: servicios parados o el *health check* pide una página que no existe |
-| En el log del servidor web sale la **IP del balanceador** | Falta `option forwardfor` o cambiar el formato del log |
-| El contador de la sesión **vuelve a 1** | Sin afinidad · o se prueba con `curl` sin guardar cookies |
-| Siempre responde **el mismo servidor** | El otro está DOWN · afinidad activa · `balance source` |
-
-Antes de recargar: `haproxy -c -f /etc/haproxy/haproxy.cfg`. El estado de cada servidor, en la página de **estadísticas**.
 
 ---
 
