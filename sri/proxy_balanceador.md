@@ -679,12 +679,11 @@ backend servidores_web_backend
     server  apache2 192.168.100.101:80 check cookie s2
 ```
 
-1. Primera petición, sin cookie: `roundrobin` elige `apache1` y HAProxy añade a la respuesta `Set-Cookie: SERVERID=s1`
-2. El navegador envía `SERVERID=s1` en cada petición y HAProxy la manda **siempre a `apache1`**
-3. **`cookie s1`** en cada `server` es el valor que lo identifica en la cookie
+- 1.ª petición: `roundrobin` elige `apache1` y HAProxy responde con `Set-Cookie: SERVERID=s1`
+- En las siguientes, el navegador envía `SERVERID=s1` y HAProxy lo manda **siempre** al `server` con `cookie s1`
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Opciones habituales: <code>cookie SERVERID insert indirect nocache</code>. <strong><code>indirect</code></strong>: HAProxy usa <code>SERVERID</code> para elegir el servidor y la <strong>quita</strong> antes de pasarle la petición, así el servidor web solo recibe sus cookies (<code>PHPSESSID</code>). <strong><code>nocache</code></strong>: que ninguna caché intermedia guarde esa respuesta, o mandaría a todos al mismo servidor.</div>
+<span>ℹ️</span><div>Alternativas: <code>balance source</code> (por IP) o sesiones <strong>compartidas</strong> entre servidores (base de datos, Redis).</div>
 </div>
 
 ---
@@ -706,8 +705,6 @@ $ curl -s -c cookies.txt -b cookies.txt http://www.example.org/sesion.php
 ```
 
 Repetido varias veces: **siempre el mismo servidor** y el contador sube. El navegador lo hace solo.
-
-Otras formas de afinidad: `balance source` (por IP) o sesiones **compartidas** entre servidores (base de datos, Redis).
 
 ---
 
