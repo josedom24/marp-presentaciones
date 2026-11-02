@@ -220,7 +220,7 @@ sudo mdadm --detail /dev/md0
 lsblk /dev/md0
 ```
 
-- Tamaño útil: **(n − 1) × tamaño del disco**, porque un disco se dedica a la paridad
+- Tamaño útil: **(n − 1) × tamaño del disco**: la paridad, repartida entre todos, ocupa el equivalente a un disco
 - Necesita al menos **3 discos**
 
 ---
@@ -233,6 +233,8 @@ Hay que guardar la definición del RAID y actualizar el *initramfs*:
 sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf
 sudo update-initramfs -u
 ```
+
+Ejecútalo **una sola vez**: `tee -a` añade al final y, si lo repites, la línea `ARRAY` queda duplicada.
 
 <div class="alerta alerta-warning" style="margin-top:0.6rem">
 <span>⚠️</span><div>Sin estos pasos, tras reiniciar el RAID puede aparecer como <code>/dev/md127</code> y fallar lo que dependa de <code>/dev/md0</code>.</div>
@@ -365,25 +367,12 @@ sudo exportfs -v         # muestra lo exportado actualmente
 - El cliente envía el **UID y el GID** (números, no nombres) y el servidor comprueba los permisos con ellos
 - Con **`root_squash`**, el `root` del cliente es `nobody` en el servidor: si el directorio es de `root`, **no puede escribir** (*Permission denied*)
 
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div class="card card-blue">
+<div class="card card-blue" style="margin-top:0.6rem">
 
 ### Soluciones
 
 - Dar permisos en el **servidor**: `chown` del directorio al usuario que va a escribir
 - `no_root_squash`, solo si se confía plenamente en el cliente
-
-</div>
-
-<div class="card card-green">
-
-### Con un servidor web
-
-- `www-data` tiene que poder **leer** los ficheros
-- Si el montaje está fuera de `/var/www`, hace falta su `<Directory>` en Apache (lo vimos en servidores web)
-
-</div>
 
 </div>
 
@@ -606,6 +595,10 @@ $ sudo iscsiadm -m discovery -t sendtargets -p 192.168.200.10
 
 El descubrimiento guarda el target en la base de datos del initiator (los **nodos**), donde se configura antes de conectarse.
 
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Si <strong>repites</strong> el descubrimiento, el nodo se actualiza con los valores por defecto de <code>/etc/iscsi/iscsid.conf</code> y se pierde lo configurado (CHAP, <code>node.startup</code>): tendrías que volver a configurarlo.</div>
+</div>
+
 ---
 
 ## Cliente: autenticación CHAP
@@ -689,6 +682,7 @@ El nombre `/dev/sda` puede **cambiar** al reiniciar: se monta por **UUID** (`sud
 ```ini
 [Unit]
 Requires=open-iscsi.service
+Wants=network-online.target
 After=open-iscsi.service network-online.target
 
 [Mount]
@@ -712,42 +706,6 @@ WantedBy=remote-fs.target
 | Acceso simultáneo | ✅ pensado para varios clientes | ⚠️ un cliente a la vez (sin FS clusterizado) |
 | Rendimiento | Bueno para ficheros | Mejor para bases de datos y máquinas virtuales |
 | Caso típico | Compartir documentos, *home* de usuarios, backups | Discos para VMs, BBDD, almacenamiento dedicado |
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">05</p>
-
-# Resumen
-
-## Problemas frecuentes
-
----
-
-## Problemas frecuentes: NFS
-
-| Síntoma | Causas habituales |
-|:--|:--|
-| `access denied by server` | El cliente no está en la red o la IP de `/etc/exports` · falta `exportfs -ra` |
-| *Permission denied* al escribir | `root_squash` · permisos del directorio en el **servidor** |
-| El `mount` se queda colgado | Servidor parado · cortafuegos · IP mal |
-| `showmount` no responde | Solo hay NFSv4 (`showmount` usa NFSv3) |
-| El servidor web da **403** | `www-data` no puede leer · falta el `<Directory>` |
-
----
-
-## Problemas frecuentes: iSCSI y montajes
-
-| Síntoma | Causas habituales |
-|:--|:--|
-| `authorization failure` en el login | Usuario o contraseña CHAP · falta `authmethod CHAP` · `initiator-address` |
-| No aparece ningún disco | No se ha hecho `--login` · el `backing-store` no existe |
-| Tras reiniciar, otro nombre de disco | Se monta por `/dev/sdX` en lugar de por **UUID** |
-| El RAID aparece como `md127` | Falta `mdadm.conf` o `update-initramfs -u` |
-| `Where= setting doesn't match unit name` | El nombre del `.mount` no coincide con la ruta |
-| El arranque espera mucho | Montaje sin `_netdev` · el servidor no responde |
 
 ---
 
