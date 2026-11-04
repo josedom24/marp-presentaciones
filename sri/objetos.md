@@ -87,12 +87,9 @@ Y además:
 
 ## La idea en una frase
 
-<div class="alerta alerta-ok" style="margin-top:1.2rem; font-size:1.15rem">
-<span>💡</span><div>El almacenamiento de objetos es almacenamiento <strong>al que se accede como a una web</strong>: no se monta, se le hacen <strong>peticiones HTTP</strong> a través de una <strong>API</strong>.</div>
-</div>
-
 <div style="margin-top:1.2rem">
 
+- El almacenamiento de objetos es almacenamiento **al que se accede como a una web**: no se monta, se le hacen **peticiones HTTP** a través de una **API**
 - Cada dato guardado tiene su propia **URL**
 - Para guardarlo, leerlo o borrarlo se usan los **métodos HTTP** que ya conocemos
 - Detrás de esa URL puede haber **cientos de servidores**: el cliente no lo sabe ni le importa
