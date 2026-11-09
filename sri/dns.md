@@ -92,147 +92,54 @@ footer: ''
 
 ## Zonas DNS
 
-> Una **zona** agrupa la información de un nombre de dominio. El servidor que guarda una zona es su **autoridad**.
+> Una **zona** es la parte del espacio de nombres que **gestiona un servidor**: contiene la información de un dominio (o de un bloque de direcciones IP).
 
-<div class="cols-2" style="margin-top:0.8rem">
+- La información de la zona se guarda en el **fichero de zona**: un archivo de texto con **registros**, uno por cada dato
+- Cada tipo de información tiene su **tipo de registro** (`A`, `MX`, `PTR`…)
+- El servidor que guarda una zona es su **servidor con autoridad**
 
-<div class="card card-blue">
-
-### Resolución directa
-
-- Conjunto de nombres bajo un dominio
-- Permite obtener la **IP** a partir del **nombre**
-- En `gonzalonazareno.org`: `macaco`, `www`, `dit`, `openstack`…
-
-</div>
-
-<div class="card card-green">
-
-### Resolución inversa
-
-- Permite obtener el **nombre** a partir de la **IP**
-- Depende del **direccionamiento** de red
-- Útil para registros de correo, *logs* y comprobaciones
-
-</div>
-
-</div>
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El <strong>fichero de zona</strong> es un archivo de texto donde se guardan los <strong>registros</strong> (cada tipo de información tiene su propio tipo de registro).</div>
-</div>
-
----
-
-## Resolución inversa: `in-addr.arpa`
-
-¿Cómo se busca un **nombre a partir de una IP** si DNS indexa por nombres? Se convierte la IP en un nombre bajo el dominio **`in-addr.arpa`**:
-
-- Se escriben los **octetos al revés** y se añade `.in-addr.arpa.`
-- Se hace al revés porque en un nombre lo **más general va a la derecha**, y en una IP lo más general (la red) va a la izquierda
-
-```
-IP:      8.8.8.8
-Nombre:  8.8.8.8.in-addr.arpa.     →  PTR  →  dns.google.
-
-IP:      172.22.0.1
-Nombre:  1.0.22.172.in-addr.arpa.  →  PTR  →  (nombre del equipo)
-```
-
-- El tipo de registro es **`PTR`**
-- La delegación sigue la **jerarquía de direcciones**: `arpa` → `in-addr.arpa` → `172` → `22`…
-
----
-
-## Zonas inversas y `dig -x`
+Para un mismo dominio solemos tener **dos tipos de zonas**:
 
 <div class="cols-2" style="margin-top:0.6rem">
 
 <div class="card card-blue">
 
-### Nombre de la zona inversa
+### Zona de resolución directa
 
-Se invierte la **parte de red** según la máscara:
-
-| Red | Zona inversa |
-|:--|:--|
-| `172.22.0.0/16` | `22.172.in-addr.arpa` |
-| `192.168.0.0/24` | `0.168.192.in-addr.arpa` |
-
-- Dentro de la zona, el nombre de cada equipo es la **parte de host** invertida
-- Hay **un `PTR` por cada `A`** de la zona directa
+- **Nombre → IP** (y otros datos)
+- Se organiza por **nombres de dominio**
 
 </div>
 
 <div class="card card-green">
 
-### Consulta con `dig -x`
+### Zona de resolución inversa
 
-```
-$ dig -x 8.8.8.8
-;8.8.8.8.in-addr.arpa.   IN   PTR
-8.8.8.8.in-addr.arpa. 74068 IN PTR dns.google.
-```
-
-- `-x` **invierte la IP** y pide el `PTR` por ti
-- Equivale a `dig PTR 8.8.8.8.in-addr.arpa`
+- **IP → nombre**
+- Se organiza por **direcciones IP**
 
 </div>
 
-</div>
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>La zona inversa la gestiona quien tiene <strong>delegado el bloque de IPs</strong> (el proveedor), no quien tiene el dominio. Para IPv6 se usa <code>ip6.arpa</code>.</div>
 </div>
 
 ---
 
-## Autoridad sobre una zona
+## Resolución directa
 
-- El **servidor DNS** que guarda el **fichero de una zona** es su **servidor con autoridad**
-- En el propio fichero de zona se declara con un **registro NS**
-- Conviene tener **varios** servidores con autoridad por zona, por disponibilidad:
+> La zona de resolución directa contiene **los nombres bajo un dominio** y la información asociada a cada uno: su IP, sus alias, el correo del dominio…
 
-<div class="cols-2" style="margin-top:0.6rem">
+Ejemplo de la información de una zona `ejemplo.org`:
 
-<div class="card card-blue">
-
-### Servidor maestro
-
-- Es donde se **edita** la zona
-- Su fichero de zona es la **fuente de verdad**
-
-</div>
-
-<div class="card card-green">
-
-### Servidor esclavo
-
-- Tiene una **copia** de la zona
-- La obtiene del maestro por **transferencia de zona** (TCP) y se mantiene sincronizada
-- Responde con **autoridad** igual que el maestro
-
-</div>
-
-</div>
+| Nombre | Tipo | Valor | Significado |
+|:--|:--|:--|:--|
+| `ejemplo.org.` | `NS` | `dns1.ejemplo.org.` | servidor con autoridad de la zona |
+| `ejemplo.org.` | `MX` | `10 correo.ejemplo.org.` | servidor de correo del dominio |
+| `dns1.ejemplo.org.` | `A` | `192.168.1.2` | IP de una máquina |
+| `servidor.ejemplo.org.` | `A` | `192.168.1.10` | IP de una máquina |
+| `www.ejemplo.org.` | `CNAME` | `servidor.ejemplo.org.` | alias: un servicio alojado en `servidor` |
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Los servidores con autoridad sobre el <strong>dominio raíz</strong> se llaman <strong>root servers</strong>: <strong>13 conjuntos</strong> (A–M), cada uno replicado con <em>anycast</em> en cientos de ubicaciones.</div>
-</div>
-
----
-
-## Delegación de dominios
-
-> DNS es una **jerarquía de zonas**: cada zona puede **delegar** una parte de su espacio de nombres en otro servidor.
-
-- La zona `org` **delega** `gonzalonazareno.org` en sus servidores con autoridad
-- Para delegar, la zona **padre** guarda registros **NS** del subdominio: *«para `sub.dominio.org`, pregunta a este servidor»*
-- Quien recibe la delegación es **autoridad** de esa parte y puede delegar a su vez
-- Así nadie necesita conocer todos los nombres: **cada zona gestiona lo suyo**
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div><strong>Glue records:</strong> si el servidor con autoridad está <em>dentro</em> del propio subdominio delegado (<code>ns.sub.dominio.org</code>), la zona padre debe guardar también su <strong>IP</strong>. Si no, habría un círculo: para preguntar al servidor necesito su IP, y para su IP debo preguntarle a él.</div>
+<span>ℹ️</span><div>Convención habitual: las <strong>máquinas</strong> se definen con registros <code>A</code> y los <strong>servicios</strong> (<code>www</code>, <code>ftp</code>…) con <code>CNAME</code> que apuntan a la máquina que los aloja.</div>
 </div>
 
 ---
@@ -241,14 +148,128 @@ $ dig -x 8.8.8.8
 
 | Registro | Para qué sirve |
 |:--|:--|
-| **SOA** | *Start of Authority* — metainformación de la zona (serie, tiempos de sincronización y caché) |
+| **SOA** | *Start of Authority* — metainformación de la zona: servidor maestro, responsable, número de serie y tiempos de sincronización y caché |
 | **NS** | Servidor con autoridad sobre la zona (y delegaciones) |
 | **A** | Dirección **IPv4** de un nombre |
 | **AAAA** | Dirección **IPv6** de un nombre |
 | **CNAME** | **Alias** — otro nombre que apunta al «real» |
-| **MX** | Servidor de **correo** del dominio |
+| **MX** | Servidor de **correo** del dominio, con una **prioridad** (menor = más prioritario) |
 | **PTR** | Resolución **inversa** (IP → nombre) |
 | **TXT** | Texto libre (SPF, DKIM, verificación…) |
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Todas las zonas tienen <strong>un registro <code>SOA</code></strong> y <strong>al menos un <code>NS</code></strong>.</div>
+</div>
+
+---
+
+## Resolución inversa
+
+> La zona de resolución inversa permite obtener el **nombre** a partir de la **IP**. Se usa en servidores de correo, *logs* y comprobaciones de seguridad.
+
+Como DNS busca por **nombres**, la IP se convierte en un nombre bajo el dominio especial **`in-addr.arpa`**, escribiendo los **octetos al revés**:
+
+```
+172.22.0.1   →   1.0.22.172.in-addr.arpa.   →   PTR   →   macaco.gonzalonazareno.org.
+```
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Nombre de la zona
+
+Es la **parte de red** invertida, según la máscara:
+
+| Red | Zona inversa |
+|:--|:--|
+| `172.22.0.0/16` | `22.172.in-addr.arpa` |
+| `192.168.1.0/24` | `1.168.192.in-addr.arpa` |
+
+</div>
+
+<div class="card card-green">
+
+### Contenido de la zona
+
+- Registros **`PTR`**: uno por cada `A` de la zona directa
+- Los **alias** (`CNAME`) no aparecen
+- Se invierte porque en un nombre lo **general va a la derecha** y en una IP, a la izquierda
+
+</div>
+
+</div>
+
+---
+
+## Servidores maestro y esclavo
+
+Una zona debe tener **varios servidores con autoridad**: si sólo hay uno y cae, el dominio **deja de resolverse**.
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Servidor maestro (primario)
+
+- Es donde se **edita** el fichero de zona
+- Es la **fuente de verdad** de la zona
+
+</div>
+
+<div class="card card-green">
+
+### Servidor esclavo (secundario)
+
+- Tiene una **copia** de la zona
+- La obtiene del maestro por **transferencia de zona** (TCP)
+- Responde con **autoridad**, igual que el maestro
+
+</div>
+
+</div>
+
+- Los dos aparecen como registros **NS** de la zona: los clientes no distinguen uno de otro
+- El maestro **avisa** al esclavo cuando la zona cambia, y el esclavo comprueba periódicamente si hay cambios
+- Para saber si su copia está desfasada, el esclavo compara el **número de serie** del `SOA`: **cada vez que se modifica la zona hay que incrementarlo**
+
+---
+
+## Delegación de dominios
+
+> DNS es una **jerarquía de zonas**: cada zona puede **delegar** una parte de su espacio de nombres en otros servidores.
+
+```
+                     .  (raíz)          → root servers
+           ┌─────────┼─────────┐
+          org        es       com       → TLD
+           │
+   gonzalonazareno.org                  → servidores de CDMON
+           │
+   tunombre.gonzalonazareno.org         → tu servidor DNS
+```
+
+- Para delegar, la zona **padre** guarda los registros **NS** del subdominio: *«para `tunombre.gonzalonazareno.org`, pregunta a este servidor»*
+- Quien recibe la delegación tiene **autoridad** sobre esa parte y puede delegar a su vez
+- Así nadie necesita conocer todos los nombres: **cada zona gestiona lo suyo**
+- En la cima están los **root servers**: 13 conjuntos (A–M), replicados con *anycast* por todo el mundo
+
+---
+
+## *Glue records*
+
+¿Qué pasa si el servidor con autoridad está **dentro** del propio subdominio delegado?
+
+```
+tunombre.gonzalonazareno.org.   NS   dns.tunombre.gonzalonazareno.org.
+```
+
+- Para preguntar a `dns.tunombre.gonzalonazareno.org` necesito su **IP**…
+- …pero su IP está en la zona `tunombre.gonzalonazareno.org`, que gestiona **él mismo**
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Para romper el círculo, la zona <strong>padre</strong> guarda también la <strong>IP</strong> del servidor delegado (un registro <code>A</code>). Ese registro se llama <strong>glue record</strong> («pegamento») y se envía en la sección <code>ADDITIONAL</code> de las respuestas.</div>
+</div>
 
 ---
 
