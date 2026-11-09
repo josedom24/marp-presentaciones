@@ -3,7 +3,7 @@ marp: true
 title: Protocolo DNS
 theme: profesional
 paginate: true
-header: 'SRI · Unidad 5 — Protocolo DNS'
+header: 'SRI · Unidad 3 — Protocolo DNS'
 footer: ''
 ---
 
@@ -124,17 +124,115 @@ footer: ''
 
 ---
 
+## Resolución inversa: `in-addr.arpa`
+
+¿Cómo se busca un **nombre a partir de una IP** si DNS indexa por nombres? Se convierte la IP en un nombre bajo el dominio **`in-addr.arpa`**:
+
+- Se escriben los **octetos al revés** y se añade `.in-addr.arpa.`
+- Se hace al revés porque en un nombre lo **más general va a la derecha**, y en una IP lo más general (la red) va a la izquierda
+
+```
+IP:      8.8.8.8
+Nombre:  8.8.8.8.in-addr.arpa.     →  PTR  →  dns.google.
+
+IP:      172.22.0.1
+Nombre:  1.0.22.172.in-addr.arpa.  →  PTR  →  (nombre del equipo)
+```
+
+- El tipo de registro es **`PTR`**
+- La delegación sigue la **jerarquía de direcciones**: `arpa` → `in-addr.arpa` → `172` → `22`…
+
+---
+
+## Zonas inversas y `dig -x`
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Nombre de la zona inversa
+
+Se invierte la **parte de red** según la máscara:
+
+| Red | Zona inversa |
+|:--|:--|
+| `172.22.0.0/16` | `22.172.in-addr.arpa` |
+| `192.168.0.0/24` | `0.168.192.in-addr.arpa` |
+
+- Dentro de la zona, el nombre de cada equipo es la **parte de host** invertida
+- Hay **un `PTR` por cada `A`** de la zona directa
+
+</div>
+
+<div class="card card-green">
+
+### Consulta con `dig -x`
+
+```
+$ dig -x 8.8.8.8
+;8.8.8.8.in-addr.arpa.   IN   PTR
+8.8.8.8.in-addr.arpa. 74068 IN PTR dns.google.
+```
+
+- `-x` **invierte la IP** y pide el `PTR` por ti
+- Equivale a `dig PTR 8.8.8.8.in-addr.arpa`
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>La zona inversa la gestiona quien tiene <strong>delegado el bloque de IPs</strong> (el proveedor), no quien tiene el dominio. Para IPv6 se usa <code>ip6.arpa</code>.</div>
+</div>
+
+---
+
 ## Autoridad sobre una zona
 
 - El **servidor DNS** que guarda el **fichero de una zona** es su **servidor con autoridad**
 - En el propio fichero de zona se declara con un **registro NS**
-- Conviene tener **varios** servidores con autoridad por zona:
-  - **Maestro** — servidor principal donde se edita la zona
-  - **Esclavos** — sincronizan automáticamente con el maestro
-- Los servidores con autoridad sobre el **dominio raíz** se llaman ***root servers***
+- Conviene tener **varios** servidores con autoridad por zona, por disponibilidad:
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Servidor maestro
+
+- Es donde se **edita** la zona
+- Su fichero de zona es la **fuente de verdad**
+
+</div>
+
+<div class="card card-green">
+
+### Servidor esclavo
+
+- Tiene una **copia** de la zona
+- La obtiene del maestro por **transferencia de zona** (TCP) y se mantiene sincronizada
+- Responde con **autoridad** igual que el maestro
+
+</div>
+
+</div>
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Hay <strong>13 conjuntos</strong> de root servers identificados con letras (A–M); cada uno se replica con <em>anycast</em> en cientos de ubicaciones por todo el mundo.</div>
+<span>ℹ️</span><div>Los servidores con autoridad sobre el <strong>dominio raíz</strong> se llaman <strong>root servers</strong>: <strong>13 conjuntos</strong> (A–M), cada uno replicado con <em>anycast</em> en cientos de ubicaciones.</div>
+</div>
+
+---
+
+## Delegación de dominios
+
+> DNS es una **jerarquía de zonas**: cada zona puede **delegar** una parte de su espacio de nombres en otro servidor.
+
+- La zona `org` **delega** `gonzalonazareno.org` en sus servidores con autoridad
+- Para delegar, la zona **padre** guarda registros **NS** del subdominio: *«para `sub.dominio.org`, pregunta a este servidor»*
+- Quien recibe la delegación es **autoridad** de esa parte y puede delegar a su vez
+- Así nadie necesita conocer todos los nombres: **cada zona gestiona lo suyo**
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div><strong>Glue records:</strong> si el servidor con autoridad está <em>dentro</em> del propio subdominio delegado (<code>ns.sub.dominio.org</code>), la zona padre debe guardar también su <strong>IP</strong>. Si no, habría un círculo: para preguntar al servidor necesito su IP, y para su IP debo preguntarle a él.</div>
 </div>
 
 ---
@@ -143,11 +241,11 @@ footer: ''
 
 | Registro | Para qué sirve |
 |:--|:--|
-| **SOA** | *Start of Authority* — metainformación de la zona |
-| **NS** | Servidor con autoridad sobre la zona |
+| **SOA** | *Start of Authority* — metainformación de la zona (serie, tiempos de sincronización y caché) |
+| **NS** | Servidor con autoridad sobre la zona (y delegaciones) |
 | **A** | Dirección **IPv4** de un nombre |
 | **AAAA** | Dirección **IPv6** de un nombre |
-| **CNAME** | **Alias** — otro nombre que apunta al "real" |
+| **CNAME** | **Alias** — otro nombre que apunta al «real» |
 | **MX** | Servidor de **correo** del dominio |
 | **PTR** | Resolución **inversa** (IP → nombre) |
 | **TXT** | Texto libre (SPF, DKIM, verificación…) |
@@ -159,39 +257,39 @@ footer: ''
 
 <p class="numero">02</p>
 
-# Resolución de consultas
+# Resolución y recursión
 
-## Recursión, caché y tipos de servidor
+## Cómo se resuelve un nombre
 
 ---
 
-## Consulta DNS por recursión
+## ¿Quién pregunta a quién?
 
-Cuando un equipo necesita resolver un nombre, sigue este flujo:
+Cuando un equipo necesita resolver un nombre:
 
-1. Comprueba la **resolución estática** (`/etc/hosts`, NSS)
-2. Si no lo encuentra, consulta al **servidor DNS** configurado en `resolv.conf`
-3. Pueden pasar **tres cosas**:
+1. Comprueba la **resolución estática** (`/etc/hosts`, según `nsswitch.conf`)
+2. Si no lo encuentra, pregunta al **servidor DNS** configurado en `/etc/resolv.conf`
+3. Ese servidor, si no sabe la respuesta, **busca por él** en la jerarquía DNS
 
 <div class="cols-2" style="margin-top:0.6rem">
 
 <div class="card card-blue">
 
-### Si el servidor lo conoce
+### Consulta recursiva
 
-- **Tiene autoridad** sobre el dominio → responde directamente
-- **Lo tiene en caché** de una consulta previa → responde directamente
+- La hace el **cliente** (*stub resolver*) a su servidor DNS
+- Significa: *«no me des pistas, **devuélveme la respuesta final** o un error»*
+- El servidor asume **todo el trabajo**
 
 </div>
 
 <div class="card card-green">
 
-### Si no lo conoce
+### Consulta iterativa
 
-- Pregunta a los **root servers**
-- Estos derivan al **TLD** correspondiente
-- El TLD deriva al servidor **con autoridad** del dominio
-- Se devuelve la respuesta y se **guarda en caché**
+- La hace el **servidor recursivo** a los servidores de la jerarquía
+- Cada uno responde *«no lo sé, **pregunta a este otro**»* (una **referencia**)
+- El servidor recursivo **sigue las pistas** hasta la autoridad
 
 </div>
 
@@ -199,28 +297,82 @@ Cuando un equipo necesita resolver un nombre, sigue este flujo:
 
 ---
 
-## Esquema de la resolución
+## Resolución paso a paso
+
+Un cliente pregunta `www.example.org` a su servidor recursivo (caché vacía):
 
 ```
-     Cliente              DNS local               Internet
-       │                      │                      │
-       │  ¿www.example.org?   │                      │
-       │ ────────────────────►│                      │
-       │                      │  ¿quién resuelve org?│
-       │                      │ ────────────────────►│  Root
-       │                      │ ◄────────────────────│
-       │                      │  ¿autoridad de       │
-       │                      │   example.org?       │
-       │                      │ ────────────────────►│  TLD .org
-       │                      │ ◄────────────────────│
-       │                      │  ¿IP www.example.org?│
-       │                      │ ────────────────────►│  Autoridad
-       │  IP                  │ ◄────────────────────│
-       │ ◄────────────────────│                      │
+ Cliente          Recursivo           Root         TLD .org      Autoridad
+   │ ¿www.example.org? │                │              │             │
+   │ ─────────────────►│  ¿www…?        │              │             │
+   │   (recursiva)     │ ──────────────►│              │             │
+   │                   │ ◄── «pregunta a los NS de org»│             │
+   │                   │  ¿www…?                       │             │
+   │                   │ ─────────────────────────────►│             │
+   │                   │ ◄── «pregunta a los NS de example.org»      │
+   │                   │  ¿www…?                                     │
+   │                   │ ───────────────────────────────────────────►│
+   │                   │ ◄─────────────────────── IP (respuesta, aa) │
+   │ ◄── IP            │   guarda en caché                           │
 ```
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El cliente hace <strong>una sola pregunta</strong>; toda la cadena de consultas la realiza el servidor DNS local.</div>
+<span>ℹ️</span><div>El cliente hace <strong>una sola pregunta</strong>. Con <code>dig +trace</code> es <code>dig</code> quien hace el papel del recursivo y te enseña cada salto.</div>
+</div>
+
+---
+
+## Qué responde cada servidor
+
+Los servidores intermedios **no dan la respuesta**: dan una **referencia**.
+
+| Sección | En una referencia | En la respuesta final |
+|:--|:--|:--|
+| `ANSWER` | **vacía** | el registro pedido (`A`, `MX`…) |
+| `AUTHORITY` | registros **NS** del siguiente nivel | normalmente vacía |
+| `ADDITIONAL` | **IPs** de esos NS (*glue*) | datos extra (EDNS) |
+
+- El **root** responde con los NS del **TLD** (`org`)
+- El **TLD** responde con los NS del **dominio** (`example.org`)
+- El servidor **con autoridad** responde con la IP y marca la respuesta como autoritativa (`aa`)
+
+---
+
+## Caché y TTL
+
+- Cada registro lleva un **TTL**: segundos que se puede **guardar en caché**
+- Mientras no caduque, el servidor recursivo responde **sin preguntar a nadie**
+- El TTL baja en cada consulta repetida: es la forma de ver si una respuesta viene de caché
+
+```
+$ dig www.debian.org
+www.debian.org.   162   IN   A   194.177.211.216     ← quedan 162 s en caché
+```
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Caché positiva
+
+- Se guarda la **respuesta correcta**
+- Duración: el **TTL** del registro
+
+</div>
+
+<div class="card card-green">
+
+### Caché negativa
+
+- También se guarda que un nombre **no existe** (`NXDOMAIN`)
+- Duración: el campo *negative TTL* del **SOA** de la zona
+
+</div>
+
+</div>
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Por eso un cambio en un registro <strong>no se ve al instante</strong>: hay que esperar a que caduque el TTL anterior en las cachés de todo el mundo.</div>
 </div>
 
 ---
@@ -239,7 +391,7 @@ Cuando un equipo necesita resolver un nombre, sigue este flujo:
 
 ### Servidor forward
 
-- **Reenvía** las consultas a otro servidor
+- **Reenvía** las consultas a otro servidor recursivo
 - No resuelve por sí mismo desde la raíz
 
 </div>
@@ -249,8 +401,8 @@ Cuando un equipo necesita resolver un nombre, sigue este flujo:
 ### Servidor con autoridad
 
 - Responde **sólo** sobre las zonas que aloja
-- No hace recursión
-- Es la fuente "oficial" de los registros del dominio
+- **No hace recursión** con clientes: no resuelve lo que no es suyo
+- Es la fuente «oficial» de los registros del dominio
 
 ### Servidor caché
 
@@ -270,6 +422,7 @@ Cuando un equipo necesita resolver un nombre, sigue este flujo:
 - Las resoluciones se hacen **más rápidas**: lo que esté en caché no se vuelve a preguntar a Internet
 - Si tenemos **servicios internos** con nombres propios, podemos crear una **zona local**: el servidor DNS tendrá autoridad sobre ella y resolverá esos nombres a **IPs privadas**
 - El servidor **DHCP** de la red repartirá ese DNS local a los clientes
+- Un mismo servidor puede ser **autoridad** de nuestras zonas y **recursivo** para el resto de nombres
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>ℹ️</span><div>Esto permite tener nombres como <code>impresora.lan</code> o <code>servidor.lan</code> sin depender de DNS externos ni tocar <code>/etc/hosts</code> en cada equipo.</div>
@@ -281,6 +434,456 @@ Cuando un equipo necesita resolver un nombre, sigue este flujo:
 <!-- _paginate: false -->
 
 <p class="numero">03</p>
+
+# Anatomía de una respuesta
+
+## `dig`, cabecera y bits de control
+
+---
+
+## La herramienta `dig`
+
+`dig` hace **consultas DNS** desde la línea de comandos y muestra **toda** la respuesta del servidor, no sólo la IP.
+
+```
+dig [tipo de registro] [@servidor DNS] consulta_DNS
+```
+
+- **Tipo de registro** por defecto: `A`. **Servidor** por defecto: el de `/etc/resolv.conf`
+- `-x <IP>` para la resolución **inversa**
+- `+short` respuesta resumida · `+trace` sigue la jerarquía desde la raíz · `+norec` consulta **sin recursión**
+- Paquete Debian: **`dnsutils`** (`sudo apt install dnsutils`)
+
+---
+
+## Salida completa de `dig`
+
+```
+$ dig mx debian.org
+
+; <<>> DiG 9.20.30 <<>> mx debian.org                       ← ① comando
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16139   ← ② cabecera
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:                                       ← ③ EDNS
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:                                        ← ④ pregunta
+;debian.org.			IN	MX
+
+;; ANSWER SECTION:                                          ← ⑤ respuesta
+debian.org.		28800	IN	MX	0 mailly.debian.org.
+debian.org.		28800	IN	MX	0 muffat.debian.org.
+debian.org.		28800	IN	MX	0 mitropoulos.debian.org.
+
+;; Query time: 27 msec                                      ← ⑥ pie
+;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)
+;; WHEN: Mon Nov 09 14:07:21 CET 2026
+;; MSG SIZE  rcvd: 113
+```
+
+---
+
+## ② La cabecera (`HEADER`)
+
+```
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16139
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+```
+
+| Campo | Significado |
+|:--|:--|
+| `opcode` | Tipo de operación: `QUERY` es la consulta normal |
+| `status` | **Resultado**: `NOERROR`, `NXDOMAIN`, `SERVFAIL`, `REFUSED` |
+| `id` | Número que **empareja** cada respuesta con su consulta (también dificulta la suplantación) |
+| `flags` | **Bits de control** del mensaje: `qr rd ra ad`… (se detallan más adelante) |
+| `QUERY` | Nº de preguntas (siempre **1**) |
+| `ANSWER` / `AUTHORITY` / `ADDITIONAL` | Nº de **registros** que hay en cada sección |
+
+---
+
+## ③ y ④ `OPT` y `QUESTION`
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### `OPT PSEUDOSECTION`
+
+```
+; EDNS: version: 0, flags:; udp: 1232
+```
+
+- **EDNS**: extensión del protocolo
+- `udp: 1232`: tamaño máximo de respuesta UDP que acepta el cliente
+- `flags: do` aparece al usar `+dnssec` (*DNSSEC OK*: «quiero las firmas»)
+- No es un registro real: es **información del mensaje**
+
+</div>
+
+<div class="card card-green">
+
+### `QUESTION SECTION`
+
+```
+;debian.org.     IN    MX
+```
+
+- **Qué se ha preguntado**: nombre, clase y tipo
+- `IN` es la clase *Internet* (la única que se usa)
+- Va con `;` al principio: es un **comentario**, no un registro
+
+</div>
+
+</div>
+
+---
+
+## ⑤ `ANSWER SECTION`
+
+Es **la respuesta**: una línea por **registro** (*resource record*), con cinco campos:
+
+```
+debian.org.      28800    IN    MX    0 mailly.debian.org.
+   ①               ②       ③     ④            ⑤
+```
+
+| | Campo | Significado |
+|:--:|:--|:--|
+| ① | **Nombre** | Nombre al que se refiere el registro (FQDN, acaba en `.`) |
+| ② | **TTL** | Segundos que se puede **guardar en caché** (baja en cada consulta repetida) |
+| ③ | **Clase** | `IN` (Internet) |
+| ④ | **Tipo** | `A`, `AAAA`, `NS`, `MX`, `CNAME`, `PTR`, `TXT`… |
+| ⑤ | **Datos** | El contenido: IP, nombre, prioridad + servidor… según el tipo |
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Si hay un <code>CNAME</code>, verás <strong>dos registros</strong>: el alias y, a continuación, el <code>A</code> del nombre real.</div>
+</div>
+
+---
+
+## `AUTHORITY` y `ADDITIONAL`
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### `AUTHORITY SECTION`
+
+- Registros **NS** de los servidores con autoridad
+- En una **referencia**: a quién preguntar después
+- Si el nombre **no existe**: el **SOA** de la zona (con el TTL de la caché negativa)
+- Con `dig ns dominio` la respuesta está en `ANSWER`; `AUTHORITY` aparece cuando es información de apoyo
+
+</div>
+
+<div class="card card-green">
+
+### `ADDITIONAL SECTION`
+
+- Datos **extra** que ahorran otra consulta
+- Típico: las **IPs** (registros `A`/`AAAA`) de los servidores de las secciones anteriores (*glue*)
+- Ejemplo: al pedir los `MX`, el servidor puede añadir la IP de cada servidor de correo
+
+</div>
+
+</div>
+
+---
+
+## ⑥ El pie: servidor, tiempo y tamaño
+
+```
+;; Query time: 27 msec
+;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)
+;; WHEN: Mon Nov 09 14:07:21 CET 2026
+;; MSG SIZE  rcvd: 113
+```
+
+| Línea | Significado |
+|:--|:--|
+| `Query time` | Tiempo hasta recibir la respuesta. **Primera** consulta: varios saltos (decenas o cientos de ms). **Repetida**: viene de **caché** (≈ 0-1 ms) |
+| `SERVER` | **Qué servidor ha contestado**: IP, puerto `53` y protocolo (**UDP** o TCP). Por defecto el de `resolv.conf`; se cambia con `@servidor` |
+| `WHEN` | Fecha y hora de la consulta |
+| `MSG SIZE rcvd` | Tamaño en **bytes** de la respuesta recibida |
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Fíjate siempre en <code>SERVER</code>: si <code>dig</code> contesta pero no es el servidor que crees, estás <strong>depurando el servidor equivocado</strong>.</div>
+</div>
+
+---
+
+## Los bits de la cabecera DNS
+
+La cabecera de cada mensaje DNS lleva **bits de control** (*flags*). Los de `dig` se ven en la línea `flags:`.
+
+| Bit | Nombre | Significado |
+|:--:|:--|:--|
+| `qr` | *Query/Response* | `0` = consulta, `1` = **respuesta** |
+| `aa` | *Authoritative Answer* | la respuesta viene de un servidor **con autoridad** |
+| `rd` | *Recursion Desired* | el cliente **pide** recursión |
+| `ra` | *Recursion Available* | el servidor **ofrece** recursión |
+| `tc` | *Truncated* | respuesta **truncada**: repetir por **TCP** |
+| `ad` | *Authenticated Data* | datos **validados con DNSSEC** |
+| `cd` | *Checking Disabled* | el cliente pide **no validar** DNSSEC |
+
+---
+
+## Recursión en los bits: `rd` y `ra`
+
+La recursión es una **negociación** entre dos bits:
+
+- El cliente envía `rd` (*«quiero recursión»*)
+- El servidor contesta `ra` si **está dispuesto** a hacerla
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Servidor recursivo
+
+```
+;; flags: qr rd ra
+```
+
+- Recibe `rd`, responde con **`ra`**
+- Sin `aa`, salvo que el nombre sea de una zona suya
+
+</div>
+
+<div class="card card-green">
+
+### Servidor con autoridad
+
+```
+;; flags: qr aa rd
+```
+
+- Responde con **`aa`** y **sin `ra`**
+- Si preguntas por un nombre ajeno: referencia o `REFUSED`
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div><code>dig +norec</code> envía la consulta <strong>sin</strong> <code>rd</code>: es lo que hace un servidor recursivo cuando pregunta a la jerarquía, y por eso recibe referencias en lugar de respuestas finales.</div>
+</div>
+
+---
+
+## `aa` y `tc`: autoridad y tamaño
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### `aa` — respuesta autoritativa
+
+- La respuesta viene **de la fuente**: el servidor tiene la zona
+- Una respuesta **desde caché** nunca lleva `aa`
+- Sirve para distinguir si el dato es **oficial** o puede estar **desfasado** por la caché
+
+</div>
+
+<div class="card card-green">
+
+### `tc` — respuesta truncada
+
+- En **UDP** una respuesta tiene un tamaño máximo (con EDNS suele ser ~1232 bytes)
+- Si no cabe, el servidor la corta y activa **`tc`**
+- El cliente **repite la consulta por TCP** (`dig` lo indica: *Truncated, retrying in TCP mode*)
+
+</div>
+
+</div>
+
+---
+
+## Códigos de estado (`status`)
+
+| Estado | Significado |
+|:--|:--|
+| `NOERROR` | consulta correcta (puede venir con la sección `ANSWER` vacía si el nombre existe pero no tiene ese tipo de registro) |
+| `NXDOMAIN` | el nombre **no existe** |
+| `SERVFAIL` | el servidor **no ha podido resolver** (servidor autoritativo caído, o **fallo de validación DNSSEC**) |
+| `REFUSED` | el servidor **se niega** a responder (p. ej. no permite recursión o consultas desde tu red) |
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Son los errores que verás al montar tu propio servidor: <code>REFUSED</code> suele ser un control de acceso mal configurado y <code>SERVFAIL</code> una zona con errores.</div>
+</div>
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">04</p>
+
+# DNSSEC
+
+## Autenticar las respuestas DNS
+
+---
+
+## El problema: DNS no se autentica
+
+- Una respuesta DNS **no demuestra** que venga de quien dice
+- Un atacante puede **suplantarla** y llevarte a otra IP: **envenenamiento de caché** (*cache poisoning*)
+- La respuesta falsa queda guardada en el **recursivo** y la reciben **todos sus clientes** hasta que caduque el TTL
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>DNS no cifra ni firma. <strong>DNSSEC</strong> (*DNS Security Extensions*) añade <strong>autenticidad e integridad</strong>: permite comprobar que la respuesta la ha generado el dueño de la zona y que no se ha modificado. <strong>No cifra</strong> (no da confidencialidad).</div>
+</div>
+
+---
+
+## Cómo funciona: firmas y claves
+
+El dueño de la zona **firma** sus registros con **criptografía de clave pública**:
+
+| Registro | Contenido |
+|:--|:--|
+| **DNSKEY** | La **clave pública** de la zona |
+| **RRSIG** | La **firma** de cada conjunto de registros (por ejemplo, los `A` de un nombre) |
+| **DS** | *Delegation Signer*: **huella** de la clave de la zona hija, guardada en la zona **padre** |
+| **NSEC / NSEC3** | **Prueba de inexistencia** firmada: demuestra que un nombre *no existe* |
+
+- Normalmente hay dos claves: **KSK** (firma las claves, se identifica en el DS) y **ZSK** (firma los registros)
+- Un **resolver validador** recalcula la firma con la DNSKEY y comprueba que coincide
+
+---
+
+## La cadena de confianza
+
+¿Por qué confiar en la clave de `debian.org`? Porque está **avalada por el padre**, y así hasta la raíz:
+
+```
+  .  (raíz)      clave pública conocida de antemano (trust anchor)
+   │  DS de org     firmado por la raíz
+   ▼
+  org            DNSKEY de org, avalada por el DS
+   │  DS de debian.org   firmado por org
+   ▼
+  debian.org     DNSKEY de debian.org  →  RRSIG de sus registros
+```
+
+- El resolver **sólo necesita conocer la clave de la raíz**: el resto se valida **encadenando** DS → DNSKEY → RRSIG
+- Si **toda la cadena** es válida, devuelve la respuesta con el bit **`ad`** activo
+- Si una firma **falla**, devuelve **`SERVFAIL`**: es mejor no responder que dar un dato falso
+
+---
+
+## DNSSEC con `dig`
+
+```
+$ dig +dnssec debian.org
+;; flags: qr rd ra ad;                   ← ad: validado
+debian.org.   172  IN  A      151.101.2.132
+debian.org.   172  IN  RRSIG A 8 2 300 20261211013633 20261101011742 29026 debian.org. NXTIX…
+
+$ dig DS debian.org +short
+40756 8 2 BBE42151B1A41EFC1F7E6D74D86E601D55051D2B9EB99B1CD0CEAA6E2A5618F5
+
+$ dig DNSKEY debian.org +short
+256 3 8 AwEAAaFKOvqD3ZPE/…        ← 256 = ZSK
+257 3 8 AwEAAcOt7qF88Cx7…         ← 257 = KSK
+```
+
+- **`+dnssec`** pide los registros `RRSIG` junto con la respuesta
+- El `RRSIG` indica algoritmo, validez (fechas de inicio y caducidad) y el *key tag* de la clave que firma
+
+---
+
+## Un fallo de validación
+
+`dnssec-failed.org` es un dominio con la firma **rota a propósito** para probar los validadores:
+
+```
+$ dig dnssec-failed.org
+;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL
+;; flags: qr rd ra;            ← sin ad
+```
+
+```
+$ dig +cd dnssec-failed.org     ← cd: «no valides»
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR
+```
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>El nombre existe y el servidor tiene la IP, pero el <strong>resolver validador la descarta</strong> porque no puede comprobar la firma. Con <code>+cd</code> se desactiva la validación y sí responde.</div>
+</div>
+
+---
+
+## La firma de la zona
+
+Firmar una zona consiste en **generar las claves** y **publicar** DNSKEY, RRSIG y NSEC en ella, **renovando las firmas** antes de que caduquen.
+
+1. Generar las claves **KSK** y **ZSK**
+2. Firmar todos los conjuntos de registros → aparecen los **RRSIG**
+3. Publicar el **DS** (huella de la KSK) en la **zona padre**: sin DS, **no hay cadena de confianza**
+4. Mantener la zona: las firmas **caducan** y las claves se **rotan**
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>En <code>bind9</code> moderno la firma y la rotación son <strong>automáticas</strong>: la zona se asocia a una <em>política de firma</em> (<code>dnssec-policy</code>) y bind gestiona claves y firmas. Se verá en los ejercicios.</div>
+</div>
+
+---
+
+## ¿Quién firma? Nuestro escenario
+
+Tenemos **dos servidores DNS** con papeles distintos:
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### DNS externo (proveedor)
+
+- Aloja la **zona pública** del dominio
+- El proveedor suele ofrecer **firmar con un clic**
+- Hay que publicar el **DS** en el **registrador** del dominio, que lo sube a la zona padre
+- Si el **registrador y el proveedor** son distintos, el DS se copia a mano
+
+</div>
+
+<div class="card card-green">
+
+### Nuestro bind (local)
+
+- Autoridad de las zonas **internas** (`.lan`, vista interna…)
+- Como **recursivo**, **valida** las respuestas de Internet (`dnssec-validation`)
+- Firmar nuestra zona sólo tiene sentido si hay **DS en el padre**: en zonas internas o delegadas a mano **no hay cadena de confianza**
+
+</div>
+
+</div>
+
+---
+
+## DNSSEC en nuestras vistas
+
+| | **Vista pública** (Internet) | **Vista interna** (intranet) |
+|:--|:--|:--|
+| Autoridad | **Proveedor** (CDMON) | **Nuestro bind** |
+| Firma | La puede firmar el proveedor + **DS** en el registrador | Normalmente **sin firmar** |
+| Validación | La hacen los **recursivos** de los clientes | La hace **nuestro recursivo** |
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Si el nombre <strong>interno</strong> existe también en Internet pero con otra IP (<em>split-horizon</em>), un validador que lo comprobara con DNSSEC público <strong>fallaría</strong>. Por eso nuestro recursivo no valida las zonas sobre las que tiene autoridad.</div>
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Hoy <code>gonzalonazareno.org</code> <strong>no está firmado</strong>: no hay registro <code>DS</code> en <code>org</code>. Es lo habitual en la mayoría de dominios.</div>
+</div>
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">05</p>
 
 # DNS en el Gonzalo Nazareno
 
@@ -358,175 +961,6 @@ simio.gonzalonazareno.org.     86400 IN  A      172.22.0.3
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
 <span>ℹ️</span><div>El mismo nombre devuelve <strong>respuestas distintas</strong> según el servidor DNS al que se pregunte: el del aula tiene su propia zona con autoridad.</div>
-</div>
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">04</p>
-
-# Ejercicio práctico
-
-## Consultas DNS con `dig`
-
----
-
-## La herramienta `dig`
-
-`dig` permite hacer **consultas DNS** desde la línea de comandos y ver toda la respuesta del servidor.
-
-### Sintaxis
-
-```
-dig [tipo de registro] [@servidor DNS] consulta_DNS
-```
-
-- El **tipo de registro** por defecto es `A`
-- El **servidor DNS** por defecto es el de `/etc/resolv.conf`
-- La respuesta aparece en la sección **`ANSWER SECTION`**
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Si no tienes <code>dig</code> instalado, añade el paquete <strong><code>dnsutils</code></strong>: <code>sudo apt install dnsutils</code>.</div>
-</div>
-
----
-
-## Tipos de registro habituales con `dig`
-
-| Tipo | Información que devuelve |
-|:--|:--|
-| `A` | Dirección IPv4 (valor por defecto) |
-| `AAAA` | Dirección IPv6 |
-| `NS` | Servidores con autoridad sobre la zona |
-| `MX` | Servidores de correo del dominio |
-| `CNAME` | Alias del nombre consultado |
-| `SOA` | Metainformación de la zona |
-| `TXT` | Registros de texto (SPF, DKIM, verificaciones…) |
-| `-x <IP>` | Resolución **inversa** de la dirección IP |
-
----
-
-## Ejercicio — direcciones IP
-
-Obtén la dirección **IP** de los siguientes dominios:
-
-- `www.gonzalonazareno.org`
-- `www.debian.org`
-
-### Pista
-
-```bash
-dig www.gonzalonazareno.org
-dig www.debian.org
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Fíjate en la sección <code>ANSWER SECTION</code>: puede haber un <code>CNAME</code> intermedio antes de llegar al registro <code>A</code> con la IP final.</div>
-</div>
-
----
-
-## Ejercicio — servidores con autoridad
-
-Obtén los **servidores con autoridad** de los dominios:
-
-- Dominio **raíz** (`.`)
-- `es`
-- `gonzalonazareno.org`
-
-### Pista
-
-```bash
-dig ns .
-dig ns es
-dig ns gonzalonazareno.org
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El dominio raíz se representa con un punto: <code>.</code>. Devolverá los <strong>13 root servers</strong> (de <code>a.root-servers.net</code> a <code>m.root-servers.net</code>).</div>
-</div>
-
----
-
-## Ejercicio — servidores de correo
-
-Obtén los **servidores de correo (MX)** de los dominios:
-
-- `gonzalonazareno.org`
-- `us.es`
-
-### Pista
-
-```bash
-dig mx gonzalonazareno.org
-dig mx us.es
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Cada registro <code>MX</code> incluye una <strong>prioridad</strong> (número entero más bajo = más prioritario). Si el principal no responde, el correo se intenta entregar al siguiente.</div>
-</div>
-
----
-
-## Ejercicio — tipo de registro
-
-¿Qué **tipo de registro** resuelve los siguientes dominios?
-
-- `www.josedomingo.org`
-- `informatica.gonzalonazareno.org`
-
-### Pista
-
-```bash
-dig www.josedomingo.org
-dig informatica.gonzalonazareno.org
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Mira la <code>ANSWER SECTION</code>: si aparece un <code>CNAME</code>, el nombre es un <strong>alias</strong> de otro; si aparece un <code>A</code> directamente, hay una IP asociada al propio nombre.</div>
-</div>
-
----
-
-## Ejercicio — resolución inversa
-
-En clase: ¿a qué **nombre** corresponde la dirección IP `172.22.0.1`?
-
-### Pista
-
-```bash
-dig -x 172.22.0.1
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>La resolución inversa se hace con la opción <code>-x</code>. La respuesta llega como un registro <strong><code>PTR</code></strong> en la <code>ANSWER SECTION</code>.</div>
-</div>
-
----
-
-## Trucos útiles con `dig`
-
-```bash
-# Consulta a un servidor DNS concreto
-dig @8.8.8.8 www.debian.org
-
-# Respuesta corta (sólo la IP / dato relevante)
-dig +short www.debian.org
-
-# Sin las secciones de cabecera y estadísticas
-dig +noall +answer www.debian.org
-
-# Seguir la cadena desde los root servers
-dig +trace www.gonzalonazareno.org
-
-# Consulta inversa
-dig -x 172.22.0.1
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div><code>+trace</code> es muy útil para entender cómo se navega la jerarquía DNS desde el dominio raíz hasta el servidor con autoridad.</div>
 </div>
 
 ---
