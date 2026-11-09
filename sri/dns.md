@@ -83,10 +83,12 @@ footer: ''
 Sucesión de nombres separados por **puntos**, que se lee de **derecha a izquierda** (de lo general a lo concreto):
 
 ```
-     macaco . gonzalonazareno . org . 
-     ──┬───   ───────┬───────   ─┬─   ┬
-    equipo        dominio       TLD  raíz
+     macaco . gonzalonazareno . org .         www . gonzalonazareno . org .
+     ──┬───   ───────┬───────   ─┬─   ┬       ─┬─   ───────┬───────   ─┬─   ┬
+    equipo        dominio       TLD  raíz   servicio      dominio       TLD  raíz
 ```
+
+Tienen nombre tanto los **equipos** (`macaco`) como los **servicios** que ofrecen (`www`, `correo`, `ftp`…).
 
 <div class="cols-2" style="margin-top:0.6rem">
 
@@ -94,8 +96,7 @@ Sucesión de nombres separados por **puntos**, que se lee de **derecha a izquier
 
 ### Dominio raíz
 
-- Es el **punto final**: todo nombre acaba en `.`
-- Suele omitirse al escribir, pero **siempre está**
+- El **punto final** (`.`): se suele omitir, pero **siempre está**
 
 </div>
 
@@ -103,8 +104,7 @@ Sucesión de nombres separados por **puntos**, que se lee de **derecha a izquier
 
 ### TLD — *Top Level Domain*
 
-- Dominios bajo el raíz
-- Genéricos (`com`, `org`, `net`…) y de país (`es`, `fr`…)
+- Bajo la raíz: genéricos (`com`, `org`…) y de país (`es`, `fr`…)
 
 </div>
 
