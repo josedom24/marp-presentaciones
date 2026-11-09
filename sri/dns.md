@@ -38,8 +38,6 @@ footer: ''
 
 > **Domain Name System** es el protocolo que permite **guardar y consultar información** asociada a un nombre de dominio: dirección IP de un equipo, nombre asociado a una IP, servidor de correo de un dominio…
 
-### Ideas clave
-
 - Las redes funcionan con **direcciones IP**, las personas con **nombres**
 - DNS es el **directorio jerárquico** que traduce de uno a otro a escala global
 - Es **distribuido**: ningún servidor conoce todos los nombres
@@ -82,7 +80,7 @@ footer: ''
 
 ## Nombres de dominio
 
-Un **nombre de dominio** es una sucesión de nombres separados por **puntos**. Se lee de **derecha a izquierda**, de lo más general a lo más concreto:
+Sucesión de nombres separados por **puntos**, que se lee de **derecha a izquierda** (de lo general a lo concreto):
 
 ```
      macaco . gonzalonazareno . org . 
@@ -116,13 +114,10 @@ Un **nombre de dominio** es una sucesión de nombres separados por **puntos**. S
 
 ## Zonas DNS
 
-> Una **zona** es la parte del espacio de nombres que **gestiona un servidor**: contiene la información de un dominio (o de un bloque de direcciones IP).
+> Una **zona** es la parte del espacio de nombres que gestiona su **servidor con autoridad**.
 
-- La información de la zona se guarda en el **fichero de zona**: un archivo de texto con **registros**, uno por cada dato
-- Cada tipo de información tiene su **tipo de registro** (`A`, `MX`, `PTR`…)
-- El servidor que guarda una zona es su **servidor con autoridad**
-
-Para un mismo dominio solemos tener **dos tipos de zonas**:
+- Se guarda en un **fichero de zona**: un texto con **registros** (`A`, `MX`, `PTR`…), uno por dato
+- Un dominio suele tener **dos tipos de zonas**:
 
 <div class="cols-2" style="margin-top:0.6rem">
 
@@ -150,9 +145,7 @@ Para un mismo dominio solemos tener **dos tipos de zonas**:
 
 ## Resolución directa
 
-> Contiene **los nombres bajo un dominio** y su información: IP, alias, correo…
-
-Ejemplo de la zona `ejemplo.org`:
+Contiene **los nombres bajo un dominio** y su información. Ejemplo de la zona `ejemplo.org`:
 
 | Nombre | Tipo | Valor |
 |:--|:--|:--|
@@ -172,18 +165,14 @@ Ejemplo de la zona `ejemplo.org`:
 
 | Registro | Para qué sirve |
 |:--|:--|
-| **SOA** | *Start of Authority* — metainformación de la zona: servidor maestro, responsable, número de serie y tiempos de sincronización y caché |
-| **NS** | Servidor con autoridad sobre la zona (y delegaciones) |
+| **SOA** | *Start of Authority*: datos de la zona (maestro, nº de serie, tiempos). **Obligatorio** |
+| **NS** | Servidor con autoridad sobre la zona (y delegaciones). **Al menos uno** |
 | **A** | Dirección **IPv4** de un nombre |
 | **AAAA** | Dirección **IPv6** de un nombre |
 | **CNAME** | **Alias** — otro nombre que apunta al «real» |
-| **MX** | Servidor de **correo** del dominio, con una **prioridad** (menor = más prioritario) |
+| **MX** | Servidor de **correo** del dominio, con **prioridad** (menor = preferente) |
 | **PTR** | Resolución **inversa** (IP → nombre) |
 | **TXT** | Texto libre (SPF, DKIM, verificación…) |
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Todas las zonas tienen <strong>un registro <code>SOA</code></strong> y <strong>al menos un <code>NS</code></strong>.</div>
-</div>
 
 ---
 
@@ -196,6 +185,13 @@ Como DNS busca por **nombres**, la IP se convierte en un nombre bajo el dominio 
 ```
 172.22.0.1   →   1.0.22.172.in-addr.arpa.   →   PTR   →   macaco.gonzalonazareno.org.
 ```
+
+- Se invierte porque en un nombre lo **general va a la derecha** y en una IP, a la **izquierda**
+- La jerarquía sigue a las direcciones: `in-addr.arpa` → `172` → `22`…
+
+---
+
+## Zonas de resolución inversa
 
 <div class="cols-2" style="margin-top:0.6rem">
 
@@ -217,18 +213,22 @@ Es la **parte de red** invertida, según la máscara:
 ### Contenido de la zona
 
 - Registros **`PTR`**: uno por cada `A` de la zona directa
+- El nombre de cada equipo es la **parte de host** invertida
 - Los **alias** (`CNAME`) no aparecen
-- Se invierte porque en un nombre lo **general va a la derecha** y en una IP, a la izquierda
 
 </div>
 
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>Las zonas inversas de IPs públicas las gestiona quien tiene <strong>asignado el bloque</strong> (el proveedor), no el dueño del dominio.</div>
 </div>
 
 ---
 
 ## Servidores maestro y esclavo
 
-Una zona debe tener **varios servidores con autoridad**: si sólo hay uno y cae, el dominio **deja de resolverse**.
+Una zona debe tener **varios servidores con autoridad** (`NS`): si sólo hay uno y cae, no se resuelve.
 
 <div class="cols-2" style="margin-top:0.6rem">
 
@@ -245,26 +245,25 @@ Una zona debe tener **varios servidores con autoridad**: si sólo hay uno y cae,
 
 ### Servidor esclavo (secundario)
 
-- Tiene una **copia** de la zona
-- La obtiene del maestro por **transferencia de zona** (TCP)
-- Responde con **autoridad**, igual que el maestro
+- Tiene una **copia** de la zona y responde con **autoridad**
+- La obtiene del maestro por **transferencia de zona**
 
 </div>
 
 </div>
 
-- Los dos aparecen como registros **NS** de la zona: los clientes no distinguen uno de otro
-- El maestro **avisa** al esclavo cuando la zona cambia, y el esclavo comprueba periódicamente si hay cambios
-- Para saber si su copia está desfasada, el esclavo compara el **número de serie** del `SOA`: **cada vez que se modifica la zona hay que incrementarlo**
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Cuando la zona cambia, el maestro <strong>avisa</strong> al esclavo, que compara el <strong>número de serie</strong> del <code>SOA</code> para saber si su copia está desfasada: <strong>hay que incrementarlo en cada cambio</strong>.</div>
+</div>
 
 ---
 
 ## Delegación de dominios
 
-> DNS es una **jerarquía de zonas**: cada zona puede **delegar** una parte de su espacio de nombres en otros servidores.
+DNS es una **jerarquía de zonas**: cada zona puede **delegar** una parte de su espacio de nombres en otros servidores.
 
 ```
-                     .  (raíz)          → root servers
+                     .  (raíz)          → root servers (13 conjuntos, A–M, con anycast)
            ┌─────────┼─────────┐
           org        es       com       → TLD
            │
@@ -273,10 +272,8 @@ Una zona debe tener **varios servidores con autoridad**: si sólo hay uno y cae,
    tunombre.gonzalonazareno.org         → tu servidor DNS
 ```
 
-- Para delegar, la zona **padre** guarda los registros **NS** del subdominio: *«para `tunombre.gonzalonazareno.org`, pregunta a este servidor»*
+- La zona **padre** guarda los **NS** del subdominio: *«para `tunombre…`, pregunta a este servidor»*
 - Quien recibe la delegación tiene **autoridad** sobre esa parte y puede delegar a su vez
-- Así nadie necesita conocer todos los nombres: **cada zona gestiona lo suyo**
-- En la cima están los **root servers**: 13 conjuntos (A–M), replicados con *anycast* por todo el mundo
 
 ---
 
@@ -310,11 +307,8 @@ tunombre.gonzalonazareno.org.   NS   dns.tunombre.gonzalonazareno.org.
 
 ## ¿Quién pregunta a quién?
 
-Cuando un equipo necesita resolver un nombre:
-
-1. Comprueba la **resolución estática** (`/etc/hosts`, según `nsswitch.conf`)
-2. Si no lo encuentra, pregunta al **servidor DNS** configurado en `/etc/resolv.conf`
-3. Ese servidor, si no sabe la respuesta, **busca por él** en la jerarquía DNS
+1. El equipo comprueba la **resolución estática** (`/etc/hosts`, según `nsswitch.conf`)
+2. Si no, pregunta al **servidor DNS** de `/etc/resolv.conf`, que **busca por él** en la jerarquía
 
 <div class="cols-2" style="margin-top:0.6rem">
 
@@ -344,8 +338,6 @@ Cuando un equipo necesita resolver un nombre:
 
 ## Resolución paso a paso
 
-Un cliente pregunta `www.example.org` a su servidor recursivo (caché vacía):
-
 ```
  Cliente          Recursivo           Root         TLD .org      Autoridad
    │ ¿www.example.org? │                │              │             │
@@ -362,7 +354,7 @@ Un cliente pregunta `www.example.org` a su servidor recursivo (caché vacía):
 ```
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El cliente hace <strong>una sola pregunta</strong>. Con <code>dig +trace</code> es <code>dig</code> quien hace el papel del recursivo y te enseña cada salto.</div>
+<span>ℹ️</span><div>Con la caché vacía, el cliente hace <strong>una sola pregunta</strong> y el recursivo hace todo el recorrido. <code>dig +trace</code> enseña cada salto.</div>
 </div>
 
 ---
@@ -386,38 +378,18 @@ Los servidores intermedios **no dan la respuesta**: dan una **referencia**.
 ## Caché y TTL
 
 - Cada registro lleva un **TTL**: segundos que se puede **guardar en caché**
-- Mientras no caduque, el servidor recursivo responde **sin preguntar a nadie**
-- El TTL baja en cada consulta repetida: es la forma de ver si una respuesta viene de caché
+- Mientras no caduque, el recursivo responde **sin preguntar a nadie**; el TTL va bajando:
 
 ```
 $ dig www.debian.org
 www.debian.org.   162   IN   A   194.177.211.216     ← quedan 162 s en caché
 ```
 
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div class="card card-blue">
-
-### Caché positiva
-
-- Se guarda la **respuesta correcta**
-- Duración: el **TTL** del registro
-
-</div>
-
-<div class="card card-green">
-
-### Caché negativa
-
-- También se guarda que un nombre **no existe** (`NXDOMAIN`)
-- Duración: el campo *negative TTL* del **SOA** de la zona
-
-</div>
-
-</div>
+- **Caché positiva**: la respuesta, durante el **TTL** del registro
+- **Caché negativa**: que un nombre **no existe** (`NXDOMAIN`), durante el *negative TTL* del **SOA**
 
 <div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Por eso un cambio en un registro <strong>no se ve al instante</strong>: hay que esperar a que caduque el TTL anterior en las cachés de todo el mundo.</div>
+<span>⚠️</span><div>Un cambio en un registro <strong>no se ve al instante</strong>: hay que esperar a que caduque el TTL en las cachés.</div>
 </div>
 
 ---
@@ -432,7 +404,7 @@ www.debian.org.   162   IN   A   194.177.211.216     ← quedan 162 s en caché
 
 - Resuelve **cualquier consulta** preguntando él mismo a la jerarquía
 - Mantiene **caché** de respuestas
-- Es el típico de los proveedores y de las redes locales
+- El de proveedores y redes locales
 
 ### Servidor forward
 
@@ -446,8 +418,7 @@ www.debian.org.   162   IN   A   194.177.211.216     ← quedan 162 s en caché
 ### Servidor con autoridad
 
 - Responde **sólo** sobre las zonas que aloja
-- **No hace recursión** con clientes: no resuelve lo que no es suyo
-- Es la fuente «oficial» de los registros del dominio
+- **No hace recursión**: es la fuente «oficial» del dominio
 
 ### Servidor caché
 
@@ -504,23 +475,18 @@ dig [tipo de registro] [@servidor DNS] consulta_DNS
 ## Salida completa de `dig`
 
 ```
-$ dig mx debian.org
-
 ; <<>> DiG 9.20.30 <<>> mx debian.org                       ← ① comando
 ;; Got answer:
 ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16139   ← ② cabecera
 ;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
-
 ;; OPT PSEUDOSECTION:                                       ← ③ EDNS
 ; EDNS: version: 0, flags:; udp: 1232
 ;; QUESTION SECTION:                                        ← ④ pregunta
 ;debian.org.			IN	MX
-
 ;; ANSWER SECTION:                                          ← ⑤ respuesta
 debian.org.		28800	IN	MX	0 mailly.debian.org.
 debian.org.		28800	IN	MX	0 muffat.debian.org.
 debian.org.		28800	IN	MX	0 mitropoulos.debian.org.
-
 ;; Query time: 27 msec                                      ← ⑥ pie
 ;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)
 ;; WHEN: Mon Nov 09 14:07:21 CET 2026
@@ -562,7 +528,6 @@ debian.org.		28800	IN	MX	0 mitropoulos.debian.org.
 - **EDNS**: extensión del protocolo
 - `udp: 1232`: tamaño máximo de respuesta UDP que acepta el cliente
 - `flags: do` aparece al usar `+dnssec` (*DNSSEC OK*: «quiero las firmas»)
-- No es un registro real: es **información del mensaje**
 
 </div>
 
@@ -595,15 +560,11 @@ debian.org.      28800    IN    MX    0 mailly.debian.org.
 
 | | Campo | Significado |
 |:--:|:--|:--|
-| ① | **Nombre** | Nombre al que se refiere el registro (FQDN, acaba en `.`) |
-| ② | **TTL** | Segundos que se puede **guardar en caché** (baja en cada consulta repetida) |
+| ① | **Nombre** | Nombre del registro (FQDN, acaba en `.`) |
+| ② | **TTL** | Segundos que puede estar en **caché** |
 | ③ | **Clase** | `IN` (Internet) |
 | ④ | **Tipo** | `A`, `AAAA`, `NS`, `MX`, `CNAME`, `PTR`, `TXT`… |
-| ⑤ | **Datos** | El contenido: IP, nombre, prioridad + servidor… según el tipo |
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Si hay un <code>CNAME</code>, verás <strong>dos registros</strong>: el alias y, a continuación, el <code>A</code> del nombre real.</div>
-</div>
+| ⑤ | **Datos** | IP, nombre, prioridad + servidor… según el tipo |
 
 ---
 
@@ -647,14 +608,10 @@ debian.org.      28800    IN    MX    0 mailly.debian.org.
 
 | Línea | Significado |
 |:--|:--|
-| `Query time` | Tiempo hasta recibir la respuesta. **Primera** consulta: varios saltos (decenas o cientos de ms). **Repetida**: viene de **caché** (≈ 0-1 ms) |
-| `SERVER` | **Qué servidor ha contestado**: IP, puerto `53` y protocolo (**UDP** o TCP). Por defecto el de `resolv.conf`; se cambia con `@servidor` |
+| `Query time` | Tiempo de respuesta: alto la **primera** vez, ≈ 0 ms si viene de **caché** |
+| `SERVER` | **Servidor que ha contestado**: IP, puerto `53` y protocolo. **Compruébalo siempre** |
 | `WHEN` | Fecha y hora de la consulta |
-| `MSG SIZE rcvd` | Tamaño en **bytes** de la respuesta recibida |
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Fíjate siempre en <code>SERVER</code>: si <code>dig</code> contesta pero no es el servidor que crees, estás <strong>depurando el servidor equivocado</strong>.</div>
-</div>
+| `MSG SIZE rcvd` | Tamaño en **bytes** de la respuesta |
 
 ---
 
@@ -676,10 +633,7 @@ La cabecera de cada mensaje DNS lleva **bits de control** (*flags*). Los de `dig
 
 ## Recursión en los bits: `rd` y `ra`
 
-La recursión es una **negociación** entre dos bits:
-
-- El cliente envía `rd` (*«quiero recursión»*)
-- El servidor contesta `ra` si **está dispuesto** a hacerla
+La recursión se **negocia**: el cliente pide **`rd`** y el servidor contesta **`ra`** si está dispuesto a hacerla.
 
 <div class="cols-2" style="margin-top:0.6rem">
 
@@ -712,7 +666,7 @@ La recursión es una **negociación** entre dos bits:
 </div>
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div><code>dig +norec</code> envía la consulta <strong>sin</strong> <code>rd</code>: es lo que hace un servidor recursivo cuando pregunta a la jerarquía, y por eso recibe referencias en lugar de respuestas finales.</div>
+<span>ℹ️</span><div><code>dig +norec</code> pregunta <strong>sin</strong> <code>rd</code>, como hace un recursivo con la jerarquía: recibe <strong>referencias</strong>.</div>
 </div>
 
 ---
