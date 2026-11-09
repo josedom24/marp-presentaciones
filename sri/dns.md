@@ -51,7 +51,7 @@ footer: ''
 
 ---
 
-## Tipos de nombres
+## Nombres de equipo
 
 <div class="cols-2" style="margin-top:0.6rem">
 
@@ -60,29 +60,53 @@ footer: ''
 ### Hostname
 
 - **Una sola palabra** que identifica al equipo
+- Ejemplo: `macaco`
 - Se guarda en `/etc/hostname`
-
-### FQDN — *Fully Qualified Domain Name*
-
-- Hostname **+ dominio completo**: `macaco.gonzalonazareno.org.`
-- Identifica al equipo de forma **inequívoca**
 
 </div>
 
 <div class="card card-green">
 
-### Domain Name
+### FQDN — *Fully Qualified Domain Name*
 
-- Sucesión de nombres separados por **puntos**
-- Ejemplo: `gonzalonazareno.org`
+- Hostname **+ dominio completo**
+- Ejemplo: `macaco.gonzalonazareno.org.`
+- Identifica al equipo de forma **inequívoca**
+- Se comprueba con `hostname -f`
+
+</div>
+
+</div>
+
+---
+
+## Nombres de dominio
+
+Un **nombre de dominio** es una sucesión de nombres separados por **puntos**. Se lee de **derecha a izquierda**, de lo más general a lo más concreto:
+
+```
+     macaco . gonzalonazareno . org . 
+     ──┬───   ───────┬───────   ─┬─   ┬
+    equipo        dominio       TLD  raíz
+```
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-blue">
 
 ### Dominio raíz
 
 - Es el **punto final**: todo nombre acaba en `.`
+- Suele omitirse al escribir, pero **siempre está**
+
+</div>
+
+<div class="card card-green">
 
 ### TLD — *Top Level Domain*
 
-- Dominios bajo el raíz: `com`, `org`, `es`…
+- Dominios bajo el raíz
+- Genéricos (`com`, `org`, `net`…) y de país (`es`, `fr`…)
 
 </div>
 
@@ -126,20 +150,20 @@ Para un mismo dominio solemos tener **dos tipos de zonas**:
 
 ## Resolución directa
 
-> La zona de resolución directa contiene **los nombres bajo un dominio** y la información asociada a cada uno: su IP, sus alias, el correo del dominio…
+> Contiene **los nombres bajo un dominio** y su información: IP, alias, correo…
 
-Ejemplo de la información de una zona `ejemplo.org`:
+Ejemplo de la zona `ejemplo.org`:
 
-| Nombre | Tipo | Valor | Significado |
-|:--|:--|:--|:--|
-| `ejemplo.org.` | `NS` | `dns1.ejemplo.org.` | servidor con autoridad de la zona |
-| `ejemplo.org.` | `MX` | `10 correo.ejemplo.org.` | servidor de correo del dominio |
-| `dns1.ejemplo.org.` | `A` | `192.168.1.2` | IP de una máquina |
-| `servidor.ejemplo.org.` | `A` | `192.168.1.10` | IP de una máquina |
-| `www.ejemplo.org.` | `CNAME` | `servidor.ejemplo.org.` | alias: un servicio alojado en `servidor` |
+| Nombre | Tipo | Valor |
+|:--|:--|:--|
+| `ejemplo.org.` | `NS` | `dns1.ejemplo.org.` |
+| `ejemplo.org.` | `MX` | `10 correo.ejemplo.org.` |
+| `dns1.ejemplo.org.` | `A` | `192.168.1.2` |
+| `servidor.ejemplo.org.` | `A` | `192.168.1.10` |
+| `www.ejemplo.org.` | `CNAME` | `servidor.ejemplo.org.` |
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Convención habitual: las <strong>máquinas</strong> se definen con registros <code>A</code> y los <strong>servicios</strong> (<code>www</code>, <code>ftp</code>…) con <code>CNAME</code> que apuntan a la máquina que los aloja.</div>
+<span>ℹ️</span><div>Las <strong>máquinas</strong> se definen con <code>A</code> y los <strong>servicios</strong> (<code>www</code>, <code>ftp</code>…) con <code>CNAME</code> hacia la máquina que los aloja.</div>
 </div>
 
 ---
