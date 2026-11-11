@@ -453,7 +453,7 @@ www.debian.org.   162   IN   A   194.177.211.216     ← quedan 162 s en caché
 
 # Anatomía de una respuesta
 
-## `dig`, cabecera y bits de control
+## Lo esencial de `dig`
 
 ---
 
@@ -465,131 +465,61 @@ www.debian.org.   162   IN   A   194.177.211.216     ← quedan 162 s en caché
 dig [tipo de registro] [@servidor DNS] consulta_DNS
 ```
 
-- **Tipo de registro** por defecto: `A`. **Servidor** por defecto: el de `/etc/resolv.conf`
-- `-x <IP>` para la resolución **inversa**
-- `+short` respuesta resumida · `+trace` sigue la jerarquía desde la raíz · `+norec` consulta **sin recursión**
-- Paquete Debian: **`dnsutils`** (`sudo apt install dnsutils`)
+- **Tipo** por defecto: `A`. **Servidor** por defecto: el de `/etc/resolv.conf`
+- `-x <IP>` resolución **inversa** · `+short` respuesta resumida
+- `+trace` sigue la jerarquía desde la raíz · `+norec` consulta **sin recursión**
+- Paquete Debian: **`dnsutils`**
 
 ---
 
-## Salida completa de `dig`
+## Salida de `dig`
 
 ```
-; <<>> DiG 9.20.30 <<>> mx debian.org                       ← ① comando
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16139   ← ② cabecera
-;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
-;; OPT PSEUDOSECTION:                                       ← ③ EDNS
-; EDNS: version: 0, flags:; udp: 1232
-;; QUESTION SECTION:                                        ← ④ pregunta
+; <<>> DiG 9.20.30 <<>> mx debian.org
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16139   ← ① cabecera
+;; flags: qr rd ra; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+;; QUESTION SECTION:                                        ← ② pregunta
 ;debian.org.			IN	MX
-;; ANSWER SECTION:                                          ← ⑤ respuesta
+;; ANSWER SECTION:                                          ← ③ respuesta
 debian.org.		28800	IN	MX	0 mailly.debian.org.
 debian.org.		28800	IN	MX	0 muffat.debian.org.
 debian.org.		28800	IN	MX	0 mitropoulos.debian.org.
-;; Query time: 27 msec                                      ← ⑥ pie
+;; Query time: 27 msec                                      ← ④ pie
 ;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)
-;; WHEN: Mon Nov 09 14:07:21 CET 2026
-;; MSG SIZE  rcvd: 113
 ```
+
+- ① **Resultado** (`status`) y **bits de control** (`flags`)
+- ② Lo que se ha **preguntado** · ③ la **respuesta**
+- ④ **Qué servidor** ha contestado y cuánto ha tardado: **compruébalo siempre**
 
 ---
 
-## ② La cabecera (`HEADER`)
+## Secciones de la respuesta
 
-```
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16139
-;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
-```
-
-| Campo | Significado |
-|:--|:--|
-| `opcode` | Tipo de operación: `QUERY` es la consulta normal |
-| `status` | **Resultado**: `NOERROR`, `NXDOMAIN`, `SERVFAIL`, `REFUSED` |
-| `id` | Número que **empareja** cada respuesta con su consulta (también dificulta la suplantación) |
-| `flags` | **Bits de control** del mensaje: `qr rd ra ad`… (se detallan más adelante) |
-| `QUERY` | Nº de preguntas (siempre **1**) |
-| `ANSWER` / `AUTHORITY` / `ADDITIONAL` | Nº de **registros** que hay en cada sección |
-
----
-
-## ③ y ④ `OPT` y `QUESTION`
-
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div class="card card-blue">
-
-### `OPT PSEUDOSECTION`
-
-```
-; EDNS: version: 0, flags:; udp: 1232
-```
-
-- **EDNS**: extensión del protocolo
-- `udp: 1232`: tamaño máximo de respuesta UDP que acepta el cliente
-- `flags: do` aparece al usar `+dnssec` (*DNSSEC OK*: «quiero las firmas»)
-
-</div>
-
-<div class="card card-green">
-
-### `QUESTION SECTION`
-
-```
-;debian.org.     IN    MX
-```
-
-- **Qué se ha preguntado**: nombre, clase y tipo
-- `IN` es la clase *Internet* (la única que se usa)
-- Va con `;` al principio: es un **comentario**, no un registro
-
-</div>
-
-</div>
-
----
-
-## ⑤ `ANSWER SECTION`
-
-Es **la respuesta**: una línea por **registro** (*resource record*), con cinco campos:
+Cada línea de `ANSWER` es un **registro** con cinco campos:
 
 ```
 debian.org.      28800    IN    MX    0 mailly.debian.org.
-   ①               ②       ③     ④            ⑤
+ nombre           TTL    clase  tipo        datos
 ```
-
-| | Campo | Significado |
-|:--:|:--|:--|
-| ① | **Nombre** | Nombre del registro (FQDN, acaba en `.`) |
-| ② | **TTL** | Segundos que puede estar en **caché** |
-| ③ | **Clase** | `IN` (Internet) |
-| ④ | **Tipo** | `A`, `AAAA`, `NS`, `MX`, `CNAME`, `PTR`, `TXT`… |
-| ⑤ | **Datos** | IP, nombre, prioridad + servidor… según el tipo |
-
----
-
-## `AUTHORITY` y `ADDITIONAL`
 
 <div class="cols-2" style="margin-top:0.6rem">
 
 <div class="card card-blue">
 
-### `AUTHORITY SECTION`
+### `AUTHORITY`
 
-- Registros **NS** de los servidores con autoridad
-- En una **referencia**: a quién preguntar después
-- Si el nombre **no existe**: el **SOA** de la zona (con el TTL de la caché negativa)
-- Con `dig ns dominio` la respuesta está en `ANSWER`; `AUTHORITY` aparece cuando es información de apoyo
+- Los **NS** con autoridad: a quién preguntar después (**referencia**)
+- Si el nombre **no existe**: el **SOA** de la zona
 
 </div>
 
 <div class="card card-green">
 
-### `ADDITIONAL SECTION`
+### `ADDITIONAL`
 
 - Datos **extra** que ahorran otra consulta
-- Típico: las **IPs** (registros `A`/`AAAA`) de los servidores de las secciones anteriores (*glue*)
-- Ejemplo: al pedir los `MX`, el servidor puede añadir la IP de cada servidor de correo
+- Típico: las **IPs** de los servidores NS (*glue*)
 
 </div>
 
@@ -597,119 +527,37 @@ debian.org.      28800    IN    MX    0 mailly.debian.org.
 
 ---
 
-## ⑥ El pie: servidor, tiempo y tamaño
-
-```
-;; Query time: 27 msec
-;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)
-;; WHEN: Mon Nov 09 14:07:21 CET 2026
-;; MSG SIZE  rcvd: 113
-```
-
-| Línea | Significado |
-|:--|:--|
-| `Query time` | Tiempo de respuesta: alto la **primera** vez, ≈ 0 ms si viene de **caché** |
-| `SERVER` | **Servidor que ha contestado**: IP, puerto `53` y protocolo. **Compruébalo siempre** |
-| `WHEN` | Fecha y hora de la consulta |
-| `MSG SIZE rcvd` | Tamaño en **bytes** de la respuesta |
-
----
-
-## Los bits de la cabecera DNS
-
-La cabecera de cada mensaje DNS lleva **bits de control** (*flags*). Los de `dig` se ven en la línea `flags:`.
-
-| Bit | Nombre | Significado |
-|:--:|:--|:--|
-| `qr` | *Query/Response* | `0` = consulta, `1` = **respuesta** |
-| `aa` | *Authoritative Answer* | la respuesta viene de un servidor **con autoridad** |
-| `rd` | *Recursion Desired* | el cliente **pide** recursión |
-| `ra` | *Recursion Available* | el servidor **ofrece** recursión |
-| `tc` | *Truncated* | respuesta **truncada**: repetir por **TCP** |
-| `ad` | *Authenticated Data* | datos **validados con DNSSEC** |
-| `cd` | *Checking Disabled* | el cliente pide **no validar** DNSSEC |
-
----
-
-## Recursión en los bits: `rd` y `ra`
-
-La recursión se **negocia**: el cliente pide **`rd`** y el servidor contesta **`ra`** si está dispuesto a hacerla.
+## Bits (`flags`) y estado (`status`)
 
 <div class="cols-2" style="margin-top:0.6rem">
 
-<div class="card card-blue">
+<div>
 
-### Servidor recursivo
-
-```
-;; flags: qr rd ra
-```
-
-- Recibe `rd`, responde con **`ra`**
-- Sin `aa`, salvo que el nombre sea de una zona suya
-
-</div>
-
-<div class="card card-green">
-
-### Servidor con autoridad
-
-```
-;; flags: qr aa rd
-```
-
-- Responde con **`aa`** y **sin `ra`**
-- Si preguntas por un nombre ajeno: referencia o `REFUSED`
+| Bit | Significado |
+|:--:|:--|
+| `qr` | es una **respuesta** |
+| `rd` | el cliente **pide** recursión |
+| `ra` | el servidor **ofrece** recursión |
+| `aa` | respuesta **autoritativa** (nunca desde caché) |
+| `tc` | **truncada**: repetir por **TCP** |
 
 </div>
 
-</div>
+<div>
 
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div><code>dig +norec</code> pregunta <strong>sin</strong> <code>rd</code>, como hace un recursivo con la jerarquía: recibe <strong>referencias</strong>.</div>
-</div>
-
----
-
-## `aa` y `tc`: autoridad y tamaño
-
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div class="card card-blue">
-
-### `aa` — respuesta autoritativa
-
-- La respuesta viene **de la fuente**: el servidor tiene la zona
-- Una respuesta **desde caché** nunca lleva `aa`
-- Sirve para distinguir si el dato es **oficial** o puede estar **desfasado** por la caché
-
-</div>
-
-<div class="card card-green">
-
-### `tc` — respuesta truncada
-
-- En **UDP** una respuesta tiene un tamaño máximo (con EDNS suele ser ~1232 bytes)
-- Si no cabe, el servidor la corta y activa **`tc`**
-- El cliente **repite la consulta por TCP** (`dig` lo indica: *Truncated, retrying in TCP mode*)
-
-</div>
-
-</div>
-
----
-
-## Códigos de estado (`status`)
-
-| Estado | Significado |
+| `status` | Significado |
 |:--|:--|
-| `NOERROR` | consulta correcta (puede venir con la sección `ANSWER` vacía si el nombre existe pero no tiene ese tipo de registro) |
+| `NOERROR` | consulta correcta |
 | `NXDOMAIN` | el nombre **no existe** |
-| `SERVFAIL` | el servidor **no ha podido resolver** (servidor autoritativo caído, o **fallo de validación DNSSEC**) |
-| `REFUSED` | el servidor **se niega** a responder (p. ej. no permite recursión o consultas desde tu red) |
+| `SERVFAIL` | el servidor **no ha podido resolver** |
+| `REFUSED` | el servidor **se niega** a responder |
+
+</div>
+
+</div>
 
 <div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Son los errores que verás al montar tu propio servidor: <code>REFUSED</code> suele ser un control de acceso mal configurado y <code>SERVFAIL</code> una zona con errores.</div>
+<span>ℹ️</span><div>Un <strong>recursivo</strong> responde con <code>ra</code>; un servidor con <strong>autoridad</strong> con <code>aa</code> y sin <code>ra</code>. <code>REFUSED</code> suele ser un control de acceso mal configurado y <code>SERVFAIL</code>, una zona con errores.</div>
 </div>
 
 ---
@@ -718,171 +566,6 @@ La recursión se **negocia**: el cliente pide **`rd`** y el servidor contesta **
 <!-- _paginate: false -->
 
 <p class="numero">04</p>
-
-# DNSSEC
-
-## Autenticar las respuestas DNS
-
----
-
-## El problema: DNS no se autentica
-
-- Una respuesta DNS **no demuestra** que venga de quien dice
-- Un atacante puede **suplantarla** y llevarte a otra IP: **envenenamiento de caché** (*cache poisoning*)
-- La respuesta falsa queda guardada en el **recursivo** y la reciben **todos sus clientes** hasta que caduque el TTL
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>DNS no cifra ni firma. <strong>DNSSEC</strong> (*DNS Security Extensions*) añade <strong>autenticidad e integridad</strong>: permite comprobar que la respuesta la ha generado el dueño de la zona y que no se ha modificado. <strong>No cifra</strong> (no da confidencialidad).</div>
-</div>
-
----
-
-## Cómo funciona: firmas y claves
-
-El dueño de la zona **firma** sus registros con **criptografía de clave pública**:
-
-| Registro | Contenido |
-|:--|:--|
-| **DNSKEY** | La **clave pública** de la zona |
-| **RRSIG** | La **firma** de cada conjunto de registros (por ejemplo, los `A` de un nombre) |
-| **DS** | *Delegation Signer*: **huella** de la clave de la zona hija, guardada en la zona **padre** |
-| **NSEC / NSEC3** | **Prueba de inexistencia** firmada: demuestra que un nombre *no existe* |
-
-- Normalmente hay dos claves: **KSK** (firma las claves, se identifica en el DS) y **ZSK** (firma los registros)
-- Un **resolver validador** recalcula la firma con la DNSKEY y comprueba que coincide
-
----
-
-## La cadena de confianza
-
-¿Por qué confiar en la clave de `debian.org`? Porque está **avalada por el padre**, y así hasta la raíz:
-
-```
-  .  (raíz)      clave pública conocida de antemano (trust anchor)
-   │  DS de org     firmado por la raíz
-   ▼
-  org            DNSKEY de org, avalada por el DS
-   │  DS de debian.org   firmado por org
-   ▼
-  debian.org     DNSKEY de debian.org  →  RRSIG de sus registros
-```
-
-- El resolver **sólo necesita conocer la clave de la raíz**: el resto se valida **encadenando** DS → DNSKEY → RRSIG
-- Si **toda la cadena** es válida, devuelve la respuesta con el bit **`ad`** activo
-- Si una firma **falla**, devuelve **`SERVFAIL`**: es mejor no responder que dar un dato falso
-
----
-
-## DNSSEC con `dig`
-
-```
-$ dig +dnssec debian.org
-;; flags: qr rd ra ad;                   ← ad: validado
-debian.org.   172  IN  A      151.101.2.132
-debian.org.   172  IN  RRSIG A 8 2 300 20261211013633 20261101011742 29026 debian.org. NXTIX…
-
-$ dig DS debian.org +short
-40756 8 2 BBE42151B1A41EFC1F7E6D74D86E601D55051D2B9EB99B1CD0CEAA6E2A5618F5
-
-$ dig DNSKEY debian.org +short
-256 3 8 AwEAAaFKOvqD3ZPE/…        ← 256 = ZSK
-257 3 8 AwEAAcOt7qF88Cx7…         ← 257 = KSK
-```
-
-- **`+dnssec`** pide los registros `RRSIG` junto con la respuesta
-- El `RRSIG` indica algoritmo, validez (fechas de inicio y caducidad) y el *key tag* de la clave que firma
-
----
-
-## Un fallo de validación
-
-`dnssec-failed.org` es un dominio con la firma **rota a propósito** para probar los validadores:
-
-```
-$ dig dnssec-failed.org
-;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL
-;; flags: qr rd ra;            ← sin ad
-```
-
-```
-$ dig +cd dnssec-failed.org     ← cd: «no valides»
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR
-```
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>El nombre existe y el servidor tiene la IP, pero el <strong>resolver validador la descarta</strong> porque no puede comprobar la firma. Con <code>+cd</code> se desactiva la validación y sí responde.</div>
-</div>
-
----
-
-## La firma de la zona
-
-Firmar una zona consiste en **generar las claves** y **publicar** DNSKEY, RRSIG y NSEC en ella, **renovando las firmas** antes de que caduquen.
-
-1. Generar las claves **KSK** y **ZSK**
-2. Firmar todos los conjuntos de registros → aparecen los **RRSIG**
-3. Publicar el **DS** (huella de la KSK) en la **zona padre**: sin DS, **no hay cadena de confianza**
-4. Mantener la zona: las firmas **caducan** y las claves se **rotan**
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>En <code>bind9</code> moderno la firma y la rotación son <strong>automáticas</strong>: la zona se asocia a una <em>política de firma</em> (<code>dnssec-policy</code>) y bind gestiona claves y firmas. Se verá en los ejercicios.</div>
-</div>
-
----
-
-## ¿Quién firma? Nuestro escenario
-
-Tenemos **dos servidores DNS** con papeles distintos:
-
-<div class="cols-2" style="margin-top:0.6rem">
-
-<div class="card card-blue">
-
-### DNS externo (proveedor)
-
-- Aloja la **zona pública** del dominio
-- El proveedor suele ofrecer **firmar con un clic**
-- Hay que publicar el **DS** en el **registrador** del dominio, que lo sube a la zona padre
-- Si el **registrador y el proveedor** son distintos, el DS se copia a mano
-
-</div>
-
-<div class="card card-green">
-
-### Nuestro bind (local)
-
-- Autoridad de las zonas **internas** (`.lan`, vista interna…)
-- Como **recursivo**, **valida** las respuestas de Internet (`dnssec-validation`)
-- Firmar nuestra zona sólo tiene sentido si hay **DS en el padre**: en zonas internas o delegadas a mano **no hay cadena de confianza**
-
-</div>
-
-</div>
-
----
-
-## DNSSEC en nuestras vistas
-
-| | **Vista pública** (Internet) | **Vista interna** (intranet) |
-|:--|:--|:--|
-| Autoridad | **Proveedor** (CDMON) | **Nuestro bind** |
-| Firma | La puede firmar el proveedor + **DS** en el registrador | Normalmente **sin firmar** |
-| Validación | La hacen los **recursivos** de los clientes | La hace **nuestro recursivo** |
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Si el nombre <strong>interno</strong> existe también en Internet pero con otra IP (<em>split-horizon</em>), un validador que lo comprobara con DNSSEC público <strong>fallaría</strong>. Por eso nuestro recursivo no valida las zonas sobre las que tiene autoridad.</div>
-</div>
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>Hoy <code>gonzalonazareno.org</code> <strong>no está firmado</strong>: no hay registro <code>DS</code> en <code>org</code>. Es lo habitual en la mayoría de dominios.</div>
-</div>
-
----
-
-<!-- _class: capitulo -->
-<!-- _paginate: false -->
-
-<p class="numero">05</p>
 
 # DNS en el Gonzalo Nazareno
 
