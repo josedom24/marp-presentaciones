@@ -28,6 +28,154 @@ footer: ''
 
 <p class="numero">01</p>
 
+# La nube hoy
+
+## Qué es, cómo se usa y quién la ofrece
+
+---
+
+## Ya usas la nube
+
+Casi todo lo que haces en Internet se ejecuta en la infraestructura de **otro**:
+
+<div class="cols-3" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Como usuario
+
+- Correo web, Google Drive, Nextcloud
+- Netflix, Spotify, YouTube
+- Las copias de seguridad del móvil
+
+</div>
+
+<div class="card card-green">
+
+### Como desarrollador
+
+- GitHub, GitLab
+- Despliegue de una web sin tocar un servidor
+- Bases de datos gestionadas
+
+</div>
+
+<div class="card card-purple">
+
+### Como administrador
+
+- Máquinas, redes y discos **creados en segundos**
+- Sin comprar ni montar hardware
+- Es lo que vamos a hacer en esta unidad
+
+</div>
+
+</div>
+
+<div class="alerta alerta-info" style="margin-top:0.6rem">
+<span>ℹ️</span><div>«La nube» no es un lugar: son <strong>centros de datos</strong> con miles de servidores, cuyos recursos se ofrecen <strong>como servicio</strong> a través de la red.</div>
+</div>
+
+---
+
+## ¿Qué es el Cloud Computing?
+
+> Un modelo para acceder **bajo demanda y por red** a un conjunto **compartido** de recursos (cómputo, almacenamiento, redes…) que se pueden **crear y liberar rápidamente**, casi sin intervención del proveedor. *(Definición del NIST)*
+
+| Característica | Qué significa |
+|:--|:--|
+| **Autoservicio bajo demanda** | Pides los recursos tú mismo, sin hablar con nadie |
+| **Acceso por red** | Todo se gestiona y se usa a través de la red |
+| **Recursos compartidos** | El mismo hardware sirve a muchos clientes, **aislados** entre sí |
+| **Elasticidad** | Los recursos crecen y decrecen según la necesidad |
+| **Servicio medido** | Se mide lo que usas, y se **paga por uso** |
+
+---
+
+## Pedir un servidor: antes y ahora
+
+<div class="cols-2" style="margin-top:0.6rem">
+
+<div class="card card-red">
+
+### Antes
+
+1. Pedir presupuesto y comprar el servidor
+2. Esperar a que llegue, montarlo y cablearlo
+3. Instalar y configurar el sistema
+4. **Semanas** después… ya se puede usar
+
+</div>
+
+<div class="card card-green">
+
+### Ahora
+
+1. Una orden o una **llamada a una API**
+2. **Segundos** después… ya se puede usar
+3. Cuando no hace falta, **se borra** y se deja de pagar
+
+</div>
+
+</div>
+
+```
+$ openstack server create --image "Debian 13" --flavor m1.small \
+      --network mi_red --key-name mi_clave servidor1
+```
+
+- En la nube **todo es una API**: el panel web, la línea de comandos y los programas hacen las mismas llamadas
+- Por eso la infraestructura se puede **automatizar** y describir en ficheros: **infraestructura como código**
+
+---
+
+## ¿Quién ofrece la nube?
+
+<div class="cols-3" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Los grandes proveedores
+
+- **AWS**, **Microsoft Azure**, **Google Cloud**
+- Centros de datos por todo el mundo, organizados en **regiones**
+- Cientos de servicios distintos
+
+</div>
+
+<div class="card card-green">
+
+### Proveedores europeos
+
+- **OVHcloud**, **Scaleway**, **IONOS**, **Hetzner**…
+- Datos en Europa y bajo legislación europea: **soberanía del dato**
+- Algunos usan **OpenStack** (por ejemplo, OVHcloud)
+
+</div>
+
+<div class="card card-purple">
+
+### Tu propia nube
+
+- La organización monta su cloud en **sus servidores**
+- Mismo modelo: autoservicio, API, elasticidad
+- Es nuestro caso: **OpenStack** en el instituto
+
+</div>
+
+</div>
+
+<div class="alerta alerta-warning" style="margin-top:0.6rem">
+<span>⚠️</span><div>Usar la nube de otro es <strong>delegar</strong>: comodidad a cambio de depender del proveedor. Lo veremos al comparar cloud público y privado.</div>
+</div>
+
+---
+
+<!-- _class: capitulo -->
+<!-- _paginate: false -->
+
+<p class="numero">02</p>
+
 # Evolución de la infraestructura
 
 ## Tradicional, virtualización e infraestructura en nube
@@ -86,7 +234,7 @@ footer: ''
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">02</p>
+<p class="numero">03</p>
 
 # Cloud Computing
 
@@ -270,7 +418,7 @@ Un cloud **privado o híbrido** es una opción muy a tener en cuenta cuando algu
 <!-- _class: capitulo -->
 <!-- _paginate: false -->
 
-<p class="numero">03</p>
+<p class="numero">04</p>
 
 # OpenStack
 
