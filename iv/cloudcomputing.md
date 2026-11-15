@@ -170,40 +170,37 @@ En la nube **todo es una API**, y por eso se puede automatizar: **infraestructur
 
 ## ¿A qué llamamos infraestructura?
 
-> **Equipos para procesamiento, conexión y almacenamiento de datos.**
+Los **equipos para procesar, conectar y almacenar** datos.
 
 <div class="cols-3" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
-### Infraestructura tradicional
+### Tradicional
 
-- Adquisición y montaje físico de equipos
-- Conexión mediante redes físicas
-- **Estática**: mismas configuraciones durante años
-- Usuarios sin acceso directo
+- Equipos y redes **físicas**
+- **Estática**: no cambia en años
+- El usuario no la gestiona
 
 </div>
 
 <div class="card card-green">
 
-### Virtualización de máquinas
+### Virtualización
 
-- Varios MVs en un solo equipo físico
-- El software de gestión se llama **hipervisor**
-- MVs conectadas en redes virtuales
-- Ejemplos: KVM, Xen, Proxmox, VMware…
+- Varias MV en un equipo físico
+- Las gestiona el **hipervisor**
+- KVM, Xen, Proxmox, VMware…
 
 </div>
 
 <div class="card card-purple">
 
-### Infraestructura en nube
+### En nube
 
-- Virtualización de máquinas, **red** y **almacenamiento**
-- Agrupamiento de recursos en clúster
-- **Dinámica** y configuración automática
-- El usuario **sí puede gestionar** su propia infraestructura
+- Se virtualiza también la **red** y el **almacenamiento**
+- **Dinámica** y automática
+- El usuario **gestiona** la suya
 
 </div>
 
@@ -213,7 +210,7 @@ En la nube **todo es una API**, y por eso se puede automatizar: **infraestructur
 
 ## Esquema de infraestructura IaaS
 
-![w:900px](img/esquema-iaas.png)
+![h:470px](img/esquema-iaas.png)
 
 ---
 
@@ -230,38 +227,37 @@ En la nube **todo es una API**, y por eso se puede automatizar: **infraestructur
 
 ## Los tres niveles …aaS
 
-> Modelo de negocio: **oferta de servicios** cloud, no venta de licencias o hardware.
+El modelo de negocio es **ofrecer servicios**, no vender licencias o hardware.
 
 <div class="cols-3" style="margin-top:0.8rem">
 
 <div class="card card-blue">
 
-### SaaS — *Software as a Service*
+### SaaS · Software
 
-- Aplicación como servicio en la nube
-- El usuario accede a través de la web
+- Una **aplicación** lista para usar
 - Para **usuarios finales**
-- Ejemplos: Google Workspace, Microsoft 365
+- Google Workspace, Microsoft 365
 
 </div>
 
 <div class="card card-green">
 
-### PaaS — *Platform as a Service*
+### PaaS · Plataforma
 
-- Plataforma de desarrollo y despliegue en la nube
-- Para **desarrolladores de software**
-- Ejemplos: OpenShift, Heroku, Render
+- Plataforma para **desplegar** aplicaciones
+- Para **desarrolladores**
+- OpenShift, Heroku, Render
 
 </div>
 
 <div class="card card-purple">
 
-### IaaS — *Infrastructure as a Service*
+### IaaS · Infraestructura
 
-- Cómputo, redes y almacenamiento como servicio
-- Para **administradores de sistemas**
-- Ejemplos: AWS, Azure, GCE, OpenStack
+- **Cómputo, redes y almacenamiento**
+- Para **administradores**
+- AWS, Azure, GCE, OpenStack
 
 </div>
 
@@ -271,7 +267,7 @@ En la nube **todo es una API**, y por eso se puede automatizar: **infraestructur
 
 ## Comparativa On-site, IaaS, PaaS, SaaS
 
-![w:900px](img/iaas-paas-saas.png)
+![h:470px](img/iaas-paas-saas.png)
 
 ---
 
@@ -376,10 +372,9 @@ Los clouds públicos tienen aspectos negativos a tener en cuenta:
 ### Inconvenientes del cloud público
 
 - **Privacidad** y **seguridad** de los datos
-- **Vendor lock-in** — dependencia del proveedor
+- **Vendor lock-in**: dependencia del proveedor
 - Escaso **control sobre los datos**
 - Limitada **personalización**
-- Posibles problemas de **rendimiento**
 - **Costes** difíciles de predecir
 
 </div>
@@ -442,7 +437,50 @@ Ejemplo: una **tienda web** en rebajas o una web de **venta de entradas**.
 
 > **OpenStack** es software libre para crear y gestionar nubes públicas y privadas (IaaS).
 
-![w:780px](img/openstack-software-diagram.png)
+![h:400px](img/openstack-software-diagram.png)
+
+---
+
+## OpenStack es una API
+
+Todo se pide con **peticiones HTTP** a la **API REST** de OpenStack. Hay tres formas de hacerlas:
+
+<div class="cols-3" style="margin-top:0.6rem">
+
+<div class="card card-blue">
+
+### Horizon
+
+- La **aplicación web**
+- Por debajo llama a la API
+
+</div>
+
+<div class="card card-green">
+
+### OpenStack client
+
+- El comando `openstack`
+- Traduce cada orden a peticiones HTTP
+
+</div>
+
+<div class="card card-purple">
+
+### Directamente
+
+- Con `curl`, porque es HTTP
+- O desde programas: OpenTofu, Ansible…
+
+</div>
+
+</div>
+
+```
+$ curl -H "X-Auth-Token: $TOKEN" https://<openstack>:8774/v2.1/servers
+```
+
+`openstack server list --debug` muestra las peticiones HTTP que hace el cliente.
 
 ---
 
