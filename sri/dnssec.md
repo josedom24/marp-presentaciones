@@ -239,6 +239,28 @@ Tenemos **dos servidores DNS** con papeles distintos:
 
 ---
 
+## Caso real: una zona firmada en CDMON
+
+`josedomingo.org` está en los DNS de CDMON. Al pulsar **Activar DNSSEC** en el panel, CDMON firma la zona y el registrador publica el **DS** en `org`.
+
+```
+$ dig DNSKEY josedomingo.org
+josedomingo.org. DNSKEY 257 3 14 XYOy1G…   ; KSK ; alg = ECDSAP384SHA384 ; key id = 31115
+
+$ dig DS josedomingo.org @a0.org.afilias-nst.info +short     ← lo publica org
+31115 14 4 0A4F19F3198D14AB…
+
+$ delv @8.8.8.8 josedomingo.org MX
+; fully validated
+```
+
+- El **key tag del DS (31115)** coincide con el **key id de la DNSKEY**: el padre avala esa clave
+- Hay **una sola clave** (257, algoritmo 14): hace de KSK y de ZSK a la vez
+- `delv` es un validador en línea de comandos: `+rtrace` muestra la cadena (zona → `org` → raíz)
+- Antes de publicar el DS, la zona ya estaba firmada pero **sin cadena de confianza**: los resolvers la trataban como una zona normal
+
+---
+
 <!-- _class: cierre -->
 <!-- _paginate: false -->
 
