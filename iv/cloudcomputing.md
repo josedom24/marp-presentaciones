@@ -114,7 +114,7 @@ footer: ''
 
 ```
 $ openstack server create --flavor m1.normal --image "Debian 13 Trixie" \
-      --key-name clave_jdmr --network "Red de josedom" instancia_prueba
+      --key-name jdmr --network "Red de josedom" instancia_prueba
 ```
 
 En la nube **todo es una API**, y por eso se puede automatizar: **infraestructura como código**.
