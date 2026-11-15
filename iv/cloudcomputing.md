@@ -74,7 +74,7 @@ footer: ''
 
 ## ¿Qué es el Cloud Computing?
 
-> Un modelo para acceder **bajo demanda y por red** a un conjunto **compartido** de recursos (cómputo, almacenamiento, redes…) que se pueden **crear y liberar rápidamente**, casi sin intervención del proveedor. *(Definición del NIST)*
+> Un modelo para acceder **bajo demanda y por red** a un conjunto **compartido** de recursos (cómputo, almacenamiento, redes…) que se pueden **crear y liberar rápidamente**, casi sin intervención del proveedor.
 
 | Característica | Qué significa |
 |:--|:--|
