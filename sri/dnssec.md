@@ -37,17 +37,69 @@ footer: ''
 
 ## Cómo funciona: firmas y claves
 
-El dueño de la zona **firma** sus registros con **criptografía de clave pública**:
+El dueño de la zona **firma** sus registros con **criptografía de clave pública**: la clave **privada** firma (y no sale del servidor) y la **pública** se publica para verificar.
 
 | Registro | Contenido |
 |:--|:--|
 | **DNSKEY** | La **clave pública** de la zona |
-| **RRSIG** | La **firma** de cada conjunto de registros (por ejemplo, los `A` de un nombre) |
-| **DS** | *Delegation Signer*: **huella** de la clave de la zona hija, guardada en la zona **padre** |
-| **NSEC / NSEC3** | **Prueba de inexistencia** firmada: demuestra que un nombre *no existe* |
+| **RRSIG** | La **firma** de cada conjunto de registros (por ejemplo, todos los `A` de un nombre) |
+| **DS** | *Delegation Signer*: **huella (hash) de la clave pública (KSK)** de la zona hija, guardada en la zona **padre** |
+| **NSEC / NSEC3** | **Prueba de inexistencia** firmada: sin ella, alguien podría responder «ese nombre no existe» y no habría forma de desmentirlo |
 
-- Normalmente hay dos claves: **KSK** (firma las claves, se identifica en el DS) y **ZSK** (firma los registros)
-- Un **resolver validador** recalcula la firma con la DNSKEY y comprueba que coincide
+---
+
+## ¿Por qué dos claves? KSK y ZSK
+
+| | **ZSK** (*Zone Signing Key*) | **KSK** (*Key Signing Key*) |
+|:--|:--|:--|
+| Firma | Los registros de la zona (`A`, `MX`, `NS`…) | Solo el conjunto **DNSKEY** (incluida la ZSK) |
+| Su huella va en el **DS** del padre | No | **Sí** |
+| Se cambia | A menudo | Muy pocas veces |
+
+- **Cambiar la ZSK es fácil**: la KSK firma la lista nueva de claves y el DS del padre sigue valiendo
+- **Cambiar la KSK es lento**: hay que pedir al padre un DS nuevo
+- Por eso se separan: la clave que más se usa se puede renovar sin depender del padre
+- Un **resolver validador** *verifica* cada firma con la DNSKEY correspondiente
+
+---
+
+## Quién firma qué, con `dig`
+
+```
+$ dig +dnssec DNSKEY debian.org
+debian.org. DNSKEY 256 3 8 AwEAAaFK…   ; ZSK ; key id = 29026
+debian.org. DNSKEY 257 3 8 AwEAAcOt…   ; KSK ; key id = 40756
+debian.org. RRSIG  DNSKEY 8 2 28800 … 40756 debian.org. nbHtv…   ← firma la KSK
+
+$ dig +dnssec A debian.org
+debian.org. A      151.101.2.132
+debian.org. RRSIG  A 8 2 300 … 29026 debian.org. NXTIX…          ← firma la ZSK
+
+$ dig DS debian.org +short
+40756 8 2 BBE42151B1A4…                                          ← huella de la KSK
+```
+
+- En el `RRSIG`, el número antes del nombre de la zona es el **key id** de la clave que firma
+- Cadena: **DS** (en el padre) → **KSK** (40756) → firma la lista **DNSKEY** → **ZSK** (29026) → firma los **`A`**
+- *`debian.org` publica además claves ECDSA (algoritmo 13); aquí solo se muestran las RSA (algoritmo 8)*
+
+---
+
+## Firmar lo que no existe: NSEC
+
+Un `NXDOMAIN` no tiene registros que firmar, y un atacante podría inventarlo para un nombre que sí existe. Solución: la zona se ordena y cada nombre dice **cuál es el siguiente**; ese aviso va **firmado**.
+
+```
+$ dig +dnssec noexiste.            ← un TLD que no existe, preguntando a la raíz
+;; status: NXDOMAIN
+no.   NSEC   nokia.   NS DS RRSIG NSEC     ← entre «no» y «nokia» no hay nada
+no.   RRSIG  NSEC 8 1 86400 … 8763 . Q9oil…  ← y está firmado
+```
+
+- `noexiste` cae alfabéticamente entre `no` y `nokia` → **no existe**
+- Sin la clave privada no se puede fabricar un «hueco» falso
+- La lista de tipos (`NS DS …`) prueba también que un **tipo** no existe aunque el nombre sí
+- **NSEC3** hace lo mismo con **hashes** de los nombres, para que no se pueda recorrer la zona y listar todos sus nombres (`debian.org` usa NSEC3)
 
 ---
 
