@@ -59,6 +59,7 @@ El dueño de la zona **firma** sus registros con **criptografía de clave públi
 - **Cambiar la ZSK es fácil**: la KSK firma la lista nueva de claves y el DS del padre sigue valiendo
 - **Cambiar la KSK es lento**: hay que pedir al padre un DS nuevo
 - Por eso se separan: la clave que más se usa se puede renovar sin depender del padre
+- **No es la única forma**: la raíz o `debian.org` usan KSK + ZSK, pero muchos servicios gestionados usan **una sola clave (CSK)**, que hace los dos papeles. Es más simple, pero **cualquier cambio de clave obliga a actualizar el DS** en el padre
 - Un **resolver validador** *verifica* cada firma con la DNSKEY correspondiente
 
 ---
@@ -255,7 +256,8 @@ $ delv @8.8.8.8 josedomingo.org MX
 ```
 
 - El **key tag del DS (31115)** coincide con el **key id de la DNSKEY**: el padre avala esa clave
-- Hay **una sola clave** (257, algoritmo 14): hace de KSK y de ZSK a la vez
+- Hay **una sola clave** (257, algoritmo 14), una **CSK**: la misma (`31115`) firma la lista DNSKEY y los registros (`RRSIG DNSKEY` y `RRSIG MX` llevan el mismo key tag). En `debian.org` eran dos claves distintas
+- Sigue con flag `257` porque es a la que apunta el DS, y `dig` la etiqueta «KSK»
 - `delv` es un validador en línea de comandos: `+rtrace` muestra la cadena (zona → `org` → raíz)
 - Antes de publicar el DS, la zona ya estaba firmada pero **sin cadena de confianza**: los resolvers la trataban como una zona normal
 
