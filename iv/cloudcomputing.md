@@ -36,7 +36,7 @@ footer: ''
 
 ## Ya usas la nube
 
-Casi todo lo que haces en Internet se ejecuta en la infraestructura de **otro**:
+«La nube» no es un lugar: son **centros de datos** de otro, cuyos recursos se ofrecen **como servicio** a través de la red.
 
 <div class="cols-3" style="margin-top:0.8rem">
 
@@ -44,9 +44,9 @@ Casi todo lo que haces en Internet se ejecuta en la infraestructura de **otro**:
 
 ### Como usuario
 
-- Correo web, Google Drive, Nextcloud
+- Correo web, Google Drive
 - Netflix, Spotify, YouTube
-- Las copias de seguridad del móvil
+- Las copias del móvil
 
 </div>
 
@@ -55,8 +55,7 @@ Casi todo lo que haces en Internet se ejecuta en la infraestructura de **otro**:
 ### Como desarrollador
 
 - GitHub, GitLab
-- Despliegue de una web sin tocar un servidor
-- Bases de datos gestionadas
+- Desplegar una web sin tocar un servidor
 
 </div>
 
@@ -64,16 +63,11 @@ Casi todo lo que haces en Internet se ejecuta en la infraestructura de **otro**:
 
 ### Como administrador
 
-- Máquinas, redes y discos **creados en segundos**
-- Sin comprar ni montar hardware
-- Es lo que vamos a hacer en esta unidad
+- Máquinas, redes y discos **en segundos**
+- Sin comprar hardware
 
 </div>
 
-</div>
-
-<div class="alerta alerta-info" style="margin-top:0.6rem">
-<span>ℹ️</span><div>«La nube» no es un lugar: son <strong>centros de datos</strong> con miles de servidores, cuyos recursos se ofrecen <strong>como servicio</strong> a través de la red.</div>
 </div>
 
 ---
@@ -100,10 +94,9 @@ Casi todo lo que haces en Internet se ejecuta en la infraestructura de **otro**:
 
 ### Antes
 
-1. Pedir presupuesto y comprar el servidor
-2. Esperar a que llegue, montarlo y cablearlo
-3. Instalar y configurar el sistema
-4. **Semanas** después… ya se puede usar
+1. Comprar el servidor y esperar
+2. Montarlo, cablearlo e instalarlo
+3. **Semanas** después, se puede usar
 
 </div>
 
@@ -112,20 +105,19 @@ Casi todo lo que haces en Internet se ejecuta en la infraestructura de **otro**:
 ### Ahora
 
 1. Una orden o una **llamada a una API**
-2. **Segundos** después… ya se puede usar
-3. Cuando no hace falta, **se borra** y se deja de pagar
+2. **Segundos** después, se puede usar
+3. Si no hace falta, **se borra**
 
 </div>
 
 </div>
 
 ```
-$ openstack server create --image "Debian 13" --flavor m1.small \
-      --network mi_red --key-name mi_clave servidor1
+$ openstack server create --flavor m1.normal --image "Debian 13 Trixie" \
+      --key-name clave_jdmr --network "Red de josedom" instancia_prueba
 ```
 
-- En la nube **todo es una API**: el panel web, la línea de comandos y los programas hacen las mismas llamadas
-- Por eso la infraestructura se puede **automatizar** y describir en ficheros: **infraestructura como código**
+En la nube **todo es una API**, y por eso se puede automatizar: **infraestructura como código**.
 
 ---
 
@@ -135,11 +127,11 @@ $ openstack server create --image "Debian 13" --flavor m1.small \
 
 <div class="card card-blue">
 
-### Los grandes proveedores
+### Grandes proveedores
 
-- **AWS**, **Microsoft Azure**, **Google Cloud**
-- Centros de datos por todo el mundo, organizados en **regiones**
-- Cientos de servicios distintos
+- **AWS**, **Azure**, **Google Cloud**
+- **Regiones** por todo el mundo
+- Cientos de servicios
 
 </div>
 
@@ -147,9 +139,8 @@ $ openstack server create --image "Debian 13" --flavor m1.small \
 
 ### Proveedores europeos
 
-- **OVHcloud**, **Scaleway**, **IONOS**, **Hetzner**…
-- Datos en Europa y bajo legislación europea: **soberanía del dato**
-- Algunos usan **OpenStack** (por ejemplo, OVHcloud)
+- **OVHcloud**, **Scaleway**, **IONOS**…
+- Datos en Europa: **soberanía del dato**
 
 </div>
 
@@ -157,16 +148,11 @@ $ openstack server create --image "Debian 13" --flavor m1.small \
 
 ### Tu propia nube
 
-- La organización monta su cloud en **sus servidores**
-- Mismo modelo: autoservicio, API, elasticidad
-- Es nuestro caso: **OpenStack** en el instituto
+- En **tus servidores**, con el mismo modelo
+- Nuestro caso: **OpenStack**
 
 </div>
 
-</div>
-
-<div class="alerta alerta-warning" style="margin-top:0.6rem">
-<span>⚠️</span><div>Usar la nube de otro es <strong>delegar</strong>: comodidad a cambio de depender del proveedor. Lo veremos al comparar cloud público y privado.</div>
 </div>
 
 ---
@@ -242,34 +228,6 @@ $ openstack server create --image "Debian 13" --flavor m1.small \
 
 ---
 
-## Características del Cloud Computing
-
-<div class="cols-2" style="margin-top:0.8rem">
-
-<div class="card card-blue">
-
-### Modelo de consumo
-
-- Servicio disponible **a demanda** y de forma automática
-- Los servicios son **elásticos**: se crean o destruyen recursos según sea necesario
-- Se **paga por uso**
-
-</div>
-
-<div class="card card-green">
-
-### Modelo técnico
-
-- Los servicios se comparten con otros usuarios garantizando **aislamiento y seguridad**
-- Se ejecutan en un **clúster de ordenadores** ("la nube")
-- Los servicios ofrecidos se denominan **… as a Service (…aaS)**
-
-</div>
-
-</div>
-
----
-
 ## Los tres niveles …aaS
 
 > Modelo de negocio: **oferta de servicios** cloud, no venta de licencias o hardware.
@@ -283,7 +241,7 @@ $ openstack server create --image "Debian 13" --flavor m1.small \
 - Aplicación como servicio en la nube
 - El usuario accede a través de la web
 - Para **usuarios finales**
-- Ejemplos: Google Workspace, Office 365
+- Ejemplos: Google Workspace, Microsoft 365
 
 </div>
 
@@ -293,7 +251,7 @@ $ openstack server create --image "Debian 13" --flavor m1.small \
 
 - Plataforma de desarrollo y despliegue en la nube
 - Para **desarrolladores de software**
-- Ejemplos: Heroku, OpenShift, CloudFoundry
+- Ejemplos: OpenShift, Heroku, Render
 
 </div>
 
@@ -314,6 +272,60 @@ $ openstack server create --image "Debian 13" --flavor m1.small \
 ## Comparativa On-site, IaaS, PaaS, SaaS
 
 ![w:900px](img/iaas-paas-saas.png)
+
+---
+
+## Responsabilidad compartida
+
+Cuanto más arriba está el servicio, **más gestiona el proveedor** y menos gestionas tú:
+
+| | **On-premise** | **IaaS** | **PaaS** | **SaaS** |
+|:--|:--:|:--:|:--:|:--:|
+| Datos y usuarios | Tú | Tú | Tú | Tú |
+| Aplicación | Tú | Tú | Tú | Proveedor |
+| Sistema operativo | Tú | Tú | Proveedor | Proveedor |
+| Virtualización, red y almacenamiento | Tú | Proveedor | Proveedor | Proveedor |
+| Hardware y centro de datos | Tú | Proveedor | Proveedor | Proveedor |
+
+- En IaaS, **actualizar y asegurar el sistema operativo** de las instancias es cosa nuestra
+- Los **datos y quién accede a ellos** son siempre responsabilidad del cliente
+
+---
+
+## Más allá del IaaS
+
+La nube ya no ofrece solo máquinas virtuales:
+
+<div class="cols-3" style="margin-top:0.8rem">
+
+<div class="card card-blue">
+
+### Contenedores
+
+- Se despliega una **imagen**, no una máquina
+- Lo vimos en la UD2
+
+</div>
+
+<div class="card card-green">
+
+### Kubernetes gestionado
+
+- El proveedor mantiene el **clúster**
+- Lo veremos en la UD4
+
+</div>
+
+<div class="card card-purple">
+
+### Serverless
+
+- Se sube solo el **código** (*FaaS*)
+- Se paga por cada ejecución
+
+</div>
+
+</div>
 
 ---
 
@@ -388,26 +400,26 @@ Un cloud **privado o híbrido** es una opción muy a tener en cuenta cuando algu
 
 ## IaaS — caso de uso: demanda variable
 
-<div class="cols-60-40" style="margin-top:0.8rem">
+Ejemplo: una **tienda web** en rebajas o una web de **venta de entradas**.
 
-<div>
+<div class="cols-2" style="margin-top:0.8rem">
 
-**IaaS es especialmente adecuado para servicios con demanda variable, como el web.**
+<div class="card card-red">
 
-### Ejemplo: servicio de vídeo bajo demanda
+### El problema
 
-- **Problema:** requisitos de hardware muy variables, con grandes picos y valles
-- **Alto coste** en infraestructura tradicional
-- **Solución con IaaS:**
-  - Balanceadores para repartir la carga
-  - Nuevos servidores creados automáticamente cuando se precisan
-  - Servidores eliminados cuando baja la demanda
+- Grandes **picos** unos pocos días al año
+- Comprar servidores para el pico: caros y **parados** el resto del tiempo
 
 </div>
 
-<div style="display:flex; align-items:center">
+<div class="card card-green">
 
-![w:100%](img/munin-memory-monitoring.jpg)
+### La solución con IaaS
+
+- Un **balanceador** reparte la carga
+- Se **crean** servidores cuando sube la demanda
+- Se **eliminan** cuando baja
 
 </div>
 
@@ -454,7 +466,7 @@ Un cloud **privado o híbrido** es una opción muy a tener en cuenta cuando algu
 ### Razones estratégicas
 
 - **Software libre** (licencia Apache 2.0)
-- Sin versión *enterprise* — sin vendor lock-in
+- El proyecto no tiene versión de pago; hay **distribuciones comerciales** con soporte
 - Proyecto **estable** con enorme respaldo industrial
 - Proceso de diseño **abierto y transparente**
 - Orientado a **estándares abiertos**
