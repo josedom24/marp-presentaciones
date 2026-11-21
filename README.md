@@ -1,3 +1,7 @@
+> [!NOTE]
+> **Repositorio archivado.** El desarrollo continúa en
+> [git.josedomingo.org/josedom24/marp-presentaciones](https://git.josedomingo.org/josedom24/marp-presentaciones).
+
 # Presentaciones con Marp
 
 Repositorio de presentaciones creadas con [Marp](https://marp.app/), el ecosistema que convierte archivos Markdown en diapositivas HTML, PDF o PowerPoint.
